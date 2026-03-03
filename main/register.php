@@ -22,23 +22,24 @@ if (isset($_SESSION['user_id'])) {
 
 require_once '../config/db.php';
 
-// ===== EMAIL VERIFICATION: You need this column in your DB =====
-// ALTER TABLE users ADD COLUMN is_verified TINYINT(1) DEFAULT 0;
-// ALTER TABLE users ADD COLUMN verification_token VARCHAR(64) DEFAULT NULL;
-// ALTER TABLE users ADD COLUMN token_expires DATETIME DEFAULT NULL;
-// ===============================================================
+// Include PHPMailer
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+require '../phpmailer/src/Exception.php';
+require '../phpmailer/src/PHPMailer.php';
+require '../phpmailer/src/SMTP.php';
 
 $error   = '';
 $success = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $first_name = trim($_POST['first_name'] ?? '');
-    $last_name  = trim($_POST['last_name']  ?? '');
-    $email      = trim($_POST['email']      ?? '');
-    $password   = $_POST['password']        ?? '';
-    $confirm    = $_POST['confirm']         ?? '';
-    $contact    = trim($_POST['contact']    ?? '');
-    $barangay   = trim($_POST['barangay']   ?? '');
+    $last_name  = trim($_POST['last_name'] ?? '');
+    $email      = trim($_POST['email'] ?? '');
+    $password   = $_POST['password'] ?? '';
+    $confirm    = $_POST['confirm'] ?? '';
+    $contact    = trim($_POST['contact'] ?? '');
+    $barangay   = trim($_POST['barangay'] ?? '');
 
     // Validation
     if (!$first_name || !$last_name || !$email || !$password || !$confirm || !$contact || !$barangay) {
@@ -50,14 +51,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (strlen($password) < 6) {
         $error = 'Password must be at least 6 characters.';
     } else {
-        // Check if email already exists
-        $check = $conn->prepare("SELECT user_id FROM users WHERE email = ? LIMIT 1");
-        $check->bind_param('s', $email);
+        // Check if email or phone already exists
+        $check = $conn->prepare("SELECT user_id FROM users WHERE email = ? OR phone = ? LIMIT 1");
+        $check->bind_param('ss', $email, $contact);
         $check->execute();
         $check->store_result();
 
         if ($check->num_rows > 0) {
-            $error = 'This email is already registered.';
+            $error = 'Email or phone number is already registered.';
         } else {
             $check->close();
 
@@ -67,72 +68,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $is_verified = 0;
 
             // Generate verification token
-            $token      = bin2hex(random_bytes(32));
-            $expires    = date('Y-m-d H:i:s', strtotime('+24 hours'));
+            $token   = bin2hex(random_bytes(32));
+            $expires = date('Y-m-d H:i:s', strtotime('+24 hours'));
+
+            // Get barangay_id from barangay name
+            $getBarangay = $conn->prepare("SELECT barangay_id FROM barangays WHERE barangay_name = ? LIMIT 1");
+            $getBarangay->bind_param("s", $barangay);
+            $getBarangay->execute();
+            $result = $getBarangay->get_result();
+            $row = $result->fetch_assoc();
+            $barangay_id = $row['barangay_id'];
+            $getBarangay->close();
 
             // Insert user
-            // Get barangay_id from barangay name
-$getBarangay = $conn->prepare("SELECT barangay_id FROM barangays WHERE barangay_name = ? LIMIT 1");
-$getBarangay->bind_param("s", $barangay);
-$getBarangay->execute();
-$result = $getBarangay->get_result();
-$row = $result->fetch_assoc();
-$barangay_id = $row['barangay_id'];
-$getBarangay->close();
-
-$stmt = $conn->prepare("
-    INSERT INTO users (full_name, email, password, role, phone, barangay_id, is_verified)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-");
-
-$stmt->bind_param(
-    "sssssis",
-    $full_name,
-    $email,
-    $hashed,
-    $role,
-    $contact,
-    $barangay_id,
-    $is_verified
-);
-            $stmt->bind_param('sssssssss', $full_name, $email, $hashed, $role, $contact, $barangay, $is_verified, $token, $expires);
+            $stmt = $conn->prepare("
+                INSERT INTO users (full_name, email, password, role, phone, barangay_id, is_verified)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->bind_param("sssssis", $full_name, $email, $hashed, $role, $contact, $barangay_id, $is_verified);
 
             if ($stmt->execute()) {
+                $user_id = $stmt->insert_id;
                 $stmt->close();
 
+                // Insert token into email_verifications table
+                $stmt2 = $conn->prepare("
+                    INSERT INTO email_verifications (user_id, token, expires_at)
+                    VALUES (?, ?, ?)
+                ");
+                $stmt2->bind_param("iss", $user_id, $token, $expires);
+                $stmt2->execute();
+                $stmt2->close();
+
                 // ===== SEND VERIFICATION EMAIL =====
-                // You need PHPMailer installed for this to work on InfinityFree
-                // composer require phpmailer/phpmailer
-                // OR download from: https://github.com/PHPMailer/PHPMailer
+                $verify_link = "https://bocauefloodinformation.infinityfreeapp.com/soe/main/verify.php?token=" . $token;
 
-                $verify_link = "https://yourdomain.com/soe/resident/verify.php?token=" . $token;
+                try {
+                    $mail = new PHPMailer(true);
+                    $mail->isSMTP();
+                    $mail->Host       = 'smtp.gmail.com';
+                    $mail->SMTPAuth   = true;
+                    $mail->Username   = 'bocauefloodinformation@gmail.com';      // replace with your email
+                    $mail->Password   = 'ofvgybsduabhablr';   // Gmail App Password
+                    $mail->SMTPSecure = 'tls';
+                    $mail->Port       = 587;
 
-                // Uncomment and configure PHPMailer below:
-                /*
-                use PHPMailer\PHPMailer\PHPMailer;
-                require '../vendor/autoload.php';
-
-                $mail = new PHPMailer(true);
-                $mail->isSMTP();
-                $mail->Host       = 'smtp.gmail.com';
-                $mail->SMTPAuth   = true;
-                $mail->Username   = 'your@gmail.com';     // Your Gmail
-                $mail->Password   = 'your_app_password';  // Gmail App Password
-                $mail->SMTPSecure = 'tls';
-                $mail->Port       = 587;
-
-                $mail->setFrom('your@gmail.com', 'Bocaue Flood Info System');
-                $mail->addAddress($email, $full_name);
-                $mail->Subject = 'Verify your account';
-                $mail->isHTML(true);
-                $mail->Body = "
-                    <h2>Welcome, $full_name!</h2>
-                    <p>Click the link below to verify your account:</p>
-                    <a href='$verify_link'>$verify_link</a>
-                    <p>This link expires in 24 hours.</p>
-                ";
-                $mail->send();
-                */
+                    $mail->setFrom('bocauefloodinformation@gmail.com', 'Bocaue Flood Info System');
+                    $mail->addAddress($email, $full_name);
+                    $mail->Subject = 'Verify your account';
+                    $mail->isHTML(true);
+                    $mail->Body = "
+                        <h2>Welcome, $full_name!</h2>
+                        <p>Click the link below to verify your account:</p>
+                        <a href='$verify_link'>$verify_link</a>
+                        <p>This link expires in 24 hours.</p>
+                    ";
+                    $mail->send();
+                } catch (Exception $e) {
+                    // If email fails, still allow registration but notify user
+                    $error = "Account created, but verification email could not be sent. Mailer Error: {$mail->ErrorInfo}";
+                }
 
                 $success = true;
             } else {
@@ -142,6 +137,7 @@ $stmt->bind_param(
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

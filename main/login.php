@@ -41,48 +41,56 @@ $timeout = isset($_GET['timeout']) && $_GET['timeout'] == '1';
 
 // ===== HANDLE FORM SUBMISSION =====
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $email    = trim($_POST['email'] ?? '');
-  $password = $_POST['password'] ?? '';
+    $email    = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
 
-  if (empty($email) || empty($password)) {
-    $error = 'Please fill in all fields.';
-  } else {
-    // Fetch user from DB
-    $stmt = $conn->prepare("SELECT user_id, full_name, email, password, role FROM users WHERE email = ? LIMIT 1");
-    $stmt->bind_param('s', $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $user   = $result->fetch_assoc();
-    $stmt->close();
-
-    if ($user && password_verify($password, $user['password'])) {
-      // ✅ Login success — set session
-      $_SESSION['user_id']       = $user['user_id'];
-      $_SESSION['full_name']     = $user['full_name'];
-      $_SESSION['email']         = $user['email'];
-      $_SESSION['role']          = $user['role'];
-      $_SESSION['last_activity'] = time();
-
-      // Redirect based on role
-      switch ($user['role']) {
-        case 'LGU':
-          header('Location: ../lgu/index.php');
-          break;
-        case 'Rescuer':
-          header('Location: ../rescuer/index.php');
-          break;
-        case 'Resident':
-          header('Location: ../resident/index.php');
-          break;
-        default:
-          header('Location: ../main/login.php');
-      }
-      exit;
+    if (empty($email) || empty($password)) {
+        $error = 'Please fill in all fields.';
     } else {
-      $error = 'Incorrect email or password. Please try again.';
+        // Fetch user from DB
+        $stmt = $conn->prepare("SELECT user_id, full_name, email, password, role, is_verified FROM users WHERE email = ? LIMIT 1");
+        $stmt->bind_param('s', $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user   = $result->fetch_assoc();
+        $stmt->close();
+
+        if ($user && password_verify($password, $user['password'])) {
+
+            // Check if account is verified
+            if ($user['is_verified'] != 1) {
+                $error = 'Please verify your email before logging in.';
+            } else {
+                // Login success — set session
+                $_SESSION['user_id']       = $user['user_id'];
+                $_SESSION['full_name']     = $user['full_name'];
+                $_SESSION['email']         = $user['email'];
+                $_SESSION['role']          = $user['role'];
+                $_SESSION['last_activity'] = time();
+
+                // Redirect based on role
+                switch ($user['role']) {
+                    case 'LGU':
+                        header('Location: ../lgu/index.php');
+                        break;
+                    case 'Rescuer':
+                        header('Location: ../rescuer/index.php');
+                        break;
+                    case 'Resident':
+                        header('Location: ../resident/index.php');
+                        break;
+                    default:
+                        header('Location: ../main/login.php');
+                }
+                exit; // Stop execution after redirect
+            }
+
+        } else {
+            $error = 'Incorrect email or password. Please try again.';
+        }
     }
-  }
-}
+} // <-- this closes the POST check properly
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
