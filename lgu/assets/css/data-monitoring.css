@@ -1,0 +1,281 @@
+/* =============================================
+   DATA MONITORING PAGE
+   ============================================= */
+
+#page-data-monitoring {
+  padding: 28px 32px;
+  background: #f4f6f9;
+  min-height: 100vh;
+}
+
+#page-data-monitoring .page-header {
+  margin-bottom: 24px;
+}
+
+#page-data-monitoring .page-header h2 {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+/* =============================================
+   MONITORING GRID (Map + Hotlines side by side)
+   ============================================= */
+
+.monitoring-grid {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+/* =============================================
+   MAP CARD
+   ============================================= */
+
+.map-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.map-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 14px 0;
+}
+
+/* Fix Leaflet map z-index overlapping topbar */
+#flood-map {
+  z-index: 1;
+  position: relative;
+}
+
+/* Map Legend Pills */
+.map-legend {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.legend-pill {
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.legend-impassable {
+  background: #f8d7da;
+  color: #842029;
+}
+
+.legend-limited {
+  background: #fff3cd;
+  color: #664d03;
+}
+
+.legend-passable {
+  background: #d1e7dd;
+  color: #0a3622;
+}
+
+/* =============================================
+   HOTLINES CARD
+   ============================================= */
+
+.hotlines-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  overflow-y: auto;
+  max-height: 420px;
+}
+
+.hotlines-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 16px 0;
+}
+
+/* Hotline Groups (per barangay) */
+.hotline-group {
+  background: #f8f9fb;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border: 1px solid #e8ecf0;
+}
+
+.hotline-group:last-child {
+  margin-bottom: 0;
+}
+
+.hotline-district {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 8px 0;
+}
+
+.hotline-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.hotline-type {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.hotline-number {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #1a1a2e;
+}
+
+/* =============================================
+   EVACUATION CENTERS SECTION
+   ============================================= */
+
+.evac-section {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.evac-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 16px 0;
+}
+
+.evac-table-wrap {
+  overflow-x: auto;
+}
+
+.evac-table-wrap--mt {
+  margin-top: 4px;
+}
+
+.evac-section table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.evac-section thead th {
+  text-align: left;
+  padding: 10px 14px;
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 0.8rem;
+  border-bottom: 1px solid #e8ecf0;
+}
+
+.evac-section tbody td {
+  padding: 12px 14px;
+  color: #1a1a2e;
+  border-bottom: 1px solid #f0f2f5;
+  vertical-align: middle;
+}
+
+.evac-section tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.col-center {
+  width: 160px;
+}
+
+.col-status {
+  width: 120px;
+  text-align: right;
+}
+
+/* Capacity bar (progress-style) */
+.capacity-bar-wrap {
+  background: #e8ecf0;
+  border-radius: 99px;
+  height: 8px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.capacity-bar {
+  height: 100%;
+  border-radius: 99px;
+  background: #3b82f6;
+  transition: width 0.4s ease;
+}
+
+/* Status badges */
+.badge {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  float: right;
+}
+
+.badge--near-full {
+  background: #fff3cd;
+  color: #92400e;
+}
+
+.badge--available {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge--full {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Empty / placeholder */
+.empty-row td {
+  text-align: center;
+  color: #9ca3af;
+  font-style: italic;
+  padding: 24px;
+}
+
+.placeholder-text {
+  color: #9ca3af;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.placeholder-text--padded {
+  padding: 12px 0;
+}
+
+/* =============================================
+   RESPONSIVE
+   ============================================= */
+
+@media (max-width: 768px) {
+  .monitoring-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hotlines-card {
+    max-height: 320px;
+  }
+
+  #page-data-monitoring {
+    padding: 16px;
+  }
+}
