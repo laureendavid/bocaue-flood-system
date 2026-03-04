@@ -101,29 +101,100 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt2->close();
 
                 // ===== SEND VERIFICATION EMAIL =====
-                $verify_link = "https://bocauefloodinformation.infinityfreeapp.com/soe/main/verify.php?token=" . $token;
+                $verify_link = "http://localhost/Soe/main/verify.php?token=" . $token;
 
                 try {
                     $mail = new PHPMailer(true);
                     $mail->isSMTP();
                     $mail->Host       = 'smtp.gmail.com';
                     $mail->SMTPAuth   = true;
-                    $mail->Username   = 'bocauefloodinformation@gmail.com';      // replace with your email
-                    $mail->Password   = 'ofvgybsduabhablr';   // Gmail App Password
-                    $mail->SMTPSecure = 'tls';
+                    $mail->Username   = 'bocauefloodinformation@gmail.com';
+                    $mail->Password   = 'ofvgybsduabhablr'; // Gmail App Password — rotate this!
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                     $mail->Port       = 587;
 
-                    $mail->setFrom('bocauefloodinformation@gmail.com', 'Bocaue Flood Info System');
+                    // ── Sender identity ──────────────────────────────────────────
+                    $mail->setFrom('bocauefloodinformation@gmail.com', 'Bocaue Flood Information System');
+                    $mail->addReplyTo('bocauefloodinformation@gmail.com', 'Bocaue Flood Information System');
                     $mail->addAddress($email, $full_name);
-                    $mail->Subject = 'Verify your account';
+
+                    // ── Subject (specific, not generic) ──────────────────────────
+                    $mail->Subject = 'Activate your Bocaue Flood Info System account';
+
+                    // ── Plain-text fallback (REQUIRED to avoid spam) ──────────────
+                    $mail->AltBody = "Hi $full_name,\r\n\r\n"
+                        . "Thank you for registering with the Bocaue Community Flood Information System.\r\n\r\n"
+                        . "Please verify your email address by visiting the link below:\r\n"
+                        . "$verify_link\r\n\r\n"
+                        . "This link will expire in 24 hours.\r\n\r\n"
+                        . "If you did not create this account, you can safely ignore this email.\r\n\r\n"
+                        . "— Bocaue Community Flood Information System";
+
+                    // ── HTML body (clean, structured) ────────────────────────────
                     $mail->isHTML(true);
-                    $mail->Body = "
-                        <h2>Welcome, $full_name!</h2>
-                        <p>Click the link below to verify your account:</p>
-                        <a href='$verify_link'>$verify_link</a>
-                        <p>This link expires in 24 hours.</p>
-                    ";
+                    $mail->Body = '
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+                    <body style="margin:0;padding:0;background:#f4f6f9;font-family:Arial,sans-serif;">
+                      <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:30px 0;">
+                        <tr><td align="center">
+                          <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;max-width:600px;">
+
+                            <!-- Header -->
+                            <tr>
+                              <td style="background:#1a3a5c;padding:28px 40px;text-align:center;">
+                                <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;letter-spacing:0.5px;">
+                                  Bocaue Community Flood Information System
+                                </h1>
+                              </td>
+                            </tr>
+
+                            <!-- Body -->
+                            <tr>
+                              <td style="padding:40px 40px 30px;color:#333333;">
+                                <p style="margin:0 0 16px;font-size:16px;">Hi <strong>' . htmlspecialchars($full_name) . '</strong>,</p>
+                                <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#555555;">
+                                  Thank you for registering. Please confirm your email address to activate your account
+                                  and start receiving flood alerts for your barangay.
+                                </p>
+                                <p style="margin:24px 0;text-align:center;">
+                                  <a href="' . $verify_link . '"
+                                     style="display:inline-block;background:#1a3a5c;color:#ffffff;text-decoration:none;
+                                            padding:14px 32px;border-radius:6px;font-size:15px;font-weight:600;">
+                                    Verify My Email Address
+                                  </a>
+                                </p>
+                                <p style="margin:0 0 8px;font-size:13px;color:#888888;">
+                                  Or copy and paste this link into your browser:
+                                </p>
+                                <p style="margin:0 0 24px;font-size:12px;color:#aaaaaa;word-break:break-all;">
+                                  ' . $verify_link . '
+                                </p>
+                                <p style="margin:0;font-size:13px;color:#999999;">
+                                  This link expires in <strong>24 hours</strong>. If you did not create this account,
+                                  you can safely ignore this email.
+                                </p>
+                              </td>
+                            </tr>
+
+                            <!-- Footer -->
+                            <tr>
+                              <td style="background:#f4f6f9;padding:20px 40px;text-align:center;border-top:1px solid #e8eaed;">
+                                <p style="margin:0;font-size:12px;color:#aaaaaa;">
+                                  &copy; ' . date('Y') . ' Bocaue Community Flood Information System &bull; Bocaue, Bulacan
+                                </p>
+                              </td>
+                            </tr>
+
+                          </table>
+                        </td></tr>
+                      </table>
+                    </body>
+                    </html>';
+
                     $mail->send();
+
                 } catch (Exception $e) {
                     // If email fails, still allow registration but notify user
                     $error = "Account created, but verification email could not be sent. Mailer Error: {$mail->ErrorInfo}";

@@ -6,9 +6,9 @@
 session_set_cookie_params([
     'lifetime' => 0,
     'path'     => '/',
-    'secure'   => true,   // ✅ changed
+    'secure'   => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
     'httponly' => true,
-    'samesite' => 'Strict'
+    'samesite' => 'Lax'
 ]);
 
 session_start();

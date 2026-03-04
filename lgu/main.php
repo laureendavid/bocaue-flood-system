@@ -1,5 +1,6 @@
 <?php
-include("../config/auth.php");
+$requiredRole = 'LGU';
+include('../config/auth.php');
 $page = $_GET['page'] ?? 'dashboard';
 $allowedPages = ['dashboard', 'user-management', 'report-verification', 'data-monitoring', 'data-management', 'community'];
 if (!in_array($page, $allowedPages)) $page = 'dashboard';
