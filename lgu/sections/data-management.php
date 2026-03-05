@@ -4,9 +4,12 @@
   </header>
 
   <div class="dm-tabs" role="tablist" aria-label="Data management sections">
-    <button class="dm-tab active" data-tab="hotlines" role="tab" aria-selected="true" aria-controls="dm-hotlines">Hotlines</button>
-    <button class="dm-tab" data-tab="evacuation-centers" role="tab" aria-selected="false" aria-controls="dm-evac">Evacuation Centers</button>
-    <button class="dm-tab" data-tab="announcement" role="tab" aria-selected="false" aria-controls="dm-announce">Announcement</button>
+    <button class="dm-tab active" data-tab="hotlines" role="tab" aria-selected="true"
+      aria-controls="dm-hotlines">Hotlines</button>
+    <button class="dm-tab" data-tab="evacuation-centers" role="tab" aria-selected="false"
+      aria-controls="dm-evac">Evacuation Centers</button>
+    <button class="dm-tab" data-tab="announcement" role="tab" aria-selected="false"
+      aria-controls="dm-announce">Announcement</button>
   </div>
 
   <!-- Panel: Hotlines -->
@@ -36,11 +39,14 @@
           </tr>
         </thead>
         <tbody>
-          <tr class="empty-row"><td colspan="4">No hotlines to display.</td></tr>
+          <tr class="empty-row">
+            <td colspan="4">No hotlines to display.</td>
+          </tr>
         </tbody>
       </table>
     </div>
   </div>
+
 
   <!-- Panel: Evacuation Centers -->
   <div id="dm-evac" class="dm-panel" data-panel="evacuation-centers" role="tabpanel" style="display:none">
@@ -70,7 +76,9 @@
           </tr>
         </thead>
         <tbody>
-          <tr class="empty-row"><td colspan="4">No evacuation centers to display.</td></tr>
+          <tr class="empty-row">
+            <td colspan="4">No evacuation centers to display.</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -100,7 +108,9 @@
           </tr>
         </thead>
         <tbody>
-          <tr class="empty-row"><td colspan="5">No announcements to display.</td></tr>
+          <tr class="empty-row">
+            <td colspan="5">No announcements to display.</td>
+          </tr>
         </tbody>
       </table>
     </div>

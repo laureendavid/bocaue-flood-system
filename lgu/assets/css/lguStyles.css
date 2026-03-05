@@ -1189,3 +1189,64 @@ html.dark .dm-tab.active {
     display: none;
   }
 }
+
+/* NOTIFICATION */
+#toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toast {
+  min-width: 250px;
+  max-width: 350px;
+  background: linear-gradient(135deg, #4caf50, #45a049);
+  color: white;
+  padding: 14px 20px;
+  border-radius: 12px;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+  font-weight: 500;
+  display: flex;
+  justify-content: space-between;
+  opacity: 0;
+  transform: translateX(100%);
+  animation:
+    slideIn 0.5s forwards,
+    fadeOut 0.5s 2.5s forwards;
+}
+
+.toast.error {
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+}
+.toast.info {
+  background: linear-gradient(135deg, #2196f3, #1976d2);
+}
+
+.toast .close-toast {
+  cursor: pointer;
+  font-weight: bold;
+  margin-left: 10px;
+}
+
+@keyframes slideIn {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
