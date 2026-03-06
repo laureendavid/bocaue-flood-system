@@ -17,12 +17,20 @@
     <div class="toolbar">
       <div class="search-box">
         <span class="material-symbols-outlined">search</span>
-        <input type="search" placeholder="Search Hotlines" aria-label="Search hotlines" />
+        <input type="search" id="hotline-search" placeholder="Search Hotlines" aria-label="Search hotlines" />
       </div>
-      <button class="btn-filter">
-        <span class="material-symbols-outlined" style="font-size:16px">filter_list</span>
-        Filter
-      </button>
+      <div class="filter-wrapper">
+        <button class="btn-filter" id="hotline-filter-btn">
+          <span class="material-symbols-outlined" style="font-size:16px">filter_list</span>
+          Filter
+        </button>
+        <div class="filter-dropdown" id="hotline-filter-dropdown" style="display:none;">
+          <p class="filter-label">Filter by Barangay</p>
+          <div id="hotline-barangay-filters"></div>
+          <p class="filter-label" style="margin-top:10px;">Filter by Hotline Name</p>
+          <div id="hotline-name-filters"></div>
+        </div>
+      </div>
       <button class="btn-add" id="btn-add-hotline">
         <span class="material-symbols-outlined">add</span>
         Add Hotline
@@ -38,12 +46,13 @@
             <th>Action</th>
           </tr>
         </thead>
-        <tbody>
-          <tr class="empty-row">
-            <td colspan="4">No hotlines to display.</td>
-          </tr>
+        <tbody id="hotline-tbody">
+          <?php include('../includes/fetch_hotlines_table.php'); ?>
         </tbody>
       </table>
+      <div id="hotline-empty" style="display:none;" class="empty-row">
+        <p>No hotlines match your search.</p>
+      </div>
     </div>
   </div>
 
@@ -89,7 +98,8 @@
     <div class="toolbar">
       <div class="search-box">
         <span class="material-symbols-outlined">search</span>
-        <input type="search" placeholder="Search Announcement" aria-label="Search announcements" />
+        <input type="search" id="announcement-search" placeholder="Search Announcement"
+          aria-label="Search announcements" />
       </div>
       <button class="btn-add" id="btn-add-announcement">
         <span class="material-symbols-outlined">add</span>
@@ -107,12 +117,13 @@
             <th>Action</th>
           </tr>
         </thead>
-        <tbody>
-          <tr class="empty-row">
-            <td colspan="5">No announcements to display.</td>
-          </tr>
+        <tbody id="announcement-tbody">
+          <?php include('../includes/fetch_announcements.php'); ?>
         </tbody>
       </table>
+      <div id="announcement-empty" style="display:none;" class="empty-row">
+        <p>No announcements match your search.</p>
+      </div>
     </div>
   </div>
 </section>

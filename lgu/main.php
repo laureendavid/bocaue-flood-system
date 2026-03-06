@@ -28,6 +28,9 @@ $pageLabels = [
   <link rel="stylesheet" href="assets/css/lguStyles.css" />
   <link rel="stylesheet" href="assets/css/modals/datamanagement_modals.css" />
   <link rel="stylesheet" href="assets/css/data-monitoring.css" />
+  <link rel="stylesheet" href="assets/css/user_management.css" />
+  <link rel="stylesheet" href="assets/css/modals/hotline_table.css" />
+  <link rel="stylesheet" href="assets/css/modals/announcement_table.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 
@@ -113,11 +116,18 @@ $pageLabels = [
   </div>
 
   <?php include 'sections/modals/datamanagement_modals.php'; ?>
+  <?php include 'sections/modals/user_modals.php'; ?>
+  <?php include 'sections/modals/hotline_table_modal.php'; ?>
+  <?php include 'sections/modals/announcement_table_modals.php'; ?>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="assets/js/lgu.js"></script>
   <script src="assets/js/modals/datamanagement_modals.js"></script>
   <script src="assets/js/flood-map.js"></script>
   <script src="assets/js/data-monitoring.js"></script>
+  <script src="assets/js/user_management.js"></script>
+  <script src="assets/js/modals/hotline_table.js"></script>
+  <script src="assets/js/modals/add_announcement.js"></script>
+  <script src="assets/js/modals/announcement_table.js"></script>
 </body>
 
 </html>

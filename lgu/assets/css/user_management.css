@@ -1,0 +1,165 @@
+/* ================================================================
+   USER MANAGEMENT
+   ================================================================ */
+
+/* ===== ACTION CELL ===== */
+.action-cell {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.btn-change-role {
+  color: #2563eb;
+}
+.btn-change-role:hover {
+  background: #eff6ff;
+}
+
+.btn-icon.btn-delete {
+  color: #dc2626;
+}
+.btn-icon.btn-delete:hover {
+  background: #fef2f2;
+}
+
+/* ===== ROLE BADGES ===== */
+.badge-lgu {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.badge-rescuer {
+  background: #fef9c3;
+  color: #a16207;
+}
+.badge-resident {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+/* ===== DELETE BUTTON IN MODAL ===== */
+.btn-delete-confirm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btn-delete-confirm:hover {
+  opacity: 0.85;
+}
+
+/* ===== READONLY INPUTS IN MODAL ===== */
+.form-input[readonly] {
+  background: var(--row-alt);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* ===== TABLE COLUMN ALIGNMENT ===== */
+#page-user-management table th:nth-child(5),
+#page-user-management table th:nth-child(6) {
+  text-align: center !important;
+}
+
+#page-user-management table td:nth-child(5),
+#page-user-management table td:nth-child(6) {
+  text-align: center !important;
+}
+
+#page-user-management .action-cell {
+  justify-content: center;
+}
+
+#page-user-management .table-wrap {
+  max-height: calc(100vh - 280px);
+  overflow-y: auto;
+}
+
+#page-user-management table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: var(--header-bg);
+}
+
+/* ===== FILTER DROPDOWN ===== */
+.filter-wrapper {
+  position: relative;
+}
+
+.filter-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+  min-width: 160px;
+  flex-direction: column;
+  gap: 8px;
+  display: none;
+}
+
+.filter-dropdown.open {
+  display: flex;
+}
+
+.filter-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.filter-dropdown label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-dark);
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.filter-dropdown label:hover {
+  color: var(--primary);
+}
+
+.filter-dropdown input[type="radio"] {
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+/* Empty state inside table */
+#um-empty {
+  padding: 48px;
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.85rem;
+}

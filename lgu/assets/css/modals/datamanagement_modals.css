@@ -79,7 +79,9 @@
   border-radius: 6px;
   display: flex;
   align-items: center;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .modal-close:hover {
@@ -133,7 +135,9 @@
   font-family: "Inter", sans-serif;
   color: var(--text-dark);
   background: var(--bg-light);
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
   outline: none;
 }
 
@@ -238,7 +242,9 @@ html.dark .btn-save {
   font-weight: 500;
   cursor: pointer;
   color: var(--text-muted);
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .btn-cancel:hover {
