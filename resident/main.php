@@ -3,6 +3,7 @@
    main.php — Resident Dashboard
    Place in: C:\xampp\htdocs\soe\resident\main.php
    ================================================================ */
+require_once('../config/db.php');
 $requiredRole = 'Resident';
 include('../config/auth.php');
 

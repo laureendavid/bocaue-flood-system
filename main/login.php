@@ -3,6 +3,7 @@
    login.php — Bocaue Community Flood Information System
    Place this file in: C:\xampp\htdocs\soe\main\login.php
    ================================================================ */
+
 session_set_cookie_params([
     'lifetime' => 0,
     'path'     => '/',
