@@ -6,12 +6,21 @@
   <div class="toolbar">
     <div class="search-box">
       <span class="material-symbols-outlined">search</span>
-      <input type="search" placeholder="Search users" aria-label="Search users" />
+      <input type="search" id="um-search" placeholder="Search users" aria-label="Search users" />
     </div>
-    <button class="btn-filter" aria-label="Filter users">
-      <span class="material-symbols-outlined" style="font-size:16px">filter_list</span>
-      Filter
-    </button>
+    <div class="filter-wrapper">
+      <button class="btn-filter" id="um-filter-btn" aria-label="Filter users">
+        <span class="material-symbols-outlined" style="font-size:16px">filter_list</span>
+        Filter
+      </button>
+      <div class="filter-dropdown" id="um-filter-dropdown">
+        <p class="filter-label">Filter by Role</p>
+        <label><input type="radio" name="um-role" value="" checked /> All</label>
+        <label><input type="radio" name="um-role" value="LGU" /> LGU</label>
+        <label><input type="radio" name="um-role" value="Rescuer" /> Rescuer</label>
+        <label><input type="radio" name="um-role" value="Resident" /> Resident</label>
+      </div>
+    </div>
     <button class="btn-add" aria-label="Add new user">
       <span class="material-symbols-outlined">add</span>
       Add User
@@ -30,11 +39,12 @@
           <th>Action</th>
         </tr>
       </thead>
-      <tbody>
-        <tr class="empty-row">
-          <td colspan="6">No users to display.</td>
-        </tr>
+      <tbody id="um-tbody">
+        <?php include('../includes/fetch_users.php'); ?>
       </tbody>
     </table>
+    <div id="um-empty" style="display:none;" class="empty-row">
+      <p>No users match your search.</p>
+    </div>
   </div>
 </section>

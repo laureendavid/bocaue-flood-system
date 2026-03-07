@@ -1,0 +1,58 @@
+/* ================================================================
+   ANNOUNCEMENT TABLE
+   ================================================================ */
+
+.btn-edit-announcement,
+.btn-delete-announcement {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.btn-edit-announcement {
+  color: #2563eb;
+}
+.btn-edit-announcement:hover {
+  background: #eff6ff;
+}
+.btn-delete-announcement {
+  color: #dc2626;
+}
+.btn-delete-announcement:hover {
+  background: #fef2f2;
+}
+
+#dm-announce .action-cell {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+#dm-announce .table-wrap {
+  max-height: calc(100vh - 380px);
+  overflow-y: auto;
+}
+
+#dm-announce table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: var(--header-bg);
+}
+
+#announcement-empty {
+  text-align: center;
+  padding: 48px;
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.85rem;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+}

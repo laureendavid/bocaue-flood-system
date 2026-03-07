@@ -168,7 +168,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn-cancel modal-close" data-modal="modal-announcement">Cancel</button>
-      <button class="btn-save">Save Changes</button>
+      <button class="btn-save" id="announcement-save">Save Changes</button>
     </div>
   </div>
 </div>
