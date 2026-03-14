@@ -128,6 +128,7 @@ $pageLabels = [
   <script src="assets/js/modals/hotline_table.js"></script>
   <script src="assets/js/modals/add_announcement.js"></script>
   <script src="assets/js/modals/announcement_table.js"></script>
+  <script src="assets/js/save_center.js"></script>
 </body>
 
 </html>
