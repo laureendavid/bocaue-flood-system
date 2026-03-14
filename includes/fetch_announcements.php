@@ -1,6 +1,9 @@
 <?php
 require_once '../config/db.php';
 
+// Delete expired announcements
+mysqli_query($conn, "DELETE FROM announcements WHERE expiry_date IS NOT NULL AND expiry_date < CURDATE()");
+
 $sql = "SELECT a.announcement_id, a.title, a.message, 
                COALESCE(b.barangay_name, 'All Barangays') AS target_area,
                a.barangay_id,

@@ -4,9 +4,10 @@
   </header>
 
   <div class="community-grid">
-    <aside class="announcements-sidebar" aria-labelledby="comm-announce-heading">
+    <aside class="announcements-sidebar" aria-labelledby="comm-announce-heading"
+      style="max-height:75vh; overflow-y:auto;">
       <h3 id="comm-announce-heading">Announcements</h3>
-      <p class="community-no-announce">No announcements to display.</p>
+      <?php include '../includes/fetch_commAnnouncement.php'; ?>
     </aside>
 
     <div>

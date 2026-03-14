@@ -11,7 +11,7 @@
     <div class="filter-wrapper">
       <button class="btn-filter" id="um-filter-btn" aria-label="Filter users">
         <span class="material-symbols-outlined" style="font-size:16px">filter_list</span>
-        Filter
+        Filter by Role
       </button>
       <div class="filter-dropdown" id="um-filter-dropdown">
         <p class="filter-label">Filter by Role</p>
