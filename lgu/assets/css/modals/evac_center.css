@@ -1,0 +1,79 @@
+.btn-evac-action {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.btn-add-evacuee {
+  color: #16a34a;
+}
+.btn-add-evacuee:hover {
+  background: #f0fdf4;
+}
+
+.btn-edit-center {
+  color: #2563eb;
+}
+.btn-edit-center:hover {
+  background: #eff6ff;
+}
+
+.btn-delete-center {
+  color: #dc2626;
+}
+.btn-delete-center:hover {
+  background: #fef2f2;
+}
+
+.btn-remove-evacuee {
+  color: #64748b;
+}
+.btn-remove-evacuee:hover {
+  background: #f1f5f9;
+}
+
+#dm-evac .table-wrap {
+  max-height: calc(100vh - 380px);
+  overflow-y: auto;
+}
+
+#dm-evac table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: var(--header-bg);
+}
+
+#dm-evac .action-cell {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+#dm-evac table th:nth-child(1),
+#dm-evac table td:nth-child(1) {
+  width: 50%;
+}
+
+#dm-evac table th:nth-child(2),
+#dm-evac table td:nth-child(2) {
+  width: 15%;
+  text-align: center;
+}
+
+#dm-evac table th:nth-child(3),
+#dm-evac table td:nth-child(3) {
+  width: 15%;
+  text-align: center;
+}
+
+#dm-evac table th:nth-child(4),
+#dm-evac table td:nth-child(4) {
+  width: 20%;
+  text-align: center;
+}

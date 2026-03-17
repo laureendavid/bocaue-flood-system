@@ -64,10 +64,6 @@
         <span class="material-symbols-outlined">search</span>
         <input type="search" placeholder="Search Centers" aria-label="Search evacuation centers" />
       </div>
-      <button class="btn-filter">
-        <span class="material-symbols-outlined" style="font-size:16px">filter_list</span>
-        Filter
-      </button>
       <button class="btn-add" id="btn-add-center">
         <span class="material-symbols-outlined">add</span>
         Add Center
@@ -78,16 +74,13 @@
         <thead>
           <tr>
             <th>Center Name</th>
-            <th>Address</th>
             <th>Occupancy</th>
             <th>Status</th>
             <th>Action</th>
           </tr>
         </thead>
         <tbody>
-          <tr class="empty-row">
-            <td colspan="4">No evacuation centers to display.</td>
-          </tr>
+          <?php include '../includes/fetch_evac_centers.php'; ?>
         </tbody>
       </table>
     </div>

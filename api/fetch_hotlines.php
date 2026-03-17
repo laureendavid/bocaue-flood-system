@@ -15,7 +15,7 @@ $grouped = [];
 if ($hotlines_result && $hotlines_result->num_rows > 0) {
     while ($row = $hotlines_result->fetch_assoc()) {
         $grouped[$row['barangay']][] = [
-            'hotline_name'   => $row['hotline_name'],
+            'hotline_name' => $row['hotline_name'],
             'contact_number' => $row['contact_number']
         ];
     }
