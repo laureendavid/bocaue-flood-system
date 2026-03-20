@@ -137,8 +137,7 @@ $pageLabels = [
   <script src="assets/js/modals/announcement_table.js"></script>
   <script src="assets/js/save_center.js"></script>
   <script src="assets/js/modals/evac_center.js"></script>
-  <script src="assets/js/evac-monitor.js"></script>
-
+  <script src="assets/js/modals/evac-map-modal.js"></script>
 </body>
 
 </html>

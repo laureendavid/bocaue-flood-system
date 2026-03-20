@@ -24,7 +24,11 @@
   </div>
 
   <section class="evac-section" aria-labelledby="evac-monitor-heading">
-    <h3 id="evac-monitor-heading">Evacuation Centers</h3>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <h3 id="evac-monitor-heading" style="margin:0;">Evacuation Centers</h3>
+      <p style="font-size:0.72rem; color:#64748b; font-style:italic; margin:0; font-weight:600;">Click a center to view
+        its location on the map.</p>
+    </div>
     <div class="evac-table-wrap evac-table-wrap--mt" style="max-height:320px; overflow-y:auto;">
       <table aria-label="Evacuation center status">
         <thead>

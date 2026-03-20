@@ -1,3 +1,64 @@
+<style>
+  /* Force override with ID specificity */
+  #page-dashboard .dashboard-evac-row .card,
+  #page-dashboard .dashboard-bottom-row .card {
+    max-height: 340px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    /* remove padding from card, move it inside */
+  }
+
+  /* Card header stays fixed at top, doesn't scroll */
+  #page-dashboard .dashboard-evac-row .card>.card-header,
+  #page-dashboard .dashboard-bottom-row .card>.card-header {
+    position: sticky;
+    top: 0;
+    background: var(--white);
+    z-index: 2;
+    flex-shrink: 0;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Hotlines / map title stays fixed */
+  #page-dashboard .dashboard-evac-row .card>.card-title--mb,
+  #page-dashboard .dashboard-bottom-row .card>.card-title--mb {
+    position: sticky;
+    top: 0;
+    background: var(--white);
+    z-index: 2;
+    flex-shrink: 0;
+    padding: 16px 20px 12px;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Scrollable content area inside each card */
+  #page-dashboard .dashboard-evac-row .card>table,
+  #page-dashboard .dashboard-evac-row .card>#hotlines-list,
+  #page-dashboard .dashboard-bottom-row .card>[aria-label="Announcements list"] {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 20px;
+  }
+
+  /* Map card must NOT scroll */
+  #page-dashboard .map-card--dashboard {
+    overflow: hidden !important;
+    padding: 20px !important;
+  }
+
+  @media (max-width: 640px) {
+
+    #page-dashboard .dashboard-evac-row .card,
+    #page-dashboard .dashboard-bottom-row .card {
+      max-height: 260px;
+    }
+  }
+</style>
+
 <section id="page-dashboard" class="page active" aria-labelledby="dashboard-heading">
   <header class="page-header">
     <h2 id="dashboard-heading">Dashboard</h2>
@@ -20,18 +81,24 @@
     <section aria-labelledby="evac-heading" class="card">
       <header class="card-header">
         <h3 id="evac-heading" class="card-title">Evacuation Centers</h3>
-        <button class="btn-link">View Map View</button>
+        <p style="font-size:0.72rem; color:#64748b; font-style:italic; margin:0; font-weight:600;">Click a center to
+          view its location on
+          the map.</p>
       </header>
-      <ul class="evac-list" aria-label="Evacuation center capacity">
-        <li class="placeholder-text">No evacuation centers to display.</li>
-      </ul>
+      <table style="width:100%; border-collapse:collapse;">
+        <tbody id="evac-monitor-tbody">
+          <tr class="empty-row">
+            <td colspan="3">Loading evacuation centers...</td>
+          </tr>
+        </tbody>
+      </table>
     </section>
 
     <section aria-labelledby="hotlines-heading" class="card">
       <h3 id="hotlines-heading" class="card-title card-title--mb">Hotlines</h3>
-      <ul style="list-style:none" aria-label="Emergency hotlines">
-        <li class="placeholder-text">No hotlines to display.</li>
-      </ul>
+      <div id="hotlines-list" aria-label="Emergency hotlines">
+        <p class="placeholder-text">Loading hotlines...</p>
+      </div>
     </section>
   </div>
 
@@ -40,13 +107,11 @@
     <section aria-labelledby="announcements-heading" class="card">
       <header class="card-header">
         <h3 id="announcements-heading" class="card-title">Announcements</h3>
-        <button class="btn-icon-add" aria-label="Add announcement">
-          <span class="material-symbols-outlined" style="font-size:18px">add</span>
-        </button>
+
       </header>
-      <ul style="list-style:none" aria-label="Announcements list">
-        <li class="placeholder-text">No announcements to display.</li>
-      </ul>
+      <div aria-label="Announcements list">
+        <?php include '../includes/fetch_commAnnouncement.php'; ?>
+      </div>
     </section>
 
     <section aria-labelledby="map-heading" class="card map-card--dashboard">
