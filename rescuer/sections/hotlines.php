@@ -18,14 +18,16 @@
     <table aria-label="Emergency hotlines table">
       <thead>
         <tr>
-          <th>Barangay</th>
           <th>Hotline Name</th>
+          <th>Barangay</th>
           <th>Contact Number</th>
           <th class="col-center">Action</th>
         </tr>
       </thead>
       <tbody id="hotlines-table-body">
-        <tr class="empty-row"><td colspan="4">No hotlines available.</td></tr>
+        <tr class="empty-row">
+          <td colspan="4">No hotlines available.</td>
+        </tr>
       </tbody>
     </table>
   </div>

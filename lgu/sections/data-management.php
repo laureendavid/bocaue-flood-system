@@ -22,7 +22,7 @@
       <div class="filter-wrapper">
         <button class="btn-filter" id="hotline-filter-btn">
           <span class="material-symbols-outlined" style="font-size:16px">filter_list</span>
-          Filter
+          Filter by Barangay and Hotline Name
         </button>
         <div class="filter-dropdown" id="hotline-filter-dropdown" style="display:none;">
           <p class="filter-label">Filter by Barangay</p>

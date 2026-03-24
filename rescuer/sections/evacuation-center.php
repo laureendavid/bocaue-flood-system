@@ -8,10 +8,10 @@
       <span class="material-symbols-outlined">search</span>
       <input type="search" id="evac-search" placeholder="Search Centers" aria-label="Search evacuation centers" />
     </div>
-    <button class="btn-filter" aria-label="Filter centers">
-      <span class="material-symbols-outlined" style="font-size:16px">filter_alt</span>
-      Filter
-    </button>
+  </div>
+
+  <div style="font-size:0.72rem; color:#64748b; font-style:italic; font-weight:600; margin-bottom:10px;">
+    Click a center to view its location on the map.
   </div>
 
   <div class="table-wrap">
@@ -19,13 +19,14 @@
       <thead>
         <tr>
           <th>Center Name</th>
-          <th>Occupancy</th>
+          <th>Capacity</th>
           <th>Status</th>
-          <th class="col-center">Action</th>
         </tr>
       </thead>
       <tbody id="evac-table-body">
-        <tr class="empty-row"><td colspan="4">No evacuation centers available.</td></tr>
+        <tr class="empty-row">
+          <td colspan="3">Loading evacuation centers...</td>
+        </tr>
       </tbody>
     </table>
   </div>
