@@ -14,7 +14,7 @@
     </button>
   </div>
 
-  <div class="table-wrap">
+  <div class="table-wrap" style="max-height: calc(95vh - 200px); overflow-y: auto;">
     <table aria-label="Emergency hotlines table">
       <thead>
         <tr>

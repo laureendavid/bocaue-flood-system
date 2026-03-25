@@ -14,7 +14,7 @@
     Click a center to view its location on the map.
   </div>
 
-  <div class="table-wrap">
+  <div class="table-wrap" style="max-height: calc(95vh - 200px); overflow-y: auto;">
     <table aria-label="Evacuation centers table">
       <thead>
         <tr>

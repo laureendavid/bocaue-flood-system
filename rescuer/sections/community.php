@@ -8,7 +8,7 @@
     <aside class="announcements-sidebar" aria-labelledby="comm-announce-heading">
       <h3 id="comm-announce-heading">Announcements</h3>
       <div class="announce-list" id="announce-list">
-        <p class="community-no-announce">No announcements to display.</p>
+        <?php include '../includes/fetch_commAnnouncement.php'; ?>
       </div>
     </aside>
 
