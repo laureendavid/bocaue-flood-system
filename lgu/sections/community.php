@@ -6,11 +6,16 @@
   <div class="community-grid">
     <aside class="announcements-sidebar" aria-labelledby="comm-announce-heading"
       style="max-height:75vh; overflow-y:auto;">
-      <h3 id="comm-announce-heading">Announcements</h3>
+      <h3 id="comm-announce-heading"
+        style="background: #b2dede;color: #1e293b;font-weight: 700;padding: 14px 20px; margin: 0;border-radius: 6px 6px 0 0;">
+        Announcements</h3>
       <?php include '../includes/fetch_commAnnouncement.php'; ?>
     </aside>
 
     <div>
+      <h3
+        style="background: #b2dede; color: #1e293b;font-weight: 700; padding: 14px 20px;margin: 0 0 0 0;border-radius: 6px 6px 0 0;">
+        Community Posts</h3>
       <article class="post-card post-card--empty">
         No community posts to display.
       </article>

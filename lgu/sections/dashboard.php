@@ -58,12 +58,13 @@
     max-height: 340px;
   }
 
-  /* Sticky card headers — all use sidebar teal */
+  /* Sticky card headers — light mint/teal */
   #page-dashboard .card>.card-header {
     flex-shrink: 0;
     padding: 14px 20px;
     border-bottom: none;
-    background: var(--sidebar-bg);
+    background: #b2dede;
+    /* ← light teal from image */
     position: sticky;
     top: 0;
     z-index: 2;
@@ -74,7 +75,8 @@
     padding: 14px 20px;
     margin-bottom: 0;
     border-bottom: none;
-    background: var(--sidebar-bg);
+    background: #b2dede;
+    /* ← same light teal */
   }
 
   /* White text on teal headers */
@@ -82,6 +84,7 @@
   #page-dashboard .card>.card-header p,
   #page-dashboard .card>.card-title--mb {
     color: #1e293b;
+    /* dark slate — stays legible on light teal */
     font-weight: 700;
   }
 
