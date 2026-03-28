@@ -123,6 +123,7 @@ $pageLabels = [
   <?php include 'sections/modals/hotline_table_modal.php'; ?>
   <?php include 'sections/modals/announcement_table_modals.php'; ?>
   <?php include 'sections/modals/evac_center_modals.php'; ?>
+  <?php include 'sections/modals/archive_announcement_modal.php'; ?>
 
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -138,6 +139,7 @@ $pageLabels = [
   <script src="assets/js/save_center.js"></script>
   <script src="assets/js/modals/evac_center.js"></script>
   <script src="assets/js/modals/evac-map-modal.js"></script>
+  <script src="assets/js/modals/archive_announcement.js"></script>
 </body>
 
 </html>

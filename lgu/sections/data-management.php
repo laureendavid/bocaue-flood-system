@@ -94,6 +94,10 @@
         <input type="search" id="announcement-search" placeholder="Search Announcement"
           aria-label="Search announcements" />
       </div>
+      <button class="btn-filter" id="btn-view-archives">
+        <span class="material-symbols-outlined" style="font-size:16px">inventory_2</span>
+        View Archives
+      </button>
       <button class="btn-add" id="btn-add-announcement">
         <span class="material-symbols-outlined">add</span>
         Add Announcement
@@ -119,4 +123,3 @@
       </div>
     </div>
   </div>
-</section>
