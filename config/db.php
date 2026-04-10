@@ -1,30 +1,31 @@
 <?php
-/* ================================================================
-   db.php — Database Connection
-   Place this file in: C:\xampp\htdocs\soe\config\db.php
-   ================================================================ */
+// config/db.php
 
-$host = 'localhost';
-$db = 'flood_information';
-$user = 'root';
-$pass = 'password';
+$host = "localhost";
+$user = "root";
+$pass = ""; // default XAMPP password
+$db   = "flood_information";
 
+// ── mysqli connection (used by backend/login.php) ──────────────────────────
 $conn = new mysqli($host, $user, $pass, $db);
 
 if ($conn->connect_error) {
-    die('Database connection failed: ' . $conn->connect_error);
+    die("mysqli connection failed: " . $conn->connect_error);
 }
 
-$conn->set_charset('utf8mb4');
-
-// Poor man's cron — runs on every page load since db.php is included everywhere.
-// Deletes all unverified users whose token has already expired.
-// ON DELETE CASCADE on email_verifications handles token cleanup automatically.
-$conn->query("
-    DELETE FROM users
-    WHERE is_verified = 0
-    AND user_id IN (
-        SELECT user_id FROM email_verifications
-        WHERE expires_at < NOW() - INTERVAL 7 DAY
-    )
-");
+// ── PDO connection (used by register_step2.php and registerComplete.php) ───
+try {
+    $pdo = new PDO(
+        "mysql:host=$host;dbname=$db;charset=utf8mb4",
+        $user,
+        $pass,
+        [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   => false,
+        ]
+    );
+} catch (PDOException $e) {
+    die("PDO connection failed: " . $e->getMessage());
+}
+?>
