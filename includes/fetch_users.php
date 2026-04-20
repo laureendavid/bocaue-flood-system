@@ -1,9 +1,10 @@
 <?php
 require_once '../config/db.php';
 
-$sql = "SELECT u.user_id, u.full_name, u.email, u.phone, b.barangay_name, u.role
+$sql = "SELECT u.user_id, u.full_name, u.email, u.phone, b.barangay_name, r.role_name AS role
         FROM users u
         JOIN barangays b ON u.barangay_id = b.barangay_id
+        JOIN roles r ON u.role_id = r.role_id
         ORDER BY u.created_at DESC";
 
 $result = mysqli_query($conn, $sql);

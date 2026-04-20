@@ -6,8 +6,7 @@
   <div class="monitoring-grid">
     <div class="map-card">
       <h3>Flood Monitoring Map</h3>
-      <div id="flood-map" class="flood-map"
-        style="width:100%; height:320px; border-radius:8px; margin-bottom:14px; border:1px solid var(--border);"></div>
+      <div id="flood-map" class="flood-map"></div>
       <div class="map-legend">
         <span class="legend-pill legend-impassable">Impassable</span>
         <span class="legend-pill legend-limited">Limited Access</span>
@@ -24,18 +23,18 @@
   </div>
 
   <section class="evac-section" aria-labelledby="evac-monitor-heading">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-      <h3 id="evac-monitor-heading" style="margin:0;">Evacuation Centers</h3>
-      <p style="font-size:0.72rem; color:#64748b; font-style:italic; margin:0; font-weight:600;">Click a center to view
+    <div class="dashboard-section-head">
+      <h3 id="evac-monitor-heading">Evacuation Centers</h3>
+      <p class="section-note">Click a center to view
         its location on the map.</p>
     </div>
-    <div class="evac-table-wrap evac-table-wrap--mt" style="max-height:320px; overflow-y:auto;">
+    <div class="evac-table-wrap evac-table-wrap--mt evac-table-scroll">
       <table aria-label="Evacuation center status">
         <thead>
           <tr>
-            <th style="width:60%;">Center</th>
-            <th style="width:15%;">Capacity</th>
-            <th style="width:25%; text-align:right; padding-right:40px;">Status</th>
+            <th class="col-center">Center</th>
+            <th class="col-capacity">Capacity</th>
+            <th class="col-status">Status</th>
           </tr>
         </thead>
         <tbody id="evac-monitor-tbody">

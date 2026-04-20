@@ -49,17 +49,226 @@ function updateThemeIcon() {
   if (icon) icon.textContent = isDark ? "light_mode" : "dark_mode";
 }
 
-/* ===========================================================
-   LOGOUT MODAL
-   =========================================================== */
-function openLogoutModal() {
-  const modal = document.getElementById("logout-modal");
-  if (modal) { modal.classList.add("open"); modal.setAttribute("aria-hidden", "false"); }
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
-function closeLogoutModal() {
-  const modal = document.getElementById("logout-modal");
-  if (modal) { modal.classList.remove("open"); modal.setAttribute("aria-hidden", "true"); }
+const BOCAUE_CENTER = [14.7982, 120.926];
+const BOCAUE_BOUNDS = typeof L !== "undefined" && typeof L.latLngBounds === "function"
+  ? L.latLngBounds([14.747, 120.865], [14.845, 120.99])
+  : null;
+const BOCAUE_POLYGON = [
+  [14.844, 120.888],
+  [14.839, 120.924],
+  [14.831, 120.963],
+  [14.816, 120.986],
+  [14.787, 120.988],
+  [14.764, 120.975],
+  [14.751, 120.948],
+  [14.748, 120.91],
+  [14.757, 120.882],
+  [14.779, 120.867],
+  [14.809, 120.868],
+];
+
+function isPointInsideBocaue(lat, lng) {
+  const x = lng;
+  const y = lat;
+  let inside = false;
+  for (let i = 0, j = BOCAUE_POLYGON.length - 1; i < BOCAUE_POLYGON.length; j = i++) {
+    const yi = BOCAUE_POLYGON[i][0];
+    const xi = BOCAUE_POLYGON[i][1];
+    const yj = BOCAUE_POLYGON[j][0];
+    const xj = BOCAUE_POLYGON[j][1];
+    const intersect = (yi > y) !== (yj > y)
+      && x < ((xj - xi) * (y - yi)) / (yj - yi + Number.EPSILON) + xi;
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+function applyBocaueBoundaryMask(map) {
+  if (!map || typeof L === "undefined") return;
+
+  const worldRing = [
+    [-90, -180],
+    [-90, 180],
+    [90, 180],
+    [90, -180],
+  ];
+
+  L.polygon([worldRing, BOCAUE_POLYGON], {
+    stroke: false,
+    fillColor: "#0b1f3b",
+    fillOpacity: 0.42,
+    interactive: false,
+  }).addTo(map);
+
+  L.polygon(BOCAUE_POLYGON, {
+    color: "#2563eb",
+    weight: 2,
+    fillOpacity: 0.02,
+    dashArray: "5, 5",
+    interactive: false,
+  }).addTo(map);
+
+  if (BOCAUE_BOUNDS) {
+    map.setMaxBounds(BOCAUE_BOUNDS);
+  }
+}
+
+function addUseCurrentLocationButton(map, onLocationFound) {
+  if (!map || typeof L === "undefined") return;
+
+  const control = L.control({ position: "topright" });
+  control.onAdd = function onAdd() {
+    const btn = L.DomUtil.create("button", "leaflet-bar use-location-btn");
+    btn.type = "button";
+    btn.textContent = "Use My Current Location";
+    btn.style.background = "#fff";
+    btn.style.border = "none";
+    btn.style.padding = "8px 10px";
+    btn.style.fontSize = "12px";
+    btn.style.fontWeight = "600";
+    btn.style.cursor = "pointer";
+    btn.style.minWidth = "168px";
+    btn.style.borderRadius = "6px";
+
+    L.DomEvent.disableClickPropagation(btn);
+    L.DomEvent.on(btn, "click", function onClick() {
+      if (!navigator.geolocation) {
+        alert("Geolocation is not supported on this browser.");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        function success(position) {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+
+          if (!isPointInsideBocaue(lat, lng)) {
+            alert("You are outside Bocaue, Bulacan coverage area.");
+            return;
+          }
+
+          onLocationFound(lat, lng);
+        },
+        function error() {
+          alert("Unable to get your current location.");
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        },
+      );
+    });
+
+    return btn;
+  };
+
+  control.addTo(map);
+}
+
+const BOCAUE_VIEWBOX = "120.865,14.845,120.99,14.747";
+
+function formatNominatimLabel(result) {
+  if (!result) return "";
+  const title = (result.name || result.display_name || "").split(",")[0].trim();
+  const display = (result.display_name || "").split(",").slice(0, 4).join(",").trim();
+  if (title && display && !display.toLowerCase().startsWith(title.toLowerCase())) {
+    return `${title} - ${display}`;
+  }
+  return display || title;
+}
+
+function formatReverseAddress(data, fallbackLat, fallbackLng) {
+  if (!data) return `${fallbackLat.toFixed(6)}, ${fallbackLng.toFixed(6)}`;
+  const address = data.address || {};
+  const primary = address.amenity
+    || address.tourism
+    || address.building
+    || address.shop
+    || address.leisure
+    || address.attraction
+    || address.hotel
+    || address.resort
+    || data.name
+    || "";
+  const road = address.road || address.pedestrian || address.footway || address.path || "";
+  const locality = address.suburb
+    || address.neighbourhood
+    || address.quarter
+    || address.hamlet
+    || address.village
+    || "";
+  const city = address.city || address.town || address.municipality || "Bocaue";
+  const province = address.province || address.state || "Bulacan";
+
+  const parts = [primary, road, locality, city, province]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean);
+
+  if (parts.length > 0) {
+    return [...new Set(parts)].join(", ");
+  }
+
+  if (data.display_name) {
+    return data.display_name.split(",").slice(0, 5).join(",").trim();
+  }
+
+  return `${fallbackLat.toFixed(6)}, ${fallbackLng.toFixed(6)}`;
+}
+
+async function searchPlacesInBocaue(query, limit = 5) {
+  const endpoint = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&namedetails=1&countrycodes=ph&bounded=1&viewbox=${encodeURIComponent(BOCAUE_VIEWBOX)}&limit=${limit}&q=${encodeURIComponent(query)}`;
+  const response = await fetch(endpoint, {
+    headers: {
+      Accept: "application/json",
+      "Accept-Language": "en",
+    },
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    throw new Error("Search service unavailable.");
+  }
+  const rows = await response.json();
+  return (rows || []).filter((row) => {
+    const lat = Number.parseFloat(row.lat);
+    const lon = Number.parseFloat(row.lon);
+    return Number.isFinite(lat) && Number.isFinite(lon) && isPointInsideBocaue(lat, lon);
+  });
+}
+
+async function reverseGeocodeInBocaue(lat, lng) {
+  const endpoint = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&namedetails=1&zoom=18&lat=${lat.toFixed(7)}&lon=${lng.toFixed(7)}`;
+  const response = await fetch(endpoint, {
+    headers: {
+      Accept: "application/json",
+      "Accept-Language": "en",
+    },
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    throw new Error("Reverse geocoding unavailable.");
+  }
+  const payload = await response.json();
+  return formatReverseAddress(payload, lat, lng);
+}
+
+/* ===========================================================
+  LOGOUT PROMPT
+  =========================================================== */
+function confirmLogout() {
+  const shouldLogout = window.confirm("Are you sure you want to logout?");
+  if (shouldLogout) {
+    window.location.href = "../main/logout.php";
+  }
 }
 
 /* ===========================================================
@@ -180,15 +389,9 @@ function escHtml(str) {
    DATA LOADING
    =========================================================== */
 async function loadDashboardSafetyCenters() {
-  // Replace with: const res = await fetch('api/get_safety_centers.php');
-  // renderDashboardSafetyCenters(await res.json());
-
-  // Static preview data until API is ready:
-  renderDashboardSafetyCenters([
-    { name: "CENTER A", current: 55,  max: 100 },
-    { name: "CENTER B", current: 80,  max: 100 },
-    { name: "CENTER C", current: 30,  max: 100 },
-  ]);
+  // Safety center cards are server-rendered in dashboard.php.
+  // Keeping this function as a no-op avoids overriding real DB data.
+  return;
 }
 
 async function loadCommunityFeed() {
@@ -218,65 +421,388 @@ async function loadCommunityFeed() {
   ]);
 }
 
+async function loadBocaueWeather() {
+  const conditionTextEl = document.getElementById("weather-condition-text");
+  const weatherIconEl = document.getElementById("weather-icon");
+  const weatherTimeEl = document.getElementById("weather-time");
+  const weatherTempEl = document.getElementById("weather-temp");
+  const weatherRangeEl = document.getElementById("weather-range");
+  const weatherHumidityEl = document.getElementById("weather-humidity");
+  const weatherWindEl = document.getElementById("weather-wind");
+  const weatherRainEl = document.getElementById("weather-rain");
+  const weatherForecastEl = document.getElementById("weather-forecast");
+  const weatherErrorEl = document.getElementById("weather-error");
+
+  if (!conditionTextEl || !weatherIconEl || !weatherTimeEl || !weatherTempEl) {
+    return;
+  }
+
+  const weatherMap = {
+    0: { label: "Clear Sky", icon: "wb_sunny" },
+    1: { label: "Mainly Clear", icon: "light_mode" },
+    2: { label: "Partly Cloudy", icon: "partly_cloudy_day" },
+    3: { label: "Overcast", icon: "cloud" },
+    45: { label: "Foggy", icon: "foggy" },
+    48: { label: "Foggy", icon: "foggy" },
+    51: { label: "Light Drizzle", icon: "grain" },
+    53: { label: "Drizzle", icon: "rainy" },
+    55: { label: "Heavy Drizzle", icon: "rainy_heavy" },
+    61: { label: "Light Rain", icon: "rainy" },
+    63: { label: "Rain", icon: "rainy" },
+    65: { label: "Heavy Rain", icon: "rainy_heavy" },
+    80: { label: "Rain Showers", icon: "rainy" },
+    81: { label: "Heavy Showers", icon: "rainy_heavy" },
+    82: { label: "Violent Rain", icon: "rainy_heavy" },
+    95: { label: "Thunderstorm", icon: "thunderstorm" },
+    96: { label: "Thunderstorm", icon: "thunderstorm" },
+    99: { label: "Thunderstorm", icon: "thunderstorm" },
+  };
+
+  function getWeatherMeta(code) {
+    return weatherMap[code] || { label: "Weather Update", icon: "cloud" };
+  }
+
+  function formatToday() {
+    const now = new Date();
+    const time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const date = now.toLocaleDateString([], { month: "short", day: "2-digit" });
+    return `${time}\n${date}`;
+  }
+
+  try {
+    if (weatherErrorEl) {
+      weatherErrorEl.style.display = "none";
+      weatherErrorEl.textContent = "";
+    }
+
+    const endpoint = "https://api.open-meteo.com/v1/forecast?latitude=14.7982&longitude=120.9260&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FManila&forecast_days=5";
+    const response = await fetch(endpoint, { headers: { Accept: "application/json" } });
+    if (!response.ok) {
+      throw new Error("Weather service unavailable.");
+    }
+
+    const payload = await response.json();
+    const current = payload.current || {};
+    const daily = payload.daily || {};
+    const weather = getWeatherMeta(current.weather_code);
+
+    conditionTextEl.textContent = weather.label;
+    weatherIconEl.textContent = weather.icon;
+    weatherTimeEl.textContent = formatToday();
+    weatherTempEl.textContent = Number.isFinite(current.temperature_2m) ? Math.round(current.temperature_2m) : "--";
+    if (weatherRangeEl) {
+      const high = Array.isArray(daily.temperature_2m_max) ? daily.temperature_2m_max[0] : null;
+      const low = Array.isArray(daily.temperature_2m_min) ? daily.temperature_2m_min[0] : null;
+      weatherRangeEl.textContent = `H: ${high != null ? Math.round(high) : "--"}°C / L: ${low != null ? Math.round(low) : "--"}°C`;
+    }
+
+    if (weatherHumidityEl) {
+      weatherHumidityEl.textContent = `${current.relative_humidity_2m ?? "--"}%`;
+    }
+    if (weatherWindEl) {
+      weatherWindEl.textContent = `${current.wind_speed_10m != null ? Math.round(current.wind_speed_10m) : "--"} km/h`;
+    }
+    if (weatherRainEl) {
+      weatherRainEl.textContent = `${current.precipitation_probability ?? "--"}%`;
+    }
+
+    if (weatherForecastEl && Array.isArray(daily.time)) {
+      weatherForecastEl.innerHTML = daily.time.slice(0, 5).map((dateStr, idx) => {
+        const code = Array.isArray(daily.weather_code) ? daily.weather_code[idx] : null;
+        const meta = getWeatherMeta(code);
+        const label = new Date(dateStr).toLocaleDateString([], { weekday: "short" }).toUpperCase();
+        return `
+          <div class="forecast-day">
+            <div class="day-label">${label}</div>
+            <span class="material-symbols-outlined">${meta.icon}</span>
+          </div>
+        `;
+      }).join("");
+    }
+  } catch (error) {
+    conditionTextEl.textContent = "Weather currently unavailable";
+    weatherIconEl.textContent = "cloud_off";
+    if (weatherErrorEl) {
+      weatherErrorEl.style.display = "block";
+      weatherErrorEl.textContent = error.message || "Failed to load weather data.";
+    }
+  }
+}
+
 /* ===========================================================
    INIT
    =========================================================== */
 document.addEventListener("DOMContentLoaded", () => {
-  initTheme();
-
-  /* Hamburger */
-  const hamburgerBtn = document.getElementById("hamburger-btn");
-  if (hamburgerBtn)
-    hamburgerBtn.addEventListener("click", (e) => { e.stopPropagation(); openSidebar(); });
-
-  /* Sidebar close X */
-  const closeBtn = document.getElementById("sidebar-close-btn");
-  if (closeBtn)
-    closeBtn.addEventListener("click", (e) => { e.stopPropagation(); closeSidebar(); });
-
-  /* Overlay */
-  const overlay = document.getElementById("sidebar-overlay");
-  if (overlay) overlay.addEventListener("click", closeSidebar);
-
-  /* Theme toggle */
-  const themeBtn = document.getElementById("theme-toggle");
-  if (themeBtn) themeBtn.addEventListener("click", toggleTheme);
-
-  /* Logout modal — sidebar button */
+  /* Logout prompt — sidebar button */
   const logoutSidebarBtn = document.getElementById("logout-trigger-btn");
-  if (logoutSidebarBtn) logoutSidebarBtn.addEventListener("click", openLogoutModal);
+  if (logoutSidebarBtn) logoutSidebarBtn.addEventListener("click", confirmLogout);
 
-  /* Logout modal — topbar dropdown button */
-  const logoutTopbarBtn = document.getElementById("logout-trigger-topbar");
-  if (logoutTopbarBtn) logoutTopbarBtn.addEventListener("click", openLogoutModal);
+  /* Notification dropdown */
+  const notificationBtn = document.getElementById("notification-btn");
+  const notificationDropdown = document.getElementById("notification-dropdown");
+  const notificationList = document.getElementById("notification-list");
+  const notificationBadge = document.getElementById("notification-badge");
+  const markReadBtn = document.getElementById("mark-read-btn");
+  let notificationsCache = [];
+  let notificationOffset = 0;
+  let notificationsHasMore = true;
+  let notificationsLoading = false;
+  const notificationPageSize = 20;
 
-  /* Logout modal — cancel */
-  const logoutCancelBtn = document.getElementById("logout-cancel-btn");
-  if (logoutCancelBtn) logoutCancelBtn.addEventListener("click", closeLogoutModal);
-
-  /* Logout modal — backdrop click */
-  const logoutModal = document.getElementById("logout-modal");
-  if (logoutModal)
-    logoutModal.addEventListener("click", (e) => {
-      if (e.target === logoutModal) closeLogoutModal();
+  function formatNotificationTime(dateStr) {
+    if (!dateStr) return "";
+    const dt = new Date(dateStr.replace(" ", "T"));
+    if (Number.isNaN(dt.getTime())) return dateStr;
+    return dt.toLocaleString([], {
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
-
-  /* Profile dropdown */
-  const profileBtn = document.getElementById("profile-btn");
-  const profileDropdown = document.getElementById("profile-dropdown");
-  if (profileBtn && profileDropdown) {
-    profileBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      profileDropdown.classList.toggle("open");
-    });
-    document.addEventListener("click", () => profileDropdown.classList.remove("open"));
   }
+
+  function renderNotifications(items, append = false) {
+    if (!notificationList) return;
+
+    if (!append && (!items || items.length === 0)) {
+      notificationList.innerHTML = '<div class="notification-empty">No notifications yet.</div>';
+      return;
+    }
+
+    const html = items
+      .map((item) => {
+        const isUnread = String(item.status || "").toLowerCase() === "unread";
+        const type = String(item.type || "alert").toLowerCase();
+        const typeLabelMap = {
+          report_update: "Report Update",
+          approved: "Approved",
+          rejected: "Rejected",
+          announcement: "Announcement",
+          alert: "Alert",
+        };
+        const typeLabel = typeLabelMap[type] || "Notification";
+        return `
+          <button
+            type="button"
+            class="notification-item ${isUnread ? "unread" : ""}"
+            data-notification-id="${escapeHtml(String(item.id || ""))}"
+            data-notification-read="${isUnread ? "0" : "1"}"
+          >
+            <div class="notification-title">${escapeHtml(item.title || typeLabel)}</div>
+            <div class="notification-message">${escapeHtml(item.message || "")}</div>
+            <div class="notification-meta">
+              <span class="notification-type type-${escapeHtml(type)}">${escapeHtml(typeLabel)}</span>
+            </div>
+            <div class="notification-meta">
+              <span class="notification-author">${escapeHtml(item.created_by || "Bocaue LGU")}</span>
+              <span class="notification-time">${formatNotificationTime(item.created_at || "")}</span>
+            </div>
+          </button>
+        `;
+      })
+      .join("");
+
+    if (append) {
+      const empty = notificationList.querySelector(".notification-empty");
+      if (empty) {
+        empty.remove();
+      }
+      notificationList.insertAdjacentHTML("beforeend", html);
+    } else {
+      notificationList.innerHTML = html;
+    }
+  }
+
+  function updateNotificationBadge(unreadCount) {
+    if (!notificationBadge) return;
+    const count = Number(unreadCount || 0);
+    if (count > 0) {
+      notificationBadge.style.display = "inline-block";
+      notificationBadge.textContent = count > 99 ? "99+" : String(count);
+    } else {
+      notificationBadge.style.display = "none";
+      notificationBadge.textContent = "0";
+    }
+  }
+
+  function renderNotificationLoadingState() {
+    if (!notificationList) return;
+    const existing = notificationList.querySelector(".notification-loading");
+    if (!existing) {
+      notificationList.insertAdjacentHTML("beforeend", '<div class="notification-loading">Loading notifications...</div>');
+    }
+  }
+
+  function clearNotificationLoadingState() {
+    if (!notificationList) return;
+    const loadingNode = notificationList.querySelector(".notification-loading");
+    if (loadingNode) {
+      loadingNode.remove();
+    }
+  }
+
+  function renderNotificationEndState() {
+    if (!notificationList) return;
+    const hasEndNode = notificationList.querySelector(".notification-end");
+    if (!notificationsHasMore && notificationsCache.length > 0 && !hasEndNode) {
+      notificationList.insertAdjacentHTML("beforeend", '<div class="notification-end">You are all caught up.</div>');
+    }
+  }
+
+  async function loadNotifications(reset = false) {
+    if (!notificationList) return;
+    if (notificationsLoading) return;
+
+    if (reset) {
+      notificationOffset = 0;
+      notificationsHasMore = true;
+      notificationsCache = [];
+      notificationList.innerHTML = '<div class="notification-loading">Loading notifications...</div>';
+    } else if (!notificationsHasMore) {
+      return;
+    } else {
+      renderNotificationLoadingState();
+    }
+
+    notificationsLoading = true;
+    try {
+      const query = new URLSearchParams({
+        limit: String(notificationPageSize),
+        offset: String(notificationOffset),
+      });
+      const response = await fetch(`../includes/fetch_notifications.php?${query.toString()}`, {
+        headers: { Accept: "application/json" },
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Unable to load notifications.");
+      }
+      const incoming = Array.isArray(data.notifications) ? data.notifications : [];
+      notificationsHasMore = Boolean(data.has_more);
+      notificationOffset += incoming.length;
+      notificationsCache = reset ? incoming : notificationsCache.concat(incoming);
+      clearNotificationLoadingState();
+      renderNotifications(incoming, !reset);
+      renderNotificationEndState();
+      updateNotificationBadge(data.unread_count || 0);
+    } catch (error) {
+      if (reset) {
+        notificationList.innerHTML = `<div class="notification-empty">${escapeHtml(error.message || "Unable to load notifications.")}</div>`;
+      }
+    } finally {
+      notificationsLoading = false;
+      clearNotificationLoadingState();
+    }
+  }
+
+  async function markAllAsRead() {
+    try {
+      const response = await fetch("../includes/mark_notifications_read.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Accept: "application/json",
+        },
+        body: "",
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Unable to mark notifications as read.");
+      }
+      loadNotifications(true);
+    } catch (error) {
+      alert(error.message || "Unable to mark notifications as read.");
+    }
+  }
+
+  async function markSingleAsRead(notificationId) {
+    if (!notificationId) return;
+    const body = new URLSearchParams();
+    body.set("notification_id", String(notificationId));
+
+    const response = await fetch("../includes/mark_notification_read.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+      },
+      body: body.toString(),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "Unable to update notification.");
+    }
+  }
+
+  if (notificationBtn && notificationDropdown) {
+    notificationBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = notificationDropdown.classList.contains("open");
+      notificationDropdown.classList.toggle("open", !isOpen);
+      if (!isOpen) {
+        loadNotifications(true);
+      }
+    });
+  }
+
+  if (markReadBtn) {
+    markReadBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      markAllAsRead();
+    });
+  }
+
+  if (notificationDropdown) {
+    notificationDropdown.addEventListener("click", (e) => e.stopPropagation());
+  }
+
+  if (notificationList) {
+    notificationList.addEventListener("click", async (event) => {
+      const item = event.target.closest(".notification-item[data-notification-id]");
+      if (!item) return;
+
+      const notificationId = Number(item.dataset.notificationId || 0);
+      const isRead = item.dataset.notificationRead === "1";
+      if (notificationId <= 0 || isRead) return;
+
+      try {
+        await markSingleAsRead(notificationId);
+        item.dataset.notificationRead = "1";
+        item.classList.remove("unread");
+        const currentBadge = Number(notificationBadge?.textContent || 0);
+        if (notificationBadge && Number.isFinite(currentBadge) && currentBadge > 0) {
+          updateNotificationBadge(Math.max(currentBadge - 1, 0));
+        } else {
+          loadNotifications(true);
+        }
+      } catch (error) {
+        alert(error.message || "Unable to mark notification as read.");
+      }
+    });
+
+    notificationList.addEventListener("scroll", () => {
+      const remaining = notificationList.scrollHeight - notificationList.scrollTop - notificationList.clientHeight;
+      if (remaining < 80) {
+        loadNotifications(false);
+      }
+    });
+  }
+
+  document.addEventListener("click", () => {
+    if (notificationDropdown) {
+      notificationDropdown.classList.remove("open");
+    }
+  });
+
+  loadNotifications(true);
 
   /* Load dashboard data */
   const activePage = document.querySelector(".page.active");
   if (activePage && activePage.id === "page-dashboard") {
     loadDashboardSafetyCenters();
     loadCommunityFeed();
+    loadBocaueWeather();
   }
 });
 
@@ -370,12 +896,29 @@ document.addEventListener("DOMContentLoaded", () => {
     const mapEl = document.getElementById("flood-map");
     if (!mapEl) return;
 
-    const map = L.map("flood-map").setView([14.800, 120.905], 13);
+    const map = L.map("flood-map", {
+      zoomControl: true,
+      minZoom: 13,
+      maxZoom: 19,
+    }).setView(BOCAUE_CENTER, 14);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap contributors",
       maxZoom: 19,
     }).addTo(map);
+
+    applyBocaueBoundaryMask(map);
+
+    let userMarker = null;
+    addUseCurrentLocationButton(map, function onCurrentLocation(lat, lng) {
+      if (userMarker) {
+        userMarker.setLatLng([lat, lng]);
+      } else {
+        userMarker = L.marker([lat, lng]).addTo(map);
+      }
+      userMarker.bindPopup("Your current location").openPopup();
+      map.flyTo([lat, lng], 16, { duration: 0.7 });
+    });
 
     /* -- Layer buckets -- */
     const roadLayers   = { impassable: [], limited: [], passable: [] };
@@ -435,25 +978,75 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    /* -- Search (Nominatim geocoder) -- */
+    let searchMarker = null;
+    let activeSuggestionResults = [];
+
+    function placeSearchMarker(lat, lng, label) {
+      if (searchMarker) {
+        searchMarker.setLatLng([lat, lng]);
+      } else {
+        searchMarker = L.marker([lat, lng]).addTo(map);
+      }
+      searchMarker.bindPopup(label || `${lat.toFixed(6)}, ${lng.toFixed(6)}`).openPopup();
+      map.flyTo([lat, lng], 16, { duration: 0.6 });
+    }
+
+    /* -- Search (Nominatim geocoder, Bocaue-bounded) -- */
     const searchInput = document.getElementById("map-search");
     if (searchInput) {
+      const suggestionId = "map-search-suggestions";
+      let suggestionList = document.getElementById(suggestionId);
+      if (!suggestionList) {
+        suggestionList = document.createElement("datalist");
+        suggestionList.id = suggestionId;
+        document.body.appendChild(suggestionList);
+      }
+      searchInput.setAttribute("list", suggestionId);
+
+      let suggestionTimer = null;
+      searchInput.addEventListener("input", () => {
+        const query = searchInput.value.trim();
+        window.clearTimeout(suggestionTimer);
+        if (query.length < 3) {
+          activeSuggestionResults = [];
+          suggestionList.innerHTML = "";
+          return;
+        }
+        suggestionTimer = window.setTimeout(async () => {
+          try {
+            const rows = await searchPlacesInBocaue(query, 6);
+            activeSuggestionResults = rows;
+            suggestionList.innerHTML = rows
+              .map((row, idx) => `<option value="${escapeHtml(formatNominatimLabel(row) || query)}" data-idx="${idx}"></option>`)
+              .join("");
+          } catch {
+            activeSuggestionResults = [];
+            suggestionList.innerHTML = "";
+          }
+        }, 280);
+      });
+
       searchInput.addEventListener("keydown", async (e) => {
         if (e.key !== "Enter") return;
+        e.preventDefault();
         const query = e.target.value.trim();
         if (!query) return;
         try {
-          const res  = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`
-          );
-          const data = await res.json();
-          if (data.length > 0) {
-            map.setView([parseFloat(data[0].lat), parseFloat(data[0].lon)], 14);
+          let target = activeSuggestionResults.find((row) => formatNominatimLabel(row) === query);
+          if (!target) {
+            const rows = await searchPlacesInBocaue(query, 1);
+            target = rows[0];
+          }
+          if (target) {
+            const lat = Number.parseFloat(target.lat);
+            const lng = Number.parseFloat(target.lon);
+            const label = formatNominatimLabel(target);
+            placeSearchMarker(lat, lng, label);
           } else {
             alert("Location not found.");
           }
-        } catch {
-          alert("Search unavailable. Check your connection.");
+        } catch (error) {
+          alert(error.message || "Search unavailable. Check your connection.");
         }
       });
     }
@@ -477,6 +1070,7 @@ document.addEventListener("DOMContentLoaded", () => {
   "use strict";
 
   var map, pinMarker;
+  var reverseRequestToken = 0;
   var BOCAUE = [14.7983, 120.9067];
 
   /* ----------------------------------------------------------
@@ -522,6 +1116,11 @@ document.addEventListener("DOMContentLoaded", () => {
     var latF = parseFloat(lat);
     var lngF = parseFloat(lng);
 
+    if (!isPointInsideBocaue(latF, lngF)) {
+      alert("You are outside Bocaue, Bulacan coverage area.");
+      return;
+    }
+
     if (pinMarker) {
       pinMarker.setLatLng([latF, lngF]);
     } else {
@@ -543,30 +1142,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateLocationField(null, latF, lngF);
 
-    // Reverse-geocode
-    fetch(
-      "https://nominatim.openstreetmap.org/reverse?format=json&lat=" +
-      latF.toFixed(6) + "&lon=" + lngF.toFixed(6) + "&zoom=17&addressdetails=1"
-    )
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        if (!data || !data.address) return;
-        var a = data.address;
-        var parts = [];
-        if (a.road || a.pedestrian || a.footway)
-          parts.push(a.road || a.pedestrian || a.footway);
-        if (a.suburb || a.neighbourhood || a.village || a.hamlet)
-          parts.push(a.suburb || a.neighbourhood || a.village || a.hamlet);
-        if (a.city || a.town || a.municipality)
-          parts.push(a.city || a.town || a.municipality);
-        if (a.province || a.state)
-          parts.push(a.province || a.state);
-        var addressText = parts.length
-          ? parts.join(", ")
-          : data.display_name.split(",").slice(0, 3).join(", ");
+    // Reverse-geocode with request token guard to avoid stale responses
+    var token = ++reverseRequestToken;
+    reverseGeocodeInBocaue(latF, lngF)
+      .then(function (addressText) {
+        if (token !== reverseRequestToken) return;
         updateLocationField(addressText, latF, lngF);
       })
-      .catch(function () {});
+      .catch(function () {
+        if (token !== reverseRequestToken) return;
+        updateLocationField(null, latF, lngF);
+      });
   }
 
   /* ----------------------------------------------------------
@@ -576,33 +1162,27 @@ document.addEventListener("DOMContentLoaded", () => {
     var mapEl = document.getElementById("report-map");
     if (!mapEl || typeof L === "undefined") return;
 
-    map = L.map("report-map", { zoomControl: true }).setView(BOCAUE, 14);
+    map = L.map("report-map", {
+      zoomControl: true,
+      minZoom: 13,
+      maxZoom: 19,
+    }).setView(BOCAUE_CENTER, 14);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap contributors",
       maxZoom: 19,
     }).addTo(map);
 
+    applyBocaueBoundaryMask(map);
+
     map.on("click", function (e) {
       placePin(e.latlng.lat, e.latlng.lng);
     });
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        function (pos) {
-          var lat = pos.coords.latitude;
-          var lng = pos.coords.longitude;
-          var dist = Math.sqrt(
-            Math.pow(lat - BOCAUE[0], 2) + Math.pow(lng - BOCAUE[1], 2)
-          );
-          if (dist < 0.2) {
-            map.setView([lat, lng], 16);
-            placePin(lat, lng);
-          }
-        },
-        function () {}
-      );
-    }
+    addUseCurrentLocationButton(map, function onCurrentLocation(lat, lng) {
+      map.flyTo([lat, lng], 16, { duration: 0.7 });
+      placePin(lat, lng);
+    });
 
     setTimeout(function () { map.invalidateSize(); }, 350);
   }
@@ -615,32 +1195,89 @@ document.addEventListener("DOMContentLoaded", () => {
     var radios      = document.querySelectorAll('input[name="severity"]');
     var waterSel    = document.getElementById("water-level");
     var waterGroup  = document.getElementById("water-level-group");
+    var waterHintEl = document.getElementById("water-level-hint");
     var rescueSection = document.getElementById("rescue-section");
+    var rescueNeeded = document.querySelector('input[name="rescue_status"][value="Rescue Needed"]');
+    var rescueNotRequired = document.querySelector('input[name="rescue_status"][value="Not Required"]');
+    var rescueOptions = document.querySelectorAll('input[name="rescue_status"]');
+    var rescueDetails = document.getElementById("rescue-details");
+    var rescuePeopleInput = document.getElementById("rescue-people");
+    var rescueDescriptionInput = document.getElementById("rescue-note");
 
     if (!radios.length || !waterSel) return;
 
+    var severityWaterMap = {
+      high: ["above", "chest"],
+      moderate: ["waist", "knee"],
+      passable: ["ankle", "none"],
+    };
+    var severityHintMap = {
+      high: "Allowed for High: Above head, Chest-deep.",
+      moderate: "Allowed for Moderate: Waist-deep, Knee-deep.",
+      passable: "Allowed for Passable / Rainy: Ankle-deep, No flooding / Rainy only.",
+    };
+
+    function applyWaterLevelConstraints(allowedLevels) {
+      var hasValidCurrent = false;
+      Array.from(waterSel.options).forEach(function (option) {
+        if (option.value === "") return;
+        var isAllowed = allowedLevels.includes(option.value);
+        option.disabled = !isAllowed;
+        if (isAllowed && option.value === waterSel.value) {
+          hasValidCurrent = true;
+        }
+      });
+
+      if (!hasValidCurrent) {
+        waterSel.value = allowedLevels[0] || "";
+      }
+    }
+
     function applyRules(value) {
+      var allowedLevels = severityWaterMap[value] || [];
+      applyWaterLevelConstraints(allowedLevels);
+      if (waterHintEl) {
+        waterHintEl.textContent = severityHintMap[value] || "Select flood severity first to see allowed water levels.";
+      }
+
+      waterSel.disabled = false;
+      if (waterGroup) waterGroup.style.opacity = "1";
+
       if (value === "passable") {
-        // Lock water level
-        waterSel.value    = "none";
-        waterSel.disabled = true;
-        if (waterGroup) waterGroup.style.opacity = "0.5";
-        // Hide rescue (no flood = no rescue needed)
-        if (rescueSection) {
-          rescueSection.classList.add("hidden");
-          // Force "Not Required"
-          var notRequired = document.querySelector('input[name="rescue_status"][value="Not Required"]');
-          if (notRequired) notRequired.checked = true;
-          // Hide details panel too
-          var details = document.getElementById("rescue-details");
-          if (details) details.classList.remove("visible");
+        if (rescueNotRequired) rescueNotRequired.checked = true;
+        if (rescueSection) rescueSection.classList.add("hidden");
+        if (rescueDetails) rescueDetails.classList.remove("visible");
+        if (rescuePeopleInput) {
+          rescuePeopleInput.value = "";
+          rescuePeopleInput.disabled = true;
+          rescuePeopleInput.required = false;
+        }
+        if (rescueDescriptionInput) {
+          rescueDescriptionInput.value = "";
+          rescueDescriptionInput.disabled = true;
         }
       } else {
-        waterSel.disabled = false;
-        if (waterGroup) waterGroup.style.opacity = "1";
-        if (waterSel.value === "none") waterSel.value = "";
-        // Show rescue section
+        if (rescueNeeded) rescueNeeded.checked = true;
         if (rescueSection) rescueSection.classList.remove("hidden");
+        if (rescueDetails) rescueDetails.classList.add("visible");
+        if (rescuePeopleInput) {
+          rescuePeopleInput.disabled = false;
+          rescuePeopleInput.required = true;
+        }
+        if (rescueDescriptionInput) {
+          rescueDescriptionInput.disabled = false;
+        }
+      }
+
+      rescueOptions.forEach(function (radio) {
+        radio.disabled = true;
+      });
+
+      if (value === "passable") {
+        var numPeoplePassable = document.getElementById("rescue-people");
+        var rescueNotePassable = document.getElementById("rescue-note");
+        if (numPeoplePassable) numPeoplePassable.value = "";
+        if (rescueNotePassable) rescueNotePassable.value = "";
       }
     }
 
@@ -667,13 +1304,29 @@ document.addEventListener("DOMContentLoaded", () => {
     function applyRescue(value) {
       if (value === "Rescue Needed") {
         details.classList.add("visible");
+        var peopleInputNeeded = document.getElementById("rescue-people");
+        var noteInputNeeded = document.getElementById("rescue-note");
+        if (peopleInputNeeded) {
+          peopleInputNeeded.disabled = false;
+          peopleInputNeeded.required = true;
+        }
+        if (noteInputNeeded) {
+          noteInputNeeded.disabled = false;
+        }
       } else {
         details.classList.remove("visible");
         // Clear rescue detail fields
         var numPeople  = document.getElementById("rescue-people");
         var rescueNote = document.getElementById("rescue-note");
-        if (numPeople)  numPeople.value  = "";
-        if (rescueNote) rescueNote.value = "";
+        if (numPeople)  {
+          numPeople.value  = "";
+          numPeople.disabled = true;
+          numPeople.required = false;
+        }
+        if (rescueNote) {
+          rescueNote.value = "";
+          rescueNote.disabled = true;
+        }
       }
     }
 
@@ -1063,12 +1716,27 @@ document.addEventListener("DOMContentLoaded", () => {
     map = L.map("safety-map", {
       zoomControl: true,
       scrollWheelZoom: false,
-    }).setView([14.800, 120.905], 14);
+      minZoom: 13,
+      maxZoom: 19,
+    }).setView(BOCAUE_CENTER, 14);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap contributors",
       maxZoom: 19,
     }).addTo(map);
+
+    applyBocaueBoundaryMask(map);
+
+    var userLocationMarker = null;
+    addUseCurrentLocationButton(map, function onCurrentLocation(lat, lng) {
+      if (userLocationMarker) {
+        userLocationMarker.setLatLng([lat, lng]);
+      } else {
+        userLocationMarker = L.marker([lat, lng]).addTo(map);
+      }
+      userLocationMarker.bindPopup("Your current location").openPopup();
+      map.flyTo([lat, lng], 16, { duration: 0.7 });
+    });
 
     setTimeout(function () { map.invalidateSize(); }, 300);
   }

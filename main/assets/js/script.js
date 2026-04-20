@@ -346,9 +346,14 @@ document.addEventListener('DOMContentLoaded', function () {
   var MAX_ZOOM      = 18;
 
   var BOCAUE_BOUNDS = L.latLngBounds(
-    L.latLng(14.770, 120.880),
-    L.latLng(14.830, 120.935)
+    L.latLng(14.747, 120.865),
+    L.latLng(14.845, 120.990)
   );
+  var BOCAUE_POLYGON = [
+    [14.844, 120.888], [14.839, 120.924], [14.831, 120.963], [14.816, 120.986],
+    [14.787, 120.988], [14.764, 120.975], [14.751, 120.948], [14.748, 120.910],
+    [14.757, 120.882], [14.779, 120.867], [14.809, 120.868],
+  ];
 
   var map = L.map('bocaueMap', {
     center: BOCAUE_CENTER, zoom: DEFAULT_ZOOM,
@@ -368,6 +373,23 @@ document.addEventListener('DOMContentLoaded', function () {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
     maxZoom: MAX_ZOOM,
   }).addTo(map);
+
+  (function addBoundaryMask() {
+    var worldRing = [[-90, -180], [-90, 180], [90, 180], [90, -180]];
+    L.polygon([worldRing, BOCAUE_POLYGON], {
+      stroke: false,
+      fillColor: '#0b1f3b',
+      fillOpacity: 0.35,
+      interactive: false,
+    }).addTo(map);
+    L.polygon(BOCAUE_POLYGON, {
+      color: '#2563eb',
+      weight: 2,
+      fillOpacity: 0.02,
+      dashArray: '5,5',
+      interactive: false,
+    }).addTo(map);
+  })();
 
   /* Custom pin icon */
   var sentinelIcon = L.divIcon({
@@ -415,6 +437,21 @@ document.addEventListener('DOMContentLoaded', function () {
   function popupHTML(title, lat, lng) {
     return '<div class="map-popup"><strong>' + title + '</strong>' +
            '<span>' + lat.toFixed(6) + ', ' + lng.toFixed(6) + '</span></div>';
+  }
+
+  function pointInsidePolygon(lat, lng) {
+    var x = lng;
+    var y = lat;
+    var inside = false;
+    for (var i = 0, j = BOCAUE_POLYGON.length - 1; i < BOCAUE_POLYGON.length; j = i++) {
+      var yi = BOCAUE_POLYGON[i][0];
+      var xi = BOCAUE_POLYGON[i][1];
+      var yj = BOCAUE_POLYGON[j][0];
+      var xj = BOCAUE_POLYGON[j][1];
+      var intersects = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi + Number.EPSILON) + xi;
+      if (intersects) inside = !inside;
+    }
+    return inside;
   }
 
   /**
@@ -468,9 +505,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     userMarker.on('dragend', function (e) {
       var pos = e.target.getLatLng();
-      if (!BOCAUE_BOUNDS.contains(pos)) {
+      if (!pointInsidePolygon(pos.lat, pos.lng)) {
         userMarker.setLatLng([snapLat, snapLng]);
-        showStatus(ICON_WARN + '&nbsp;Please keep your pin within Bocaue, Bulacan.', 'warning');
+        showStatus(ICON_WARN + '&nbsp;You are outside Bocaue, Bulacan coverage area.', 'warning');
         return;
       }
       snapLat = pos.lat; snapLng = pos.lng;
@@ -516,8 +553,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   /* ── Click map to pin ── */
   map.on('click', function (e) {
-    if (!BOCAUE_BOUNDS.contains(e.latlng)) {
-      showStatus(ICON_WARN + '&nbsp;Please select a location within Bocaue, Bulacan.', 'warning');
+    if (!pointInsidePolygon(e.latlng.lat, e.latlng.lng)) {
+      showStatus(ICON_WARN + '&nbsp;You are outside Bocaue, Bulacan coverage area.', 'warning');
       return;
     }
     placeMarker(e.latlng.lat, e.latlng.lng, 'Locating address…');
@@ -548,7 +585,7 @@ document.addEventListener('DOMContentLoaded', function () {
           locBtn.disabled = false;
           locBtnText && (locBtnText.textContent = 'Use My GPS Location');
 
-          if (BOCAUE_BOUNDS.contains(L.latLng(lat, lng))) {
+          if (pointInsidePolygon(lat, lng)) {
             map.setView([lat, lng], 17);
             placeMarker(lat, lng, 'Locating address…');
             showStatus('<span class="loc-spinner"></span>&nbsp;GPS found — fetching your address…', 'loading');
@@ -564,7 +601,7 @@ document.addEventListener('DOMContentLoaded', function () {
           } else {
             map.setView(BOCAUE_CENTER, DEFAULT_ZOOM);
             showStatus(
-              ICON_WARN + '&nbsp;Your GPS is outside Bocaue, Bulacan. Click the map to pin your residence.',
+              ICON_WARN + '&nbsp;You are outside Bocaue, Bulacan coverage area.',
               'warning'
             );
           }

@@ -11,18 +11,19 @@ $userBarangay     = 'Bocaue, Bulacan';
 $userBarangayName = 'Bocaue';
 $userMunicipality = 'Bocaue';
 $userProvince     = 'Bulacan';
+$userBarangayId   = null;
 
 if (isset($_SESSION['user_id'])) {
     $uid  = (int) $_SESSION['user_id'];
     $stmt = $conn->prepare("
-        SELECT b.barangay_name, b.municipality, b.province
+        SELECT b.barangay_id, b.barangay_name, b.municipality, b.province
         FROM users u
         JOIN barangays b ON u.barangay_id = b.barangay_id
         WHERE u.user_id = ?
     ");
     $stmt->bind_param('i', $uid);
     $stmt->execute();
-    $stmt->bind_result($userBarangayName, $userMunicipality, $userProvince);
+    $stmt->bind_result($userBarangayId, $userBarangayName, $userMunicipality, $userProvince);
     if ($stmt->fetch()) {
         $userBarangay = $userBarangayName . ', ' . $userMunicipality;
     }
@@ -31,10 +32,50 @@ if (isset($_SESSION['user_id'])) {
 
 $submitError   = '';
 $submitSuccess = false;
+$manilaNow = new DateTimeImmutable('now', new DateTimeZone('Asia/Manila'));
+
+function isWithinBocaueCoverage(float $latitude, float $longitude): bool
+{
+    return $latitude >= 14.747
+        && $latitude <= 14.845
+        && $longitude >= 120.865
+        && $longitude <= 120.990;
+}
+
+function fetchIdByCandidates(mysqli $conn, string $table, string $idColumn, string $nameColumn, array $candidates): ?int
+{
+    $query = "SELECT {$idColumn} FROM {$table} WHERE LOWER(TRIM({$nameColumn})) = LOWER(TRIM(?)) LIMIT 1";
+    $stmt = $conn->prepare($query);
+    if (!$stmt) {
+        return null;
+    }
+
+    foreach ($candidates as $candidate) {
+        $candidate = trim((string) $candidate);
+        if ($candidate === '') {
+            continue;
+        }
+
+        $stmt->bind_param('s', $candidate);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result ? $result->fetch_assoc() : null;
+        if ($row && isset($row[$idColumn])) {
+            $stmt->close();
+            return (int) $row[$idColumn];
+        }
+    }
+
+    $stmt->close();
+    return null;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
     $userId        = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
-    $description   = trim($_POST['flood_desc']     ?? '');
+    $description   = trim(
+        $_POST['flood_desc']
+        ?? ($_POST['description'] ?? ($_POST['flood_description'] ?? ''))
+    );
     $waterLevel    = trim($_POST['water_level']     ?? '');
     $severityRaw   = trim($_POST['severity']        ?? '');
     $floodDate     = trim($_POST['flood_date']      ?? '');
@@ -43,12 +84,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
     $longitude     = trim($_POST['longitude']       ?? '') ?: null;
     $pinnedAddress = trim($_POST['pinned_address']  ?? '');
     $rescueStatus  = trim($_POST['rescue_status']   ?? 'Not Required');
-    $rescuePeople  = trim($_POST['rescue_people']   ?? '');
-    $rescueNote    = trim($_POST['rescue_note']     ?? '');
-
-    // Validate rescue_status against DB enum
-    $allowedRescue = ['Not Required', 'Rescue Needed'];
-    if (!in_array($rescueStatus, $allowedRescue)) $rescueStatus = 'Not Required';
+    $rescuePeopleRaw = trim($_POST['rescue_people_count'] ?? ($_POST['rescue_people'] ?? ''));
+    $rescueDescription = trim($_POST['rescue_description'] ?? ($_POST['rescue_note'] ?? ''));
 
     // Map severity → DB enum
     $severityMap = [
@@ -58,19 +95,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
     ];
     $floodSeverity = $severityMap[$severityRaw] ?? null;
 
-    // Passable/rainy → force no flood values
-    if ($severityRaw === 'passable') {
-        $waterLevel   = 'none';
-        $rescueStatus = 'Not Required';
-    }
-
-    // Append rescue details to description if rescue needed
-    if ($rescueStatus === 'Rescue Needed') {
-        $extra = [];
-        if ($rescuePeople !== '') $extra[] = 'People needing rescue: ' . $rescuePeople;
-        if ($rescueNote   !== '') $extra[] = 'Rescue note: ' . $rescueNote;
-        if ($extra) $description .= "\n\n[RESCUE DETAILS]\n" . implode("\n", $extra);
-    }
+    $allowedWaterLevelsBySeverity = [
+        'high' => ['above', 'chest'],
+        'moderate' => ['waist', 'knee'],
+        'passable' => ['ankle', 'none'],
+    ];
+    $autoRescueBySeverity = [
+        'high' => 'Rescue Needed',
+        'moderate' => 'Rescue Needed',
+        'passable' => 'Not Required',
+    ];
+    $allowedWaterLevels = $allowedWaterLevelsBySeverity[$severityRaw] ?? [];
+    $rescueStatus = $autoRescueBySeverity[$severityRaw] ?? 'Not Required';
+    $rescuePeopleCount = null;
 
     $fullAddress = $pinnedAddress ?: $userBarangay;
 
@@ -78,27 +115,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
     if (!$userId)            $submitError = 'You must be logged in to submit a report.';
     elseif (!$description)   $submitError = 'Please enter a description.';
     elseif (!$floodSeverity) $submitError = 'Please select a severity level.';
-    elseif ($severityRaw !== 'passable' && !$waterLevel)
-                             $submitError = 'Please select a water level.';
+    elseif (!$waterLevel)    $submitError = 'Please select a water level.';
+    elseif (!in_array($waterLevel, $allowedWaterLevels, true))
+                             $submitError = 'Selected water level is invalid for the chosen severity.';
+    elseif (
+        $rescueStatus === 'Rescue Needed'
+        && (
+            $rescuePeopleRaw === ''
+            || !ctype_digit($rescuePeopleRaw)
+            || (int) $rescuePeopleRaw <= 0
+        )
+    )                        $submitError = 'Number of people needing rescue is required and must be greater than 0.';
     elseif (!$latitude || !$longitude)
                              $submitError = 'Please tap the map to pin your flood location.';
-    elseif (!in_array($rescueStatus, ['Not Required','Rescue Needed']))
-                             $submitError = 'Please indicate if rescue is needed.';
+    elseif (!isWithinBocaueCoverage((float) $latitude, (float) $longitude))
+                             $submitError = 'You are outside Bocaue, Bulacan coverage area.';
     else {
+        if ($rescueStatus === 'Rescue Needed') {
+            $rescuePeopleCount = (int) $rescuePeopleRaw;
+        } else {
+            $rescueDescription = '';
+        }
+
+        $waterLevelNameMap = [
+            'above' => ['Above head', 'Above-head', 'Above Head', 'Above chest', 'Above-chest', 'Above Chest'],
+            'chest' => ['Chest-deep', 'Chest Deep', 'Chest'],
+            'waist' => ['Waist-deep', 'Waist Deep', 'Waist'],
+            'knee' => ['Knee-deep', 'Knee Deep', 'Knee'],
+            'ankle' => ['Ankle-deep', 'Ankle Deep', 'Ankle'],
+            'none' => ['Ankle-deep', 'Ankle Deep', 'Ankle', 'No flooding / Rainy only', 'No flooding', 'Rainy only', 'None'],
+        ];
+        $severityNameMap = [
+            'high' => ['High', 'Impassable'],
+            'moderate' => ['Moderate', 'Limited Access'],
+            'passable' => ['Passable / Rainy', 'Passable', 'Rainy'],
+        ];
+
+        $waterLevelId = fetchIdByCandidates(
+            $conn,
+            'water_levels',
+            'water_level_id',
+            'level_name',
+            $waterLevelNameMap[$waterLevel] ?? []
+        );
+        $severityId = fetchIdByCandidates(
+            $conn,
+            'flood_severity',
+            'severity_id',
+            'severity_name',
+            $severityNameMap[$severityRaw] ?? []
+        );
+        $pendingStatusId = fetchIdByCandidates(
+            $conn,
+            'report_status',
+            'status_id',
+            'status_name',
+            ['Pending']
+        );
+        $rescueStatusId = fetchIdByCandidates(
+            $conn,
+            'rescue_status',
+            'rescue_status_id',
+            'status_name',
+            [$rescueStatus]
+        );
+
+        if ($waterLevelId === null || $severityId === null || $pendingStatusId === null || $rescueStatusId === null) {
+            $submitError = 'Submission failed: lookup values for water level, severity, or statuses were not found in the database.';
+            goto render_form;
+        }
+
         $conn->begin_transaction();
         try {
             // 1. Insert location
             $locStmt = $conn->prepare("
                 INSERT INTO locations
-                    (location_type, barangay, municipality, province,
-                     latitude, longitude, full_address)
-                VALUES ('Report', ?, ?, ?, ?, ?, ?)
+                    (barangay_id, latitude, longitude, full_address)
+                VALUES (?, ?, ?, ?)
             ");
             $locStmt->bind_param(
-                'sssdds',
-                $userBarangayName,
-                $userMunicipality,
-                $userProvince,
+                'idds',
+                $userBarangayId,
                 $latitude,
                 $longitude,
                 $fullAddress
@@ -125,19 +222,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
             // 3. Insert report
             $reportedAt = ($floodDate && $floodTime)
                 ? $floodDate . ' ' . $floodTime . ':00'
-                : date('Y-m-d H:i:s');
+                : $manilaNow->format('Y-m-d H:i:s');
 
             $repStmt = $conn->prepare("
                 INSERT INTO reports
-                    (user_id, location_id, water_level, flood_severity,
-                     report_image, description, status, rescue_status, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, 'Pending', ?, ?)
+                    (user_id, location_id, water_level_id, severity_id,
+                     report_image, description, status_id, rescue_status_id,
+                     rescue_people_count, rescue_description, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             $repStmt->bind_param(
-                'iissssss',
-                $userId, $locationId, $waterLevel,
-                $floodSeverity, $reportImage, $description,
-                $rescueStatus, $reportedAt
+                'iiiissiiiss',
+                $userId,
+                $locationId,
+                $waterLevelId,
+                $severityId,
+                $reportImage,
+                $description,
+                $pendingStatusId,
+                $rescueStatusId,
+                $rescuePeopleCount,
+                $rescueDescription,
+                $reportedAt
             );
             $repStmt->execute();
             $repStmt->close();
@@ -153,8 +259,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
 }
 
 // Helpers for repopulating form on error
+render_form:
 $postSeverity = $_POST['severity']      ?? '';
 $postRescue   = $_POST['rescue_status'] ?? '';
+$postRescuePeopleCount = $_POST['rescue_people_count'] ?? ($_POST['rescue_people'] ?? '');
+$postRescueDescription = $_POST['rescue_description'] ?? ($_POST['rescue_note'] ?? '');
+$severityHintMap = [
+    'high' => 'Allowed for High: Above head, Chest-deep.',
+    'moderate' => 'Allowed for Moderate: Waist-deep, Knee-deep.',
+    'passable' => 'Allowed for Passable / Rainy: Ankle-deep, No flooding / Rainy only.',
+];
+$initialWaterHint = $severityHintMap[$postSeverity] ?? 'Select flood severity first to see allowed water levels.';
 ?>
 
 <!-- Leaflet CSS -->
@@ -249,7 +364,7 @@ $postRescue   = $_POST['rescue_status'] ?? '';
               'knee'  => 'Knee-deep',
               'waist' => 'Waist-deep',
               'chest' => 'Chest-deep',
-              'above' => 'Above chest / Dangerous',
+              'above' => 'Above head / Dangerous',
             ];
             $selLevel = $_POST['water_level'] ?? '';
             foreach ($levels as $val => $label):
@@ -259,6 +374,7 @@ $postRescue   = $_POST['rescue_status'] ?? '';
               </option>
             <?php endforeach; ?>
           </select>
+          <small class="report-form-hint" id="water-level-hint"><?= htmlspecialchars($initialWaterHint) ?></small>
         </div>
 
         <!-- Date & Time -->
@@ -266,12 +382,12 @@ $postRescue   = $_POST['rescue_status'] ?? '';
           <div class="form-group">
             <label class="form-label" for="flood-date">Date</label>
             <input type="date" class="form-input" id="flood-date" name="flood_date"
-              value="<?= htmlspecialchars($_POST['flood_date'] ?? date('Y-m-d')) ?>" required>
+              value="<?= htmlspecialchars($_POST['flood_date'] ?? $manilaNow->format('Y-m-d')) ?>" required>
           </div>
           <div class="form-group">
             <label class="form-label" for="flood-time">Time</label>
             <input type="time" class="form-input" id="flood-time" name="flood_time"
-              value="<?= htmlspecialchars($_POST['flood_time'] ?? date('H:i')) ?>" required>
+              value="<?= htmlspecialchars($_POST['flood_time'] ?? $manilaNow->format('H:i')) ?>" required>
           </div>
         </div>
 
@@ -329,10 +445,12 @@ $postRescue   = $_POST['rescue_status'] ?? '';
                 type="number"
                 class="form-input"
                 id="rescue-people"
-                name="rescue_people"
+                name="rescue_people_count"
                 placeholder="e.g. 4"
                 min="1"
-                value="<?= htmlspecialchars($_POST['rescue_people'] ?? '') ?>"
+                step="1"
+                inputmode="numeric"
+                value="<?= htmlspecialchars($postRescuePeopleCount) ?>"
               >
             </div>
             <div class="form-group">
@@ -340,10 +458,10 @@ $postRescue   = $_POST['rescue_status'] ?? '';
               <textarea
                 class="form-input"
                 id="rescue-note"
-                name="rescue_note"
+                name="rescue_description"
                 placeholder="e.g. Elderly and children present, located on 2nd floor..."
                 style="min-height:60px;"
-              ><?= htmlspecialchars($_POST['rescue_note'] ?? '') ?></textarea>
+              ><?= htmlspecialchars($postRescueDescription) ?></textarea>
             </div>
           </div>
         </div>

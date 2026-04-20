@@ -45,7 +45,7 @@ $error = $errorMessages[$_GET['error'] ?? ''] ?? '';
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bocaue_FIS - Login</title>
-  <link rel="stylesheet" href="/main/assets/css/styles.css">
+  <link rel="stylesheet" href="assets/css/styles.css">
 </head>
 <body>
 
@@ -211,6 +211,6 @@ $error = $errorMessages[$_GET['error'] ?? ''] ?? '';
 
 </div><!-- /.login-page -->
 
-<script src="/main/assets/js/script.js"></script>
+<script src="assets/js/script.js"></script>
 </body>
 </html>

@@ -14,6 +14,9 @@ $pageLabels = [
   'data-management' => 'Data Management',
   'community' => 'Community',
 ];
+
+$currentPageTitle = $pageLabels[$page] ?? 'Dashboard';
+$lguBasePath = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/lgu/main.php')), '/');
 ?>
 <!doctype html>
 <html lang="en">
@@ -26,18 +29,18 @@ $pageLabels = [
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
     rel="stylesheet" />
 
-  <link rel="stylesheet" href="assets/css/lguStyles.css" />
-  <link rel="stylesheet" href="assets/css/modals/datamanagement_modals.css" />
-  <link rel="stylesheet" href="assets/css/data-monitoring.css" />
-  <link rel="stylesheet" href="assets/css/user_management.css" />
-  <link rel="stylesheet" href="assets/css/modals/hotline_table.css" />
-  <link rel="stylesheet" href="assets/css/modals/announcement_table.css" />
+  <link rel="stylesheet" href="<?= htmlspecialchars($lguBasePath) ?>/assets/css/lguStyles.css" />
+  <link rel="stylesheet" href="<?= htmlspecialchars($lguBasePath) ?>/assets/css/modals/datamanagement_modals.css" />
+  <link rel="stylesheet" href="<?= htmlspecialchars($lguBasePath) ?>/assets/css/data-monitoring.css" />
+  <link rel="stylesheet" href="<?= htmlspecialchars($lguBasePath) ?>/assets/css/user_management.css" />
+  <link rel="stylesheet" href="<?= htmlspecialchars($lguBasePath) ?>/assets/css/modals/hotline_table.css" />
+  <link rel="stylesheet" href="<?= htmlspecialchars($lguBasePath) ?>/assets/css/modals/announcement_table.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="assets/css/modals/evac_center.css" />
+  <link rel="stylesheet" href="<?= htmlspecialchars($lguBasePath) ?>/assets/css/modals/evac_center.css" />
 
 </head>
 
-<body>
+<body data-page="<?= htmlspecialchars($page) ?>">
   <div class="app-shell">
 
     <!-- Sidebar Overlay (mobile/tablet) -->
@@ -51,9 +54,12 @@ $pageLabels = [
 
       <div class="sidebar-brand">
         <div class="brand-icon">
-          <span class="material-symbols-outlined">person</span>
+          <span class="material-symbols-outlined">admin_panel_settings</span>
         </div>
-        <h1>LGU</h1>
+        <div class="brand-text">
+          <h1>LGU Portal</h1>
+          <p>Bocaue Flood Information System</p>
+        </div>
       </div>
 
       <nav class="sidebar-nav">
@@ -69,10 +75,17 @@ $pageLabels = [
           <a class="nav-link<?php if ($page === $key)
             echo ' active'; ?>" href="main.php?page=<?= $key ?>" data-page="<?= $key ?>" data-label="<?= $label ?>">
             <span class="material-symbols-outlined"><?= $icon ?></span>
-            <?= $label ?>
+            <span class="nav-label"><?= $label ?></span>
           </a>
         <?php endforeach; ?>
       </nav>
+
+      <div class="sidebar-footer">
+        <button class="sidebar-logout-btn" type="button" onclick="window.location.href='../main/logout.php'">
+          <span class="material-symbols-outlined">logout</span>
+          <span class="nav-label">Logout</span>
+        </button>
+      </div>
 
     </aside>
 
@@ -84,6 +97,11 @@ $pageLabels = [
         <button id="hamburger-btn" class="hamburger-btn" aria-label="Open navigation" aria-controls="sidebar">
           <span class="material-symbols-outlined">menu</span>
         </button>
+
+        <div class="topbar-heading">
+          <h1><?= htmlspecialchars($currentPageTitle) ?></h1>
+          <p>LGU Operations Center</p>
+        </div>
 
         <!-- notification -->
         <div id="toast-container"></div>
@@ -128,18 +146,18 @@ $pageLabels = [
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <script src="assets/js/lgu.js"></script>
-  <script src="assets/js/modals/datamanagement_modals.js"></script>
-  <script src="assets/js/flood-map.js"></script>
-  <script src="assets/js/data-monitoring.js"></script>
-  <script src="assets/js/user_management.js"></script>
-  <script src="assets/js/modals/hotline_table.js"></script>
-  <script src="assets/js/modals/add_announcement.js"></script>
-  <script src="assets/js/modals/announcement_table.js"></script>
-  <script src="assets/js/save_center.js"></script>
-  <script src="assets/js/modals/evac_center.js"></script>
-  <script src="assets/js/modals/evac-map-modal.js"></script>
-  <script src="assets/js/modals/archive_announcement.js"></script>
+  <script src="<?= htmlspecialchars($lguBasePath) ?>/assets/js/lgu.js"></script>
+  <script src="<?= htmlspecialchars($lguBasePath) ?>/assets/js/modals/datamanagement_modals.js"></script>
+  <script src="<?= htmlspecialchars($lguBasePath) ?>/assets/js/flood-map.js"></script>
+  <script src="<?= htmlspecialchars($lguBasePath) ?>/assets/js/data-monitoring.js"></script>
+  <script src="<?= htmlspecialchars($lguBasePath) ?>/assets/js/user_management.js"></script>
+  <script src="<?= htmlspecialchars($lguBasePath) ?>/assets/js/modals/hotline_table.js"></script>
+  <script src="<?= htmlspecialchars($lguBasePath) ?>/assets/js/modals/add_announcement.js"></script>
+  <script src="<?= htmlspecialchars($lguBasePath) ?>/assets/js/modals/announcement_table.js"></script>
+  <script src="<?= htmlspecialchars($lguBasePath) ?>/assets/js/save_center.js"></script>
+  <script src="<?= htmlspecialchars($lguBasePath) ?>/assets/js/modals/evac_center.js"></script>
+  <script src="<?= htmlspecialchars($lguBasePath) ?>/assets/js/modals/evac-map-modal.js"></script>
+  <script src="<?= htmlspecialchars($lguBasePath) ?>/assets/js/modals/archive_announcement.js"></script>
 </body>
 
 </html>
