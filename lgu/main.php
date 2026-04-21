@@ -37,6 +37,7 @@ $lguBasePath = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '
   <link rel="stylesheet" href="<?= htmlspecialchars($lguBasePath) ?>/assets/css/modals/announcement_table.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="<?= htmlspecialchars($lguBasePath) ?>/assets/css/modals/evac_center.css" />
+  <link rel="stylesheet" href="<?= htmlspecialchars($lguBasePath) ?>/assets/css/community_posts.css" />
 
 </head>
 

@@ -6,28 +6,47 @@
   var allCenters = [];
   var BOCAUE_BOUNDS = L.latLngBounds([14.747, 120.865], [14.845, 120.99]);
   var BOCAUE_POLYGON = [
-    [14.844, 120.888], [14.839, 120.924], [14.831, 120.963], [14.816, 120.986],
-    [14.787, 120.988], [14.764, 120.975], [14.751, 120.948], [14.748, 120.91],
-    [14.757, 120.882], [14.779, 120.867], [14.809, 120.868],
+    [14.844, 120.888],
+    [14.839, 120.924],
+    [14.831, 120.963],
+    [14.816, 120.986],
+    [14.787, 120.988],
+    [14.764, 120.975],
+    [14.751, 120.948],
+    [14.748, 120.91],
+    [14.757, 120.882],
+    [14.779, 120.867],
+    [14.809, 120.868],
   ];
 
   function pointInsideBocaue(lat, lng) {
     var x = lng;
     var y = lat;
     var inside = false;
-    for (var i = 0, j = BOCAUE_POLYGON.length - 1; i < BOCAUE_POLYGON.length; j = i++) {
+    for (
+      var i = 0, j = BOCAUE_POLYGON.length - 1;
+      i < BOCAUE_POLYGON.length;
+      j = i++
+    ) {
       var yi = BOCAUE_POLYGON[i][0];
       var xi = BOCAUE_POLYGON[i][1];
       var yj = BOCAUE_POLYGON[j][0];
       var xj = BOCAUE_POLYGON[j][1];
-      var intersects = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi + Number.EPSILON) + xi;
+      var intersects =
+        yi > y !== yj > y &&
+        x < ((xj - xi) * (y - yi)) / (yj - yi + Number.EPSILON) + xi;
       if (intersects) inside = !inside;
     }
     return inside;
   }
 
   function applyBoundaryLayer(map) {
-    var worldRing = [[-90, -180], [-90, 180], [90, 180], [90, -180]];
+    var worldRing = [
+      [-90, -180],
+      [-90, 180],
+      [90, 180],
+      [90, -180],
+    ];
     L.polygon([worldRing, BOCAUE_POLYGON], {
       stroke: false,
       fillColor: "#0b1f3b",
@@ -109,10 +128,7 @@
       maxZoom: 19,
       maxBounds: BOCAUE_BOUNDS,
       maxBoundsViscosity: 1.0,
-    }).setView(
-      [lat, lng],
-      16,
-    );
+    }).setView([lat, lng], 16);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap contributors",
@@ -261,7 +277,7 @@
     var tbody = document.getElementById("evac-monitor-tbody");
     if (!tbody) return;
 
-    fetch("/soe/includes/fetch_evac_monitor.php")
+    fetch("../includes/fetch_evac_monitor.php")
       .then(function (res) {
         return res.json();
       })

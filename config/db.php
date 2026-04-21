@@ -4,7 +4,7 @@
 $host = "localhost";
 $user = "root";
 $pass = ""; // default XAMPP password
-$db   = "flood_information";
+$db = "flood_information";
 
 // ── mysqli connection (used by backend/login.php) ──────────────────────────
 $conn = new mysqli($host, $user, $pass, $db);
@@ -20,9 +20,9 @@ try {
         $user,
         $pass,
         [
-            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES   => false,
+            PDO::ATTR_EMULATE_PREPARES => false,
         ]
     );
 } catch (PDOException $e) {

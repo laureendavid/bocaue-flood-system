@@ -12,9 +12,7 @@
 
     <div class="community-column">
       <h3 class="community-section-title">Community Posts</h3>
-      <article class="post-card post-card--empty">
-        No community posts to display.
-      </article>
+          <?php include '../includes/fetch_communityReports.php'; ?>
     </div>
   </div>
 </section>

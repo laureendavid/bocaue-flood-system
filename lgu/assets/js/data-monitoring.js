@@ -1,5 +1,5 @@
 function loadHotlines() {
-  fetch("/soe/api/fetch_hotlines.php")
+  fetch("../api/fetch_hotlines.php")
     .then((res) => res.json())
     .then((json) => {
       const container = document.getElementById("hotlines-list");

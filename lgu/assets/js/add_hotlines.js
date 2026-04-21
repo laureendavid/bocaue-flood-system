@@ -40,7 +40,7 @@
     formData.append("hotline_name", name);
     formData.append("contact_number", contact);
 
-    fetch("/soe/api/add_hotlines.php", { method: "POST", body: formData })
+    fetch("../api/add_hotlines.php", { method: "POST", body: formData })
       .then((res) => res.text())
       .then((data) => {
         if (data.trim() === "success") {

@@ -45,6 +45,7 @@ $pageIcons = [
     rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="assets/css/rescuerStyles.css" />
+  <link rel="stylesheet" href="assets/css/community_posts.css">
 </head>
 
 <body>
@@ -120,6 +121,7 @@ $pageIcons = [
   <script src="assets/js/rescuer-evac.js"></script>
   <script src="assets/js/rescuer-hotlines.js"></script>
   <script src="assets/js/rescuer-dashboard-hotline.js"></script>
+  <script src="assets/js/flood-map-rescuer.js"></script>
 </body>
 
 </html>

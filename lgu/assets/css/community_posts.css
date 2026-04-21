@@ -1,0 +1,197 @@
+/* =============================================
+   COMMUNITY POST CARDS
+   ============================================= */
+
+.post-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s ease;
+}
+
+.post-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.post-card--empty {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 32px 16px;
+}
+
+/* --- Header --- */
+.post-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.post-card__user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.post-card__avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.post-card__user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.post-card__name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #111827;
+}
+
+.post-card__meta {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+/* --- Body --- */
+.post-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.post-card__body--with-image {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.post-card__image-wrap {
+  flex-shrink: 0;
+  width: 160px;
+  height: 110px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+
+.post-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.post-card__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.post-card__description {
+  font-size: 0.875rem;
+  color: #374151;
+  line-height: 1.55;
+  margin: 0 0 10px 0;
+}
+
+/* --- Tags --- */
+.post-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.post-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+}
+
+.post-tag--water {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.severity--passable {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+
+.severity--limited {
+  background: #fffbeb;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
+.severity--impassable {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+/* --- Footer / Rescue Badge --- */
+.post-card__footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.rescue-badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 4px 14px;
+  border-radius: 20px;
+  letter-spacing: 0.02em;
+}
+
+.badge--danger {
+  background: #ef4444;
+  color: #fff;
+}
+
+.badge--warning {
+  background: #f59e0b;
+  color: #fff;
+}
+
+.badge--success {
+  background: #22c55e;
+  color: #fff;
+}
+
+.badge--neutral {
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .post-card__body--with-image {
+    flex-direction: column;
+  }
+
+  .post-card__image-wrap {
+    width: 100%;
+    height: 180px;
+  }
+}
