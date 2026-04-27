@@ -1,0 +1,8 @@
+{
+    "name": "laureen/soe",
+    "description": "Bocaue Flood Information",
+    "type": "project",
+    "require": {
+        "cloudinary/cloudinary_php": "*"
+    }
+}

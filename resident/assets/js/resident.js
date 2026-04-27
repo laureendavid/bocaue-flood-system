@@ -59,9 +59,10 @@ function escapeHtml(value) {
 }
 
 const BOCAUE_CENTER = [14.7982, 120.926];
-const BOCAUE_BOUNDS = typeof L !== "undefined" && typeof L.latLngBounds === "function"
-  ? L.latLngBounds([14.747, 120.865], [14.845, 120.99])
-  : null;
+const BOCAUE_BOUNDS =
+  typeof L !== "undefined" && typeof L.latLngBounds === "function"
+    ? L.latLngBounds([14.747, 120.865], [14.845, 120.99])
+    : null;
 const BOCAUE_POLYGON = [
   [14.844, 120.888],
   [14.839, 120.924],
@@ -80,13 +81,18 @@ function isPointInsideBocaue(lat, lng) {
   const x = lng;
   const y = lat;
   let inside = false;
-  for (let i = 0, j = BOCAUE_POLYGON.length - 1; i < BOCAUE_POLYGON.length; j = i++) {
+  for (
+    let i = 0, j = BOCAUE_POLYGON.length - 1;
+    i < BOCAUE_POLYGON.length;
+    j = i++
+  ) {
     const yi = BOCAUE_POLYGON[i][0];
     const xi = BOCAUE_POLYGON[i][1];
     const yj = BOCAUE_POLYGON[j][0];
     const xj = BOCAUE_POLYGON[j][1];
-    const intersect = (yi > y) !== (yj > y)
-      && x < ((xj - xi) * (y - yi)) / (yj - yi + Number.EPSILON) + xi;
+    const intersect =
+      yi > y !== yj > y &&
+      x < ((xj - xi) * (y - yi)) / (yj - yi + Number.EPSILON) + xi;
     if (intersect) inside = !inside;
   }
   return inside;
@@ -180,8 +186,16 @@ const BOCAUE_VIEWBOX = "120.865,14.845,120.99,14.747";
 function formatNominatimLabel(result) {
   if (!result) return "";
   const title = (result.name || result.display_name || "").split(",")[0].trim();
-  const display = (result.display_name || "").split(",").slice(0, 4).join(",").trim();
-  if (title && display && !display.toLowerCase().startsWith(title.toLowerCase())) {
+  const display = (result.display_name || "")
+    .split(",")
+    .slice(0, 4)
+    .join(",")
+    .trim();
+  if (
+    title &&
+    display &&
+    !display.toLowerCase().startsWith(title.toLowerCase())
+  ) {
     return `${title} - ${display}`;
   }
   return display || title;
@@ -190,23 +204,26 @@ function formatNominatimLabel(result) {
 function formatReverseAddress(data, fallbackLat, fallbackLng) {
   if (!data) return `${fallbackLat.toFixed(6)}, ${fallbackLng.toFixed(6)}`;
   const address = data.address || {};
-  const primary = address.amenity
-    || address.tourism
-    || address.building
-    || address.shop
-    || address.leisure
-    || address.attraction
-    || address.hotel
-    || address.resort
-    || data.name
-    || "";
-  const road = address.road || address.pedestrian || address.footway || address.path || "";
-  const locality = address.suburb
-    || address.neighbourhood
-    || address.quarter
-    || address.hamlet
-    || address.village
-    || "";
+  const primary =
+    address.amenity ||
+    address.tourism ||
+    address.building ||
+    address.shop ||
+    address.leisure ||
+    address.attraction ||
+    address.hotel ||
+    address.resort ||
+    data.name ||
+    "";
+  const road =
+    address.road || address.pedestrian || address.footway || address.path || "";
+  const locality =
+    address.suburb ||
+    address.neighbourhood ||
+    address.quarter ||
+    address.hamlet ||
+    address.village ||
+    "";
   const city = address.city || address.town || address.municipality || "Bocaue";
   const province = address.province || address.state || "Bulacan";
 
@@ -241,7 +258,11 @@ async function searchPlacesInBocaue(query, limit = 5) {
   return (rows || []).filter((row) => {
     const lat = Number.parseFloat(row.lat);
     const lon = Number.parseFloat(row.lon);
-    return Number.isFinite(lat) && Number.isFinite(lon) && isPointInsideBocaue(lat, lon);
+    return (
+      Number.isFinite(lat) &&
+      Number.isFinite(lon) &&
+      isPointInsideBocaue(lat, lon)
+    );
   });
 }
 
@@ -277,14 +298,14 @@ function confirmLogout() {
 function getOccupancyBadge(current, max) {
   const pct = max > 0 ? (current / max) * 100 : 0;
   if (pct >= 100) return { cls: "badge-full", label: "Full" };
-  if (pct >= 75)  return { cls: "badge-nearfull", label: "Near Full" };
+  if (pct >= 75) return { cls: "badge-nearfull", label: "Near Full" };
   return { cls: "badge-available", label: "Available" };
 }
 
 function getProgressBarClass(current, max) {
   const pct = max > 0 ? (current / max) * 100 : 0;
   if (pct >= 100) return "full";
-  if (pct >= 75)  return "nearfull";
+  if (pct >= 75) return "nearfull";
   return "available";
 }
 
@@ -295,14 +316,16 @@ function renderDashboardSafetyCenters(centers) {
   const list = document.getElementById("dash-safety-list");
   if (!list) return;
   if (!centers || centers.length === 0) {
-    list.innerHTML = '<li class="empty-state-inline">No safety centers available.</li>';
+    list.innerHTML =
+      '<li class="empty-state-inline">No safety centers available.</li>';
     return;
   }
-  list.innerHTML = centers.map((c) => {
-    const pct = c.max > 0 ? Math.min((c.current / c.max) * 100, 100) : 0;
-    const badge = getOccupancyBadge(c.current, c.max);
-    const barCls = getProgressBarClass(c.current, c.max);
-    return `
+  list.innerHTML = centers
+    .map((c) => {
+      const pct = c.max > 0 ? Math.min((c.current / c.max) * 100, 100) : 0;
+      const badge = getOccupancyBadge(c.current, c.max);
+      const barCls = getProgressBarClass(c.current, c.max);
+      return `
     <li class="safety-center-item">
       <div class="safety-center-header">
         <span class="safety-center-name">${escHtml(c.name)}</span>
@@ -312,7 +335,8 @@ function renderDashboardSafetyCenters(centers) {
         <div class="progress-bar ${barCls}" style="width:${pct.toFixed(1)}%"></div>
       </div>
     </li>`;
-  }).join("");
+    })
+    .join("");
 }
 
 /* ===========================================================
@@ -322,30 +346,32 @@ function renderCommunityFeed(posts) {
   const feed = document.getElementById("community-feed");
   if (!feed) return;
   if (!posts || posts.length === 0) {
-    feed.innerHTML = '<div class="feed-card" style="padding:32px;text-align:center;color:var(--text-muted);font-style:italic;">No posts yet.</div>';
+    feed.innerHTML =
+      '<div class="feed-card" style="padding:32px;text-align:center;color:var(--text-muted);font-style:italic;">No posts yet.</div>';
     return;
   }
 
   const badgeMap = {
-    rescue:     { cls: "badge-rescue",     label: "Rescue Needed" },
-    lgu:        { cls: "badge-lgu",        label: "Official" },
-    rescued:    { cls: "badge-rescued",    label: "Rescued" },
+    rescue: { cls: "badge-rescue", label: "Rescue Needed" },
+    lgu: { cls: "badge-lgu", label: "Official" },
+    rescued: { cls: "badge-rescued", label: "Rescued" },
     inprogress: { cls: "badge-inprogress", label: "In Progress" },
   };
 
-  feed.innerHTML = posts.map((p) => {
-    const badge = badgeMap[p.status] || badgeMap.rescue;
-    const avatarHtml = p.avatarUrl
-      ? `<img src="${escHtml(p.avatarUrl)}" alt="${escHtml(p.userName)}" style="width:100%;height:100%;object-fit:cover;">`
-      : `<span class="material-symbols-outlined">person</span>`;
-    const bodyHtml = p.bodyText
-      ? `<p>${escHtml(p.bodyText)}</p>`
-      : `<div class="skeleton-line long"></div>
+  feed.innerHTML = posts
+    .map((p) => {
+      const badge = badgeMap[p.status] || badgeMap.rescue;
+      const avatarHtml = p.avatarUrl
+        ? `<img src="${escHtml(p.avatarUrl)}" alt="${escHtml(p.userName)}" style="width:100%;height:100%;object-fit:cover;">`
+        : `<span class="material-symbols-outlined">person</span>`;
+      const bodyHtml = p.bodyText
+        ? `<p>${escHtml(p.bodyText)}</p>`
+        : `<div class="skeleton-line long"></div>
          <div class="skeleton-line medium"></div>
          <div class="skeleton-line long"></div>
          <div class="skeleton-line short"></div>`;
 
-    return `
+      return `
     <article class="feed-card">
       <div class="feed-header">
         <div class="feed-user">
@@ -359,9 +385,9 @@ function renderCommunityFeed(posts) {
       </div>
       <div class="feed-body">${bodyHtml}</div>
       <div class="feed-tags">
-        ${p.location  ? `<span class="feed-tag"><span class="material-symbols-outlined">location_on</span>${escHtml(p.location)}</span>` : ""}
-        ${p.severity  ? `<span class="feed-tag"><span class="dot dot-red"></span>${escHtml(p.severity)}</span>` : ""}
-        ${p.waterLevel? `<span class="feed-tag"><span class="dot dot-orange"></span>${escHtml(p.waterLevel)}</span>` : ""}
+        ${p.location ? `<span class="feed-tag"><span class="material-symbols-outlined">location_on</span>${escHtml(p.location)}</span>` : ""}
+        ${p.severity ? `<span class="feed-tag"><span class="dot dot-red"></span>${escHtml(p.severity)}</span>` : ""}
+        ${p.waterLevel ? `<span class="feed-tag"><span class="dot dot-orange"></span>${escHtml(p.waterLevel)}</span>` : ""}
       </div>
       <div class="feed-actions">
         <button class="feed-action"><span class="material-symbols-outlined">verified</span>Trusted Report</button>
@@ -369,7 +395,8 @@ function renderCommunityFeed(posts) {
         <button class="feed-action"><span class="material-symbols-outlined">repeat</span>Repost</button>
       </div>
     </article>`;
-  }).join("");
+    })
+    .join("");
 }
 
 /* ===========================================================
@@ -464,7 +491,10 @@ async function loadBocaueWeather() {
 
   function formatToday() {
     const now = new Date();
-    const time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const time = now.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
     const date = now.toLocaleDateString([], { month: "short", day: "2-digit" });
     return `${time}\n${date}`;
   }
@@ -475,8 +505,11 @@ async function loadBocaueWeather() {
       weatherErrorEl.textContent = "";
     }
 
-    const endpoint = "https://api.open-meteo.com/v1/forecast?latitude=14.7982&longitude=120.9260&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FManila&forecast_days=5";
-    const response = await fetch(endpoint, { headers: { Accept: "application/json" } });
+    const endpoint =
+      "https://api.open-meteo.com/v1/forecast?latitude=14.7982&longitude=120.9260&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FManila&forecast_days=5";
+    const response = await fetch(endpoint, {
+      headers: { Accept: "application/json" },
+    });
     if (!response.ok) {
       throw new Error("Weather service unavailable.");
     }
@@ -489,10 +522,16 @@ async function loadBocaueWeather() {
     conditionTextEl.textContent = weather.label;
     weatherIconEl.textContent = weather.icon;
     weatherTimeEl.textContent = formatToday();
-    weatherTempEl.textContent = Number.isFinite(current.temperature_2m) ? Math.round(current.temperature_2m) : "--";
+    weatherTempEl.textContent = Number.isFinite(current.temperature_2m)
+      ? Math.round(current.temperature_2m)
+      : "--";
     if (weatherRangeEl) {
-      const high = Array.isArray(daily.temperature_2m_max) ? daily.temperature_2m_max[0] : null;
-      const low = Array.isArray(daily.temperature_2m_min) ? daily.temperature_2m_min[0] : null;
+      const high = Array.isArray(daily.temperature_2m_max)
+        ? daily.temperature_2m_max[0]
+        : null;
+      const low = Array.isArray(daily.temperature_2m_min)
+        ? daily.temperature_2m_min[0]
+        : null;
       weatherRangeEl.textContent = `H: ${high != null ? Math.round(high) : "--"}°C / L: ${low != null ? Math.round(low) : "--"}°C`;
     }
 
@@ -507,24 +546,32 @@ async function loadBocaueWeather() {
     }
 
     if (weatherForecastEl && Array.isArray(daily.time)) {
-      weatherForecastEl.innerHTML = daily.time.slice(0, 5).map((dateStr, idx) => {
-        const code = Array.isArray(daily.weather_code) ? daily.weather_code[idx] : null;
-        const meta = getWeatherMeta(code);
-        const label = new Date(dateStr).toLocaleDateString([], { weekday: "short" }).toUpperCase();
-        return `
+      weatherForecastEl.innerHTML = daily.time
+        .slice(0, 5)
+        .map((dateStr, idx) => {
+          const code = Array.isArray(daily.weather_code)
+            ? daily.weather_code[idx]
+            : null;
+          const meta = getWeatherMeta(code);
+          const label = new Date(dateStr)
+            .toLocaleDateString([], { weekday: "short" })
+            .toUpperCase();
+          return `
           <div class="forecast-day">
             <div class="day-label">${label}</div>
             <span class="material-symbols-outlined">${meta.icon}</span>
           </div>
         `;
-      }).join("");
+        })
+        .join("");
     }
   } catch (error) {
     conditionTextEl.textContent = "Weather currently unavailable";
     weatherIconEl.textContent = "cloud_off";
     if (weatherErrorEl) {
       weatherErrorEl.style.display = "block";
-      weatherErrorEl.textContent = error.message || "Failed to load weather data.";
+      weatherErrorEl.textContent =
+        error.message || "Failed to load weather data.";
     }
   }
 }
@@ -535,7 +582,8 @@ async function loadBocaueWeather() {
 document.addEventListener("DOMContentLoaded", () => {
   /* Logout prompt — sidebar button */
   const logoutSidebarBtn = document.getElementById("logout-trigger-btn");
-  if (logoutSidebarBtn) logoutSidebarBtn.addEventListener("click", confirmLogout);
+  if (logoutSidebarBtn)
+    logoutSidebarBtn.addEventListener("click", confirmLogout);
 
   /* Notification dropdown */
   const notificationBtn = document.getElementById("notification-btn");
@@ -566,7 +614,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!notificationList) return;
 
     if (!append && (!items || items.length === 0)) {
-      notificationList.innerHTML = '<div class="notification-empty">No notifications yet.</div>';
+      notificationList.innerHTML =
+        '<div class="notification-empty">No notifications yet.</div>';
       return;
     }
 
@@ -630,7 +679,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!notificationList) return;
     const existing = notificationList.querySelector(".notification-loading");
     if (!existing) {
-      notificationList.insertAdjacentHTML("beforeend", '<div class="notification-loading">Loading notifications...</div>');
+      notificationList.insertAdjacentHTML(
+        "beforeend",
+        '<div class="notification-loading">Loading notifications...</div>',
+      );
     }
   }
 
@@ -646,7 +698,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!notificationList) return;
     const hasEndNode = notificationList.querySelector(".notification-end");
     if (!notificationsHasMore && notificationsCache.length > 0 && !hasEndNode) {
-      notificationList.insertAdjacentHTML("beforeend", '<div class="notification-end">You are all caught up.</div>');
+      notificationList.insertAdjacentHTML(
+        "beforeend",
+        '<div class="notification-end">You are all caught up.</div>',
+      );
     }
   }
 
@@ -658,7 +713,8 @@ document.addEventListener("DOMContentLoaded", () => {
       notificationOffset = 0;
       notificationsHasMore = true;
       notificationsCache = [];
-      notificationList.innerHTML = '<div class="notification-loading">Loading notifications...</div>';
+      notificationList.innerHTML =
+        '<div class="notification-loading">Loading notifications...</div>';
     } else if (!notificationsHasMore) {
       return;
     } else {
@@ -671,17 +727,24 @@ document.addEventListener("DOMContentLoaded", () => {
         limit: String(notificationPageSize),
         offset: String(notificationOffset),
       });
-      const response = await fetch(`../includes/fetch_notifications.php?${query.toString()}`, {
-        headers: { Accept: "application/json" },
-      });
+      const response = await fetch(
+        `../includes/fetch_notifications.php?${query.toString()}`,
+        {
+          headers: { Accept: "application/json" },
+        },
+      );
       const data = await response.json();
       if (!response.ok || !data.success) {
         throw new Error(data.message || "Unable to load notifications.");
       }
-      const incoming = Array.isArray(data.notifications) ? data.notifications : [];
+      const incoming = Array.isArray(data.notifications)
+        ? data.notifications
+        : [];
       notificationsHasMore = Boolean(data.has_more);
       notificationOffset += incoming.length;
-      notificationsCache = reset ? incoming : notificationsCache.concat(incoming);
+      notificationsCache = reset
+        ? incoming
+        : notificationsCache.concat(incoming);
       clearNotificationLoadingState();
       renderNotifications(incoming, !reset);
       renderNotificationEndState();
@@ -708,7 +771,9 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       const data = await response.json();
       if (!response.ok || !data.success) {
-        throw new Error(data.message || "Unable to mark notifications as read.");
+        throw new Error(
+          data.message || "Unable to mark notifications as read.",
+        );
       }
       loadNotifications(true);
     } catch (error) {
@@ -759,7 +824,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (notificationList) {
     notificationList.addEventListener("click", async (event) => {
-      const item = event.target.closest(".notification-item[data-notification-id]");
+      const item = event.target.closest(
+        ".notification-item[data-notification-id]",
+      );
       if (!item) return;
 
       const notificationId = Number(item.dataset.notificationId || 0);
@@ -771,7 +838,11 @@ document.addEventListener("DOMContentLoaded", () => {
         item.dataset.notificationRead = "1";
         item.classList.remove("unread");
         const currentBadge = Number(notificationBadge?.textContent || 0);
-        if (notificationBadge && Number.isFinite(currentBadge) && currentBadge > 0) {
+        if (
+          notificationBadge &&
+          Number.isFinite(currentBadge) &&
+          currentBadge > 0
+        ) {
           updateNotificationBadge(Math.max(currentBadge - 1, 0));
         } else {
           loadNotifications(true);
@@ -782,7 +853,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     notificationList.addEventListener("scroll", () => {
-      const remaining = notificationList.scrollHeight - notificationList.scrollTop - notificationList.clientHeight;
+      const remaining =
+        notificationList.scrollHeight -
+        notificationList.scrollTop -
+        notificationList.clientHeight;
       if (remaining < 80) {
         loadNotifications(false);
       }
@@ -823,52 +897,114 @@ document.addEventListener("DOMContentLoaded", () => {
     {
       name: "MacArthur Highway (Bocaue Proper)",
       status: "impassable",
-      coords: [[14.806, 120.893], [14.801, 120.901], [14.796, 120.910]],
+      coords: [
+        [14.806, 120.893],
+        [14.801, 120.901],
+        [14.796, 120.91],
+      ],
     },
     {
       name: "Bocaue–Sta. Maria Road",
       status: "impassable",
-      coords: [[14.813, 120.906], [14.808, 120.913], [14.803, 120.919]],
+      coords: [
+        [14.813, 120.906],
+        [14.808, 120.913],
+        [14.803, 120.919],
+      ],
     },
     {
       name: "National Road (South Bocaue)",
       status: "impassable",
-      coords: [[14.789, 120.899], [14.784, 120.906], [14.780, 120.912]],
+      coords: [
+        [14.789, 120.899],
+        [14.784, 120.906],
+        [14.78, 120.912],
+      ],
     },
     {
       name: "Balagtas Access Road",
       status: "limited",
-      coords: [[14.821, 120.888], [14.815, 120.893], [14.810, 120.898]],
+      coords: [
+        [14.821, 120.888],
+        [14.815, 120.893],
+        [14.81, 120.898],
+      ],
     },
     {
       name: "San Juan Road",
       status: "limited",
-      coords: [[14.796, 120.882], [14.801, 120.888], [14.806, 120.894]],
+      coords: [
+        [14.796, 120.882],
+        [14.801, 120.888],
+        [14.806, 120.894],
+      ],
     },
     {
       name: "Tambobong Road",
       status: "passable",
-      coords: [[14.799, 120.911], [14.794, 120.917], [14.790, 120.923]],
+      coords: [
+        [14.799, 120.911],
+        [14.794, 120.917],
+        [14.79, 120.923],
+      ],
     },
     {
       name: "Bagbaguin Road",
       status: "passable",
-      coords: [[14.816, 120.916], [14.811, 120.921], [14.807, 120.927]],
+      coords: [
+        [14.816, 120.916],
+        [14.811, 120.921],
+        [14.807, 120.927],
+      ],
     },
     {
       name: "Manggahan Road",
       status: "passable",
-      coords: [[14.823, 120.921], [14.818, 120.927], [14.814, 120.933]],
+      coords: [
+        [14.823, 120.921],
+        [14.818, 120.927],
+        [14.814, 120.933],
+      ],
     },
   ];
 
   const incidents = [
-    { lat: 14.813, lng: 120.906, level: "impassable", desc: "Chest-deep flooding" },
-    { lat: 14.801, lng: 120.900, level: "impassable", desc: "Waist-deep flooding" },
-    { lat: 14.796, lng: 120.916, level: "impassable", desc: "Flash flood — road closed" },
-    { lat: 14.808, lng: 120.921, level: "limited",    desc: "Ankle-deep flooding" },
-    { lat: 14.820, lng: 120.911, level: "limited",    desc: "Minor flooding, slow down" },
-    { lat: 14.815, lng: 120.894, level: "passable",   desc: "Slight water on road" },
+    {
+      lat: 14.813,
+      lng: 120.906,
+      level: "impassable",
+      desc: "Chest-deep flooding",
+    },
+    {
+      lat: 14.801,
+      lng: 120.9,
+      level: "impassable",
+      desc: "Waist-deep flooding",
+    },
+    {
+      lat: 14.796,
+      lng: 120.916,
+      level: "impassable",
+      desc: "Flash flood — road closed",
+    },
+    {
+      lat: 14.808,
+      lng: 120.921,
+      level: "limited",
+      desc: "Ankle-deep flooding",
+    },
+    {
+      lat: 14.82,
+      lng: 120.911,
+      level: "limited",
+      desc: "Minor flooding, slow down",
+    },
+    {
+      lat: 14.815,
+      lng: 120.894,
+      level: "passable",
+      desc: "Slight water on road",
+    },
   ];
 
   /* ----------------------------------------------------------
@@ -876,15 +1012,15 @@ document.addEventListener("DOMContentLoaded", () => {
   ---------------------------------------------------------- */
   const colors = {
     impassable: "#dc2626",
-    limited:    "#f59e0b",
-    passable:   "#22c55e",
+    limited: "#f59e0b",
+    passable: "#22c55e",
   };
 
   /* ----------------------------------------------------------
      Status label helper
   ---------------------------------------------------------- */
   function statusLabel(status) {
-    if (status === "limited")    return "Limited Access";
+    if (status === "limited") return "Limited Access";
     if (status === "impassable") return "Impassable";
     return status.charAt(0).toUpperCase() + status.slice(1);
   }
@@ -921,21 +1057,23 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     /* -- Layer buckets -- */
-    const roadLayers   = { impassable: [], limited: [], passable: [] };
+    const roadLayers = { impassable: [], limited: [], passable: [] };
     const markerLayers = { impassable: [], limited: [], passable: [] };
 
     /* -- Draw road polylines -- */
     roads.forEach((road) => {
       const line = L.polyline(road.coords, {
-        color:     colors[road.status],
-        weight:    7,
-        opacity:   0.88,
-        lineCap:   "round",
-        lineJoin:  "round",
-      }).bindPopup(
-        `<div class="popup-title">${road.name}</div>
-         <span class="popup-status ${road.status}">${statusLabel(road.status)}</span>`
-      ).addTo(map);
+        color: colors[road.status],
+        weight: 7,
+        opacity: 0.88,
+        lineCap: "round",
+        lineJoin: "round",
+      })
+        .bindPopup(
+          `<div class="popup-title">${road.name}</div>
+         <span class="popup-status ${road.status}">${statusLabel(road.status)}</span>`,
+        )
+        .addTo(map);
 
       roadLayers[road.status].push(line);
     });
@@ -943,17 +1081,19 @@ document.addEventListener("DOMContentLoaded", () => {
     /* -- Draw incident circle markers -- */
     incidents.forEach((m) => {
       const marker = L.circleMarker([m.lat, m.lng], {
-        radius:      10,
-        fillColor:   colors[m.level],
-        color:       "#fff",
-        weight:      2.5,
-        opacity:     1,
+        radius: 10,
+        fillColor: colors[m.level],
+        color: "#fff",
+        weight: 2.5,
+        opacity: 1,
         fillOpacity: 0.92,
-      }).bindPopup(
-        `<div class="popup-title">Flood Incident</div>
+      })
+        .bindPopup(
+          `<div class="popup-title">Flood Incident</div>
          <span class="popup-status ${m.level}">${statusLabel(m.level)}</span>
-         <div style="margin-top:5px;font-size:0.75rem;color:#475569;">${m.desc}</div>`
-      ).addTo(map);
+         <div style="margin-top:5px;font-size:0.75rem;color:#475569;">${m.desc}</div>`,
+        )
+        .addTo(map);
 
       markerLayers[m.level].push(marker);
     });
@@ -987,7 +1127,9 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         searchMarker = L.marker([lat, lng]).addTo(map);
       }
-      searchMarker.bindPopup(label || `${lat.toFixed(6)}, ${lng.toFixed(6)}`).openPopup();
+      searchMarker
+        .bindPopup(label || `${lat.toFixed(6)}, ${lng.toFixed(6)}`)
+        .openPopup();
       map.flyTo([lat, lng], 16, { duration: 0.6 });
     }
 
@@ -1017,7 +1159,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const rows = await searchPlacesInBocaue(query, 6);
             activeSuggestionResults = rows;
             suggestionList.innerHTML = rows
-              .map((row, idx) => `<option value="${escapeHtml(formatNominatimLabel(row) || query)}" data-idx="${idx}"></option>`)
+              .map(
+                (row, idx) =>
+                  `<option value="${escapeHtml(formatNominatimLabel(row) || query)}" data-idx="${idx}"></option>`,
+              )
               .join("");
           } catch {
             activeSuggestionResults = [];
@@ -1032,7 +1177,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const query = e.target.value.trim();
         if (!query) return;
         try {
-          let target = activeSuggestionResults.find((row) => formatNominatimLabel(row) === query);
+          let target = activeSuggestionResults.find(
+            (row) => formatNominatimLabel(row) === query,
+          );
           if (!target) {
             const rows = await searchPlacesInBocaue(query, 1);
             target = rows[0];
@@ -1080,8 +1227,8 @@ document.addEventListener("DOMContentLoaded", () => {
     return L.divIcon({
       className: "",
       html: '<span class="material-symbols-outlined" style="font-size:36px;color:#dc2626;filter:drop-shadow(0 2px 5px rgba(0,0,0,0.4));display:block;line-height:1;margin-left:-4px;">location_on</span>',
-      iconSize:    [32, 36],
-      iconAnchor:  [16, 36],
+      iconSize: [32, 36],
+      iconAnchor: [16, 36],
       popupAnchor: [0, -38],
     });
   }
@@ -1091,22 +1238,23 @@ document.addEventListener("DOMContentLoaded", () => {
   ---------------------------------------------------------- */
   function updateLocationField(address, lat, lng) {
     var display = document.getElementById("pinned-location-display");
-    var icon    = document.getElementById("pinned-location-icon");
-    var text    = document.getElementById("pinned-location-text");
-    var pinInfo    = document.getElementById("pin-info");
+    var icon = document.getElementById("pinned-location-icon");
+    var text = document.getElementById("pinned-location-text");
+    var pinInfo = document.getElementById("pin-info");
     var pinAddress = document.getElementById("pin-address");
-    var pinCoords  = document.getElementById("pin-coords");
-    var fieldAddr  = document.getElementById("field-address");
+    var pinCoords = document.getElementById("pin-coords");
+    var fieldAddr = document.getElementById("field-address");
 
-    var addressText = address || (lat.toFixed(5) + ", " + lng.toFixed(5));
+    var addressText = address || lat.toFixed(5) + ", " + lng.toFixed(5);
 
     if (display) display.classList.add("filled");
-    if (icon)    icon.textContent = "location_on";
-    if (text)    text.textContent = addressText;
-    if (pinInfo)    pinInfo.classList.add("has-pin");
+    if (icon) icon.textContent = "location_on";
+    if (text) text.textContent = addressText;
+    if (pinInfo) pinInfo.classList.add("has-pin");
     if (pinAddress) pinAddress.textContent = address || "Location pinned";
-    if (pinCoords)  pinCoords.textContent  = lat.toFixed(6) + ", " + lng.toFixed(6);
-    if (fieldAddr)  fieldAddr.value = addressText;
+    if (pinCoords)
+      pinCoords.textContent = lat.toFixed(6) + ", " + lng.toFixed(6);
+    if (fieldAddr) fieldAddr.value = addressText;
   }
 
   /* ----------------------------------------------------------
@@ -1127,7 +1275,10 @@ document.addEventListener("DOMContentLoaded", () => {
       pinMarker = L.marker([latF, lngF], {
         icon: makePinIcon(),
         draggable: true,
-      }).addTo(map).bindPopup("📍 Your flood report location").openPopup();
+      })
+        .addTo(map)
+        .bindPopup("📍 Your flood report location")
+        .openPopup();
 
       pinMarker.on("dragend", function (e) {
         var pos = e.target.getLatLng();
@@ -1184,7 +1335,9 @@ document.addEventListener("DOMContentLoaded", () => {
       placePin(lat, lng);
     });
 
-    setTimeout(function () { map.invalidateSize(); }, 350);
+    setTimeout(function () {
+      map.invalidateSize();
+    }, 350);
   }
 
   /* ----------------------------------------------------------
@@ -1192,14 +1345,20 @@ document.addEventListener("DOMContentLoaded", () => {
      Passable/Rainy locks water level to "none"
   ---------------------------------------------------------- */
   function initSeverityWaterLevelSync() {
-    var radios      = document.querySelectorAll('input[name="severity"]');
-    var waterSel    = document.getElementById("water-level");
-    var waterGroup  = document.getElementById("water-level-group");
+    var radios = document.querySelectorAll('input[name="severity"]');
+    var waterSel = document.getElementById("water-level");
+    var waterGroup = document.getElementById("water-level-group");
     var waterHintEl = document.getElementById("water-level-hint");
     var rescueSection = document.getElementById("rescue-section");
-    var rescueNeeded = document.querySelector('input[name="rescue_status"][value="Rescue Needed"]');
-    var rescueNotRequired = document.querySelector('input[name="rescue_status"][value="Not Required"]');
-    var rescueOptions = document.querySelectorAll('input[name="rescue_status"]');
+    var rescueNeeded = document.querySelector(
+      'input[name="rescue_status"][value="Rescue Needed"]',
+    );
+    var rescueNotRequired = document.querySelector(
+      'input[name="rescue_status"][value="Not Required"]',
+    );
+    var rescueOptions = document.querySelectorAll(
+      'input[name="rescue_status"]',
+    );
     var rescueDetails = document.getElementById("rescue-details");
     var rescuePeopleInput = document.getElementById("rescue-people");
     var rescueDescriptionInput = document.getElementById("rescue-note");
@@ -1214,7 +1373,8 @@ document.addEventListener("DOMContentLoaded", () => {
     var severityHintMap = {
       high: "Allowed for High: Above head, Chest-deep.",
       moderate: "Allowed for Moderate: Waist-deep, Knee-deep.",
-      passable: "Allowed for Passable / Rainy: Ankle-deep, No flooding / Rainy only.",
+      passable:
+        "Allowed for Passable / Rainy: Ankle-deep, No flooding / Rainy only.",
     };
 
     function applyWaterLevelConstraints(allowedLevels) {
@@ -1237,7 +1397,9 @@ document.addEventListener("DOMContentLoaded", () => {
       var allowedLevels = severityWaterMap[value] || [];
       applyWaterLevelConstraints(allowedLevels);
       if (waterHintEl) {
-        waterHintEl.textContent = severityHintMap[value] || "Select flood severity first to see allowed water levels.";
+        waterHintEl.textContent =
+          severityHintMap[value] ||
+          "Select flood severity first to see allowed water levels.";
       }
 
       waterSel.disabled = false;
@@ -1298,7 +1460,7 @@ document.addEventListener("DOMContentLoaded", () => {
   ---------------------------------------------------------- */
   function initRescueToggle() {
     var rescueRadios = document.querySelectorAll('input[name="rescue_status"]');
-    var details      = document.getElementById("rescue-details");
+    var details = document.getElementById("rescue-details");
     if (!rescueRadios.length || !details) return;
 
     function applyRescue(value) {
@@ -1316,10 +1478,10 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         details.classList.remove("visible");
         // Clear rescue detail fields
-        var numPeople  = document.getElementById("rescue-people");
+        var numPeople = document.getElementById("rescue-people");
         var rescueNote = document.getElementById("rescue-note");
-        if (numPeople)  {
-          numPeople.value  = "";
+        if (numPeople) {
+          numPeople.value = "";
           numPeople.disabled = true;
           numPeople.required = false;
         }
@@ -1337,49 +1499,68 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Apply on load
-    var checkedRescue = document.querySelector('input[name="rescue_status"]:checked');
+    var checkedRescue = document.querySelector(
+      'input[name="rescue_status"]:checked',
+    );
     if (checkedRescue) applyRescue(checkedRescue.value);
   }
 
   /* ----------------------------------------------------------
-     Photo preview
-  ---------------------------------------------------------- */
+   Photo preview (JPG/PNG only)
+---------------------------------------------------------- */
   function initPhotoAttach() {
-    var photoBtn     = document.getElementById("attach-photo-btn");
-    var photoInput   = document.getElementById("photo-input");
+    var photoBtn = document.getElementById("attach-photo-btn");
+    var photoInput = document.getElementById("photo-input");
     var photoPreview = document.getElementById("photo-preview");
-    var photoImg     = document.getElementById("photo-img");
+    var photoImg = document.getElementById("photo-img");
+
     if (!photoBtn || !photoInput) return;
 
-    photoBtn.addEventListener("click", function () { photoInput.click(); });
+    photoBtn.addEventListener("click", function () {
+      photoInput.click();
+    });
 
     photoInput.addEventListener("change", function (e) {
       var file = e.target.files[0];
       if (!file) return;
-      var allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+      // ✅ ONLY JPG + PNG
+      var allowed = ["image/jpeg", "image/png"];
+
       if (!allowed.includes(file.type)) {
-        alert("Please select a JPG, PNG, WEBP, or GIF image.");
+        alert("Only JPG and PNG images are allowed.");
         photoInput.value = "";
+        photoPreview.style.display = "none";
         return;
       }
+
+      // Optional: file size limit (recommended for LGU system)
+      var maxSizeMB = 3;
+      if (file.size > maxSizeMB * 1024 * 1024) {
+        alert("Image must be less than 3MB.");
+        photoInput.value = "";
+        photoPreview.style.display = "none";
+        return;
+      }
+
       var reader = new FileReader();
       reader.onload = function (ev) {
         photoImg.src = ev.target.result;
         photoPreview.style.display = "block";
       };
+
       reader.readAsDataURL(file);
     });
   }
-
   /* ----------------------------------------------------------
      Prevent double-submit
   ---------------------------------------------------------- */
   function initFormSubmit() {
-    var form      = document.getElementById("report-form");
+    var form = document.getElementById("report-form");
     var submitBtn = document.getElementById("submit-btn");
     if (!form || !submitBtn) return;
     form.addEventListener("submit", function () {
-      submitBtn.disabled    = true;
+      submitBtn.disabled = true;
       submitBtn.textContent = "Submitting…";
     });
   }
@@ -1388,7 +1569,7 @@ document.addEventListener("DOMContentLoaded", () => {
      Success modal
   ---------------------------------------------------------- */
   function initSuccessModal() {
-    var okBtn   = document.getElementById("ok-btn");
+    var okBtn = document.getElementById("ok-btn");
     var overlay = document.getElementById("success-overlay");
     if (!okBtn || !overlay) return;
     okBtn.addEventListener("click", function () {
@@ -1417,7 +1598,6 @@ document.addEventListener("DOMContentLoaded", () => {
   } else {
     init();
   }
-
 })();
 
 /* =============================================================
@@ -1435,25 +1615,100 @@ document.addEventListener("DOMContentLoaded", () => {
      These are always shown and can be filtered by category.
   ---------------------------------------------------------- */
   var STATIC_HOTLINES = [
-    { name: "PNP Emergency",        number: "117",           category: "police",    icon: "shield_person",     iconClass: "icon-police",    tagClass: "tag-police",    barangay: "" },
-    { name: "NDRRMC Hotline",       number: "8-911",         category: "emergency", icon: "emergency",         iconClass: "icon-emergency", tagClass: "tag-emergency", barangay: "" },
-    { name: "Red Cross Bulacan",    number: "0922-999-0000", category: "medical",   icon: "health_and_safety", iconClass: "icon-medical",   tagClass: "tag-medical",   barangay: "" },
-    { name: "MDRRMO Bocaue",        number: "0917-111-2222", category: "emergency", icon: "crisis_alert",      iconClass: "icon-emergency", tagClass: "tag-emergency", barangay: "" },
-    { name: "Bocaue Police Station",number: "0920-555-6666", category: "police",    icon: "local_police",      iconClass: "icon-police",    tagClass: "tag-police",    barangay: "" },
-    { name: "Bocaue Rural Health Unit", number: "0921-777-8888", category: "medical", icon: "local_hospital",  iconClass: "icon-medical",   tagClass: "tag-medical",   barangay: "" },
-    { name: "Search & Rescue Team", number: "0923-112-3334", category: "rescue",    icon: "medical_services",  iconClass: "icon-rescue",    tagClass: "tag-rescue",    barangay: "" },
-    { name: "Ambulance Services",   number: "0924-445-6667", category: "medical",   icon: "ambulance",         iconClass: "icon-medical",   tagClass: "tag-medical",   barangay: "" },
-    { name: "Coast Guard Bulacan",  number: "0926-001-1122", category: "rescue",    icon: "directions_boat",   iconClass: "icon-rescue",    tagClass: "tag-rescue",    barangay: "" },
+    {
+      name: "PNP Emergency",
+      number: "117",
+      category: "police",
+      icon: "shield_person",
+      iconClass: "icon-police",
+      tagClass: "tag-police",
+      barangay: "",
+    },
+    {
+      name: "NDRRMC Hotline",
+      number: "8-911",
+      category: "emergency",
+      icon: "emergency",
+      iconClass: "icon-emergency",
+      tagClass: "tag-emergency",
+      barangay: "",
+    },
+    {
+      name: "Red Cross Bulacan",
+      number: "0922-999-0000",
+      category: "medical",
+      icon: "health_and_safety",
+      iconClass: "icon-medical",
+      tagClass: "tag-medical",
+      barangay: "",
+    },
+    {
+      name: "MDRRMO Bocaue",
+      number: "0917-111-2222",
+      category: "emergency",
+      icon: "crisis_alert",
+      iconClass: "icon-emergency",
+      tagClass: "tag-emergency",
+      barangay: "",
+    },
+    {
+      name: "Bocaue Police Station",
+      number: "0920-555-6666",
+      category: "police",
+      icon: "local_police",
+      iconClass: "icon-police",
+      tagClass: "tag-police",
+      barangay: "",
+    },
+    {
+      name: "Bocaue Rural Health Unit",
+      number: "0921-777-8888",
+      category: "medical",
+      icon: "local_hospital",
+      iconClass: "icon-medical",
+      tagClass: "tag-medical",
+      barangay: "",
+    },
+    {
+      name: "Search & Rescue Team",
+      number: "0923-112-3334",
+      category: "rescue",
+      icon: "medical_services",
+      iconClass: "icon-rescue",
+      tagClass: "tag-rescue",
+      barangay: "",
+    },
+    {
+      name: "Ambulance Services",
+      number: "0924-445-6667",
+      category: "medical",
+      icon: "ambulance",
+      iconClass: "icon-medical",
+      tagClass: "tag-medical",
+      barangay: "",
+    },
+    {
+      name: "Coast Guard Bulacan",
+      number: "0926-001-1122",
+      category: "rescue",
+      icon: "directions_boat",
+      iconClass: "icon-rescue",
+      tagClass: "tag-rescue",
+      barangay: "",
+    },
   ];
 
   var TAG_LABELS = {
-    emergency: "Emergency", medical: "Medical",
-    police: "Police", lgu: "LGU", rescue: "Rescue",
-    barangay: "Barangay"
+    emergency: "Emergency",
+    medical: "Medical",
+    police: "Police",
+    lgu: "LGU",
+    rescue: "Rescue",
+    barangay: "Barangay",
   };
 
   /* All hotlines (static + DB), populated after fetch */
-  var allHotlines   = [];
+  var allHotlines = [];
   var activeCategory = "all";
 
   /* ----------------------------------------------------------
@@ -1477,13 +1732,13 @@ document.addEventListener("DOMContentLoaded", () => {
           Object.keys(json.data).forEach(function (barangay) {
             json.data[barangay].forEach(function (h) {
               dbHotlines.push({
-                name:      h.hotline_name,
-                number:    h.contact_number,
-                category:  "lgu",           // DB hotlines are barangay/LGU contacts
-                icon:      "account_balance",
+                name: h.hotline_name,
+                number: h.contact_number,
+                category: "lgu", // DB hotlines are barangay/LGU contacts
+                icon: "account_balance",
                 iconClass: "icon-lgu",
-                tagClass:  "tag-lgu",
-                barangay:  barangay,
+                tagClass: "tag-lgu",
+                barangay: barangay,
               });
             });
           });
@@ -1495,7 +1750,9 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .catch(function (err) {
         showLoading(false);
-        showError("Could not load barangay hotlines. Showing national lines only.");
+        showError(
+          "Could not load barangay hotlines. Showing national lines only.",
+        );
         // Fallback to static only
         allHotlines = STATIC_HOTLINES.slice();
         renderCards(getFiltered());
@@ -1511,10 +1768,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (searchInput) q = searchInput.value.toLowerCase().trim();
 
     return allHotlines.filter(function (h) {
-      var matchCat  = activeCategory === "all" || h.category === activeCategory;
-      var matchText = h.name.toLowerCase().includes(q) ||
-                      h.number.includes(q) ||
-                      (h.barangay && h.barangay.toLowerCase().includes(q));
+      var matchCat = activeCategory === "all" || h.category === activeCategory;
+      var matchText =
+        h.name.toLowerCase().includes(q) ||
+        h.number.includes(q) ||
+        (h.barangay && h.barangay.toLowerCase().includes(q));
       return matchCat && matchText;
     });
   }
@@ -1523,8 +1781,8 @@ document.addEventListener("DOMContentLoaded", () => {
      Render card list
   ---------------------------------------------------------- */
   function renderCards(data) {
-    var list    = document.getElementById("hl-list");
-    var noRes   = document.getElementById("hl-no-results");
+    var list = document.getElementById("hl-list");
+    var noRes = document.getElementById("hl-no-results");
     if (!list) return;
 
     list.innerHTML = "";
@@ -1564,22 +1822,38 @@ document.addEventListener("DOMContentLoaded", () => {
         card.className = "hl-card";
 
         var cleanNumber = h.number.replace(/\D/g, "");
-        var tagLabel    = TAG_LABELS[h.category] || h.category;
+        var tagLabel = TAG_LABELS[h.category] || h.category;
 
         card.innerHTML =
-          '<div class="hl-card-icon ' + h.iconClass + '">' +
-            '<span class="material-symbols-outlined">' + h.icon + '</span>' +
-          '</div>' +
+          '<div class="hl-card-icon ' +
+          h.iconClass +
+          '">' +
+          '<span class="material-symbols-outlined">' +
+          h.icon +
+          "</span>" +
+          "</div>" +
           '<div class="hl-card-info">' +
-            '<div class="hl-card-name">' + escHtml(h.name) + '</div>' +
-            '<div class="hl-card-number">' + escHtml(h.number) + '</div>' +
-            (h.barangay ? '<div class="hl-card-barangay">' + escHtml(h.barangay) + '</div>' : '') +
-            '<span class="hl-card-tag ' + h.tagClass + '">' + tagLabel + '</span>' +
-          '</div>' +
-          '<a class="hl-call-btn" href="tel:' + cleanNumber + '">' +
-            '<span class="material-symbols-outlined">call</span>' +
-            '<span>Call</span>' +
-          '</a>';
+          '<div class="hl-card-name">' +
+          escHtml(h.name) +
+          "</div>" +
+          '<div class="hl-card-number">' +
+          escHtml(h.number) +
+          "</div>" +
+          (h.barangay
+            ? '<div class="hl-card-barangay">' + escHtml(h.barangay) + "</div>"
+            : "") +
+          '<span class="hl-card-tag ' +
+          h.tagClass +
+          '">' +
+          tagLabel +
+          "</span>" +
+          "</div>" +
+          '<a class="hl-call-btn" href="tel:' +
+          cleanNumber +
+          '">' +
+          '<span class="material-symbols-outlined">call</span>' +
+          "<span>Call</span>" +
+          "</a>";
 
         list.appendChild(card);
       });
@@ -1654,7 +1928,6 @@ document.addEventListener("DOMContentLoaded", () => {
   } else {
     init();
   }
-
 })();
 
 /* =============================================================
@@ -1670,14 +1943,32 @@ document.addEventListener("DOMContentLoaded", () => {
      Status config
   ---------------------------------------------------------- */
   var CFG = {
-    available: { label: "Available", dot: "g", badge: "available", bar: "#22c55e", pin: "#22c55e" },
-    limited:   { label: "Limited",   dot: "y", badge: "limited",   bar: "#f59e0b", pin: "#f59e0b" },
-    full:      { label: "Full",      dot: "r", badge: "full",      bar: "#ef4444", pin: "#ef4444" },
+    available: {
+      label: "Available",
+      dot: "g",
+      badge: "available",
+      bar: "#22c55e",
+      pin: "#22c55e",
+    },
+    limited: {
+      label: "Limited",
+      dot: "y",
+      badge: "limited",
+      bar: "#f59e0b",
+      pin: "#f59e0b",
+    },
+    full: {
+      label: "Full",
+      dot: "r",
+      badge: "full",
+      bar: "#ef4444",
+      pin: "#ef4444",
+    },
   };
 
   var allCenters = [];
   var mapMarkers = [];
-  var map        = null;
+  var map = null;
 
   /* ----------------------------------------------------------
      Derive status from occupancy / capacity
@@ -1686,7 +1977,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (capacity <= 0) return "available";
     var pct = (occupancy / capacity) * 100;
     if (pct >= 100) return "full";
-    if (pct >= 75)  return "limited";
+    if (pct >= 75) return "limited";
     return "available";
   }
 
@@ -1696,12 +1987,15 @@ document.addEventListener("DOMContentLoaded", () => {
   function makePin(color) {
     return L.divIcon({
       className: "",
-      html: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="38" viewBox="0 0 32 42">' +
-              '<path d="M16 0C7.163 0 0 7.163 0 16c0 10.5 16 26 16 26S32 26.5 32 16C32 7.163 24.837 0 16 0z" fill="' + color + '"/>' +
-              '<circle cx="16" cy="16" r="7" fill="white"/>' +
-            '</svg>',
-      iconSize:    [28, 38],
-      iconAnchor:  [14, 38],
+      html:
+        '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="38" viewBox="0 0 32 42">' +
+        '<path d="M16 0C7.163 0 0 7.163 0 16c0 10.5 16 26 16 26S32 26.5 32 16C32 7.163 24.837 0 16 0z" fill="' +
+        color +
+        '"/>' +
+        '<circle cx="16" cy="16" r="7" fill="white"/>' +
+        "</svg>",
+      iconSize: [28, 38],
+      iconAnchor: [14, 38],
       popupAnchor: [0, -40],
     });
   }
@@ -1738,31 +2032,50 @@ document.addEventListener("DOMContentLoaded", () => {
       map.flyTo([lat, lng], 16, { duration: 0.7 });
     });
 
-    setTimeout(function () { map.invalidateSize(); }, 300);
+    setTimeout(function () {
+      map.invalidateSize();
+    }, 300);
   }
 
   /* ----------------------------------------------------------
      Refresh map markers
   ---------------------------------------------------------- */
   function refreshMarkers() {
-    mapMarkers.forEach(function (m) { if (map) map.removeLayer(m); });
+    mapMarkers.forEach(function (m) {
+      if (map) map.removeLayer(m);
+    });
     mapMarkers = [];
 
     allCenters.forEach(function (c, i) {
-      if (!c.lat || !c.lng || !map) { mapMarkers.push(null); return; }
+      if (!c.lat || !c.lng || !map) {
+        mapMarkers.push(null);
+        return;
+      }
       var s = CFG[c.status] || CFG.available;
       var m = L.marker([parseFloat(c.lat), parseFloat(c.lng)], {
         icon: makePin(s.pin),
-      }).bindPopup(
-        '<div style="font-family:Inter,sans-serif;min-width:150px;">' +
-          '<strong style="font-size:0.83rem;color:#0f172a;display:block;margin-bottom:2px;">' + escHtml(c.name) + '</strong>' +
-          '<span style="font-size:0.7rem;color:#64748b;">' + escHtml(c.address) + '</span><br>' +
-          '<span style="font-size:0.7rem;font-weight:700;color:' + s.pin + ';margin-top:4px;display:inline-block;">● ' + s.label + '</span>' +
-        '</div>'
-      ).addTo(map);
+      })
+        .bindPopup(
+          '<div style="font-family:Inter,sans-serif;min-width:150px;">' +
+            '<strong style="font-size:0.83rem;color:#0f172a;display:block;margin-bottom:2px;">' +
+            escHtml(c.name) +
+            "</strong>" +
+            '<span style="font-size:0.7rem;color:#64748b;">' +
+            escHtml(c.address) +
+            "</span><br>" +
+            '<span style="font-size:0.7rem;font-weight:700;color:' +
+            s.pin +
+            ';margin-top:4px;display:inline-block;">● ' +
+            s.label +
+            "</span>" +
+            "</div>",
+        )
+        .addTo(map);
 
       (function (idx) {
-        m.on("click", function () { highlightCard(idx); });
+        m.on("click", function () {
+          highlightCard(idx);
+        });
       })(i);
 
       mapMarkers.push(m);
@@ -1787,7 +2100,7 @@ document.addEventListener("DOMContentLoaded", () => {
      Render card list
   ---------------------------------------------------------- */
   function renderCards(data) {
-    var list  = document.getElementById("sc-list");
+    var list = document.getElementById("sc-list");
     var noRes = document.getElementById("sc-no-results");
     if (!list) return;
 
@@ -1801,45 +2114,70 @@ document.addEventListener("DOMContentLoaded", () => {
 
     data.forEach(function (c) {
       var idx = allCenters.indexOf(c);
-      var s   = CFG[c.status] || CFG.available;
-      var pct = c.capacity > 0
-        ? Math.min(Math.round((c.occupancy / c.capacity) * 100), 100)
-        : 0;
+      var s = CFG[c.status] || CFG.available;
+      var pct =
+        c.capacity > 0
+          ? Math.min(Math.round((c.occupancy / c.capacity) * 100), 100)
+          : 0;
       var cardStatusClass = c.status !== "available" ? " " + c.status : "";
 
       var card = document.createElement("div");
-      card.className   = "center-card" + cardStatusClass;
+      card.className = "center-card" + cardStatusClass;
       card.dataset.idx = idx;
 
       card.innerHTML =
         '<div class="center-top">' +
-          '<div class="center-name">' + escHtml(c.name) + '</div>' +
-          '<span class="cap-badge ' + s.badge + '">' + s.label + '</span>' +
-        '</div>' +
+        '<div class="center-name">' +
+        escHtml(c.name) +
+        "</div>" +
+        '<span class="cap-badge ' +
+        s.badge +
+        '">' +
+        s.label +
+        "</span>" +
+        "</div>" +
         '<div class="center-addr">' +
-          '<span class="material-symbols-outlined">location_on</span>' +
-          escHtml(c.address) +
-        '</div>' +
+        '<span class="material-symbols-outlined">location_on</span>' +
+        escHtml(c.address) +
+        "</div>" +
         '<div class="cap-row">' +
-          '<div class="cap-bar-bg">' +
-            '<div class="cap-bar-fill" style="width:' + pct + '%;background:' + s.bar + ';"></div>' +
-          '</div>' +
-          '<span class="cap-count">' + c.occupancy + '/' + c.capacity + '</span>' +
-        '</div>' +
+        '<div class="cap-bar-bg">' +
+        '<div class="cap-bar-fill" style="width:' +
+        pct +
+        "%;background:" +
+        s.bar +
+        ';"></div>' +
+        "</div>" +
+        '<span class="cap-count">' +
+        c.occupancy +
+        "/" +
+        c.capacity +
+        "</span>" +
+        "</div>" +
         '<div class="center-bottom">' +
-          '<div class="status-pill ' + c.status + '">' +
-            '<div class="sdot ' + s.dot + '"></div>' + s.label +
-          '</div>' +
-          (c.contact
-            ? '<a class="center-phone" href="tel:' + escHtml(c.contact.replace(/\D/g, "")) + '">' +
-                '<span class="material-symbols-outlined">call</span>' + escHtml(c.contact) +
-              '</a>'
-            : '') +
-        '</div>';
+        '<div class="status-pill ' +
+        c.status +
+        '">' +
+        '<div class="sdot ' +
+        s.dot +
+        '"></div>' +
+        s.label +
+        "</div>" +
+        (c.contact
+          ? '<a class="center-phone" href="tel:' +
+            escHtml(c.contact.replace(/\D/g, "")) +
+            '">' +
+            '<span class="material-symbols-outlined">call</span>' +
+            escHtml(c.contact) +
+            "</a>"
+          : "") +
+        "</div>";
 
       card.addEventListener("click", function () {
         if (map && c.lat && c.lng) {
-          map.flyTo([parseFloat(c.lat), parseFloat(c.lng)], 16, { duration: 0.7 });
+          map.flyTo([parseFloat(c.lat), parseFloat(c.lng)], 16, {
+            duration: 0.7,
+          });
           if (mapMarkers[idx]) mapMarkers[idx].openPopup();
         }
         highlightCard(idx);
@@ -1882,17 +2220,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
         allCenters = json.data.map(function (c) {
           var occ = parseInt(c.occupancy) || 0;
-          var cap = parseInt(c.capacity)  || 0;
+          var cap = parseInt(c.capacity) || 0;
           return {
             center_id: c.center_id,
-            name:      c.center_name,
-            address:   c.full_address || (c.barangay + ", " + c.municipality),
-            contact:   c.contact || "",
+            name: c.center_name,
+            address: c.full_address || c.barangay + ", " + c.municipality,
+            contact: c.contact || "",
             occupancy: occ,
-            capacity:  cap,
-            lat:       c.latitude,
-            lng:       c.longitude,
-            status:    getStatus(occ, cap),
+            capacity: cap,
+            lat: c.latitude,
+            lng: c.longitude,
+            status: getStatus(occ, cap),
           };
         });
 
@@ -1904,8 +2242,10 @@ document.addEventListener("DOMContentLoaded", () => {
         // Show the actual JS/network error so it's easier to debug
         showError(
           "Could not load safety centers. " +
-          "Check that api/fetch-safety-centers.php exists and db.php path is correct. " +
-          "(" + err.message + ")"
+            "Check that api/fetch-safety-centers.php exists and db.php path is correct. " +
+            "(" +
+            err.message +
+            ")",
         );
       });
   }
@@ -1948,8 +2288,10 @@ document.addEventListener("DOMContentLoaded", () => {
     input.addEventListener("input", function () {
       var q = input.value.toLowerCase().trim();
       var filtered = allCenters.filter(function (c) {
-        return c.name.toLowerCase().includes(q) ||
-               c.address.toLowerCase().includes(q);
+        return (
+          c.name.toLowerCase().includes(q) ||
+          c.address.toLowerCase().includes(q)
+        );
       });
       renderCards(filtered);
     });
@@ -1970,5 +2312,4 @@ document.addEventListener("DOMContentLoaded", () => {
   } else {
     init();
   }
-
 })();
