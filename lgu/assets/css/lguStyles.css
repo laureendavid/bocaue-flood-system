@@ -203,7 +203,7 @@ html.dark .nav-link.active {
   position: sticky;
   top: 0;
   z-index: 30;
-  overflow: visible; 
+  overflow: visible;
 }
 
 .hamburger-btn {
@@ -1444,7 +1444,11 @@ body {
 
 .sidebar {
   width: 260px;
-  background: linear-gradient(180deg, var(--lgu-bg-start) 0%, var(--lgu-bg-end) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--lgu-bg-start) 0%,
+    var(--lgu-bg-end) 100%
+  );
   border-right: none;
   box-shadow: 10px 0 24px rgba(11, 31, 71, 0.2);
 }
@@ -1481,7 +1485,10 @@ body {
   color: rgba(255, 255, 255, 0.9);
   min-height: 46px;
   border-radius: 12px;
-  transition: background-color 0.22s ease, transform 0.22s ease, color 0.22s ease;
+  transition:
+    background-color 0.22s ease,
+    transform 0.22s ease,
+    color 0.22s ease;
 }
 
 .nav-link .material-symbols-outlined {
@@ -1520,7 +1527,9 @@ body {
   gap: 10px;
   padding: 0 12px;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .sidebar-logout-btn:hover {
@@ -1831,5 +1840,215 @@ body.sidebar-mobile-open {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* ================================================================
+   LGU DASHBOARD — ADDITIONAL FIXES
+   Paste at the very bottom of lgu.css (after the existing fixes)
+   ================================================================ */
+
+/* ===== STAT CARDS — force side by side at ALL sizes ===== */
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* always 2-col */
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* Make them a bit more compact and polished */
+.stat-card {
+  background: var(--lgu-card, #fff);
+  border: 1px solid var(--lgu-border, #dbe7ff);
+  border-radius: var(--lgu-radius, 16px);
+  padding: 22px 16px;
+  text-align: center;
+  box-shadow: var(--lgu-shadow, 0 12px 30px rgba(15, 23, 42, 0.1));
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.13);
+}
+.stat-label {
+  color: var(--lgu-muted, #64748b);
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+.stat-value {
+  font-size: 2.6rem;
+  font-weight: 700;
+  color: #0f1f40;
+  line-height: 1;
+  display: block;
+}
+
+/* Override the mobile rule that was stacking them */
+@media (max-width: 640px) {
+  .dashboard-stats {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px;
+  }
+  .stat-card {
+    padding: 16px 10px;
+  }
+  .stat-label {
+    font-size: 0.72rem;
+  }
+  .stat-value {
+    font-size: 1.9rem;
+  }
+}
+
+/* Keep side-by-side even on very small screens — just shrink further */
+@media (max-width: 380px) {
+  .dashboard-stats {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px;
+  }
+  .stat-value {
+    font-size: 1.6rem;
+  }
+  .stat-label {
+    font-size: 0.68rem;
+  }
+}
+
+/* ===== EVAC CENTERS CARD — styled header (matches evac-section reference) ===== */
+
+/* The evac row card that contains the table */
+.dashboard-evac-row .card {
+  padding: 0; /* remove default padding — header will handle it */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* card-header row (title + section note) */
+.dashboard-evac-row .card-header {
+  padding: 14px 20px 12px;
+  margin-bottom: 0;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--lgu-border, #dbe7ff);
+  background: #fff;
+  border-radius: var(--lgu-radius, 16px) var(--lgu-radius, 16px) 0 0;
+}
+
+.dashboard-evac-row .card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.dashboard-evac-row .section-note {
+  font-size: 0.75rem;
+  color: var(--lgu-muted, #64748b);
+  font-style: italic;
+  margin: 2px 0 0;
+}
+
+/* card-scroll holds the table */
+.dashboard-evac-row .card-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 0; /* table will have its own cell padding */
+  max-height: 300px;
+  min-height: 0;
+}
+.dashboard-evac-row .card-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.dashboard-evac-row .card-scroll::-webkit-scrollbar-thumb {
+  background: var(--lgu-border, #dbe7ff);
+  border-radius: 999px;
+}
+
+/* Table inside the evac card — matches evac-section reference style */
+.dashboard-evac-row .card-scroll table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  min-width: unset;
+}
+.dashboard-evac-row .card-scroll thead th {
+  text-align: left;
+  padding: 10px 16px;
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 0.78rem;
+  border-bottom: 1px solid #e8ecf0;
+  background: #f8fbff;
+  white-space: nowrap;
+}
+.dashboard-evac-row .card-scroll tbody td {
+  padding: 11px 16px;
+  color: #1a1a2e;
+  border-bottom: 1px solid #f0f2f5;
+  vertical-align: middle;
+  white-space: normal;
+  word-break: break-word;
+}
+.dashboard-evac-row .card-scroll tbody tr:last-child td {
+  border-bottom: none;
+}
+.dashboard-evac-row .card-scroll tbody tr:hover {
+  background: #f0f6ff;
+}
+
+/* ===== HOTLINES CARD — soft header to match ===== */
+.dashboard-evac-row .card:has(.card-soft-header) {
+  padding: 0;
+}
+.dashboard-evac-row .card-soft-header {
+  margin: 0;
+  padding: 14px 20px;
+  background: #dbeafe;
+  color: #0f1f40;
+  font-size: 1rem;
+  font-weight: 600;
+  border-bottom: 1px solid var(--lgu-border, #dbe7ff);
+  border-radius: var(--lgu-radius, 16px) var(--lgu-radius, 16px) 0 0;
+  flex-shrink: 0;
+}
+.dashboard-evac-row #hotlines-list.card-scroll {
+  padding: 12px 20px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* ===== TABLET ===== */
+@media (max-width: 1024px) {
+  .dashboard-evac-row {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-evac-row .card-scroll,
+  .dashboard-evac-row #hotlines-list.card-scroll {
+    max-height: 220px;
+  }
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 640px) {
+  .dashboard-evac-row .card-header {
+    padding: 12px 14px 10px;
+  }
+  .dashboard-evac-row .card-scroll thead th,
+  .dashboard-evac-row .card-scroll tbody td {
+    padding: 9px 12px;
+    font-size: 0.8rem;
+  }
+  .dashboard-evac-row .card-scroll,
+  .dashboard-evac-row #hotlines-list.card-scroll {
+    max-height: 180px;
+  }
+  .dashboard-evac-row .card-soft-header {
+    font-size: 0.88rem;
+    padding: 11px 14px;
   }
 }
