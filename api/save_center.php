@@ -10,8 +10,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $center_name = trim($_POST['center_name'] ?? '');
 $capacity = intval($_POST['capacity'] ?? 0);
-$lat = $_POST['lat'] ?? '';
-$lng = $_POST['lng'] ?? '';
+$lat = $_POST['lat'] ?? null;
+$lng = $_POST['lng'] ?? null;
 $address = trim($_POST['address'] ?? '');
 
 if (!$center_name || !$capacity || !$lat || !$lng) {
@@ -19,38 +19,82 @@ if (!$center_name || !$capacity || !$lat || !$lng) {
     exit;
 }
 
-$barangay = 'Bocaue';
-$municipality = 'Bocaue';
-$province = 'Bulacan';
+/* =========================
+   1. GET DEFAULT BARANGAY
+   (fallback only)
+========================= */
+$barangay_id = null;
 
-$bgy_result = $conn->query("SELECT barangay_name FROM barangays");
-while ($bgy = $bgy_result->fetch_assoc()) {
-    if (stripos($address, $bgy['barangay_name']) !== false) {
-        $barangay = $bgy['barangay_name'];
-        break;
+if (!empty($_POST['barangay_id'])) {
+    $barangay_id = intval($_POST['barangay_id']);
+} else {
+
+    // fallback: pick first barangay if none provided
+    $res = $conn->query("SELECT barangay_id FROM barangays LIMIT 1");
+    if ($res && $row = $res->fetch_assoc()) {
+        $barangay_id = $row['barangay_id'];
     }
 }
 
-$stmt = $conn->prepare("INSERT INTO locations 
-    (location_type, location_name, barangay, municipality, province, latitude, longitude, full_address) 
-    VALUES ('Evacuation Center', ?, ?, ?, ?, ?, ?, ?)");
-$stmt->bind_param("sssssss", $center_name, $barangay, $municipality, $province, $lat, $lng, $address);
+/* =========================
+   2. INSERT LOCATION (FIXED)
+========================= */
+$stmt = $conn->prepare("
+    INSERT INTO locations 
+    (barangay_id, latitude, longitude, full_address)
+    VALUES (?, ?, ?, ?)
+");
+
+$stmt->bind_param(
+    "idds",
+    $barangay_id,
+    $lat,
+    $lng,
+    $address
+);
 
 if (!$stmt->execute()) {
-    echo json_encode(['success' => false, 'message' => 'Failed to save location: ' . $stmt->error]);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Failed to save location',
+        'error' => $stmt->error
+    ]);
     exit;
 }
 
 $location_id = $conn->insert_id;
 
-$stmt2 = $conn->prepare("INSERT INTO evacuation_centers 
-    (center_name, location_id, capacity, occupancy) 
-    VALUES (?, ?, ?, 0)");
-$stmt2->bind_param("sii", $center_name, $location_id, $capacity);
+/* =========================
+   3. INSERT EVAC CENTER
+========================= */
+$stmt2 = $conn->prepare("
+    INSERT INTO evacuation_centers 
+    (center_name, location_id, capacity, occupancy)
+    VALUES (?, ?, ?, 0)
+");
+
+$stmt2->bind_param(
+    "sii",
+    $center_name,
+    $location_id,
+    $capacity
+);
 
 if (!$stmt2->execute()) {
-    echo json_encode(['success' => false, 'message' => 'Failed to save evacuation center: ' . $stmt2->error]);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Failed to save evacuation center',
+        'error' => $stmt2->error
+    ]);
     exit;
 }
 
-echo json_encode(['success' => true, 'message' => 'Evacuation center added successfully.']);
+/* =========================
+   SUCCESS
+========================= */
+echo json_encode([
+    'success' => true,
+    'message' => 'Evacuation center added successfully',
+    'location_id' => $location_id
+]);
+?>

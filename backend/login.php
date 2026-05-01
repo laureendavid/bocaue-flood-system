@@ -11,8 +11,8 @@ if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.gc_maxlifetime', 1800);
     session_set_cookie_params([
         'lifetime' => 0,
-        'path'     => '/',
-        'secure'   => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+        'path' => '/',
+        'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
         'httponly' => true,
         'samesite' => 'Lax',
     ]);
@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // ── Read and sanitize inputs ───────────────────────────────────────────────
-$email    = trim($_POST['email']    ?? '');
+$email = trim($_POST['email'] ?? '');
 $password = trim($_POST['password'] ?? '');
 
 // ── Basic presence / format check ─────────────────────────────────────────
@@ -62,7 +62,7 @@ if (!$stmt) {
 $stmt->bind_param('s', $email);
 $stmt->execute();
 $result = $stmt->get_result();
-$user   = $result->fetch_assoc();
+$user = $result->fetch_assoc();
 $stmt->close();
 $conn->close();
 
@@ -96,9 +96,9 @@ if ((int) ($user['first_login'] ?? 1) === 0) {
 session_regenerate_id(true);
 
 // ── Store session data ─────────────────────────────────────────────────────
-$_SESSION['user_id']       = $user['user_id'];
-$_SESSION['full_name']     = $user['full_name'];
-$_SESSION['role']          = $user['role'];
+$_SESSION['user_id'] = $user['user_id'];
+$_SESSION['full_name'] = $user['full_name'];
+$_SESSION['role'] = $user['role'];
 $_SESSION['last_activity'] = time();
 
 // ── Redirect based on role ─────────────────────────────────────────────────
