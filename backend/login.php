@@ -45,6 +45,7 @@ $sql = "SELECT u.user_id,
                u.full_name,
                u.password,
                u.is_verified,
+               u.first_login,
                r.role_name AS role
         FROM   users u
         JOIN   roles r ON r.role_id = u.role_id
@@ -80,6 +81,14 @@ if (!password_verify($password, $user['password'])) {
 // ── Check account is verified ──────────────────────────────────────────────
 if (!(bool) $user['is_verified']) {
     header('Location: ../main/login.php?error=not_verified');
+    exit;
+}
+
+if ((int) ($user['first_login'] ?? 1) === 0) {
+    $_SESSION['pending_password_user_id'] = $user['user_id'];
+    $_SESSION['pending_password_email'] = $email;
+    $_SESSION['pending_password_role'] = $user['role'];
+    header('Location: ../main/set_new_password.php');
     exit;
 }
 

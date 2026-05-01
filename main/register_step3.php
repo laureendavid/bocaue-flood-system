@@ -1,360 +1,261 @@
 <?php
-/**
- * register_step3.php — Step 3: Security Setup (Password)
- *
- * SESSION KEYS SET HERE:
- *   reg_password_hashed — bcrypt hash of the password
- *   reg_step3_ok        — guard flag
- *
- * NOTE: There is no separate "username" field in the users table,
- * so reg_identifier is stored in session but NOT inserted into the DB.
- * The users table uses email as the login identifier.
- */
-
 session_start();
 
-// ── Guard ──────────────────────────────────────────────────────────────────
-if (empty($_SESSION['reg_step2_ok'])) {
-  header('Location: register_step2.php');
-  exit;
+if (empty($_SESSION['reg_step3_ok'])) {
+    header('Location: register_step1.php');
+    exit;
 }
 
-$error = '';
+require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../phpmailer/src/Exception.php';
+require_once __DIR__ . '/../phpmailer/src/PHPMailer.php';
+require_once __DIR__ . '/../phpmailer/src/SMTP.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\PHPMailer;
 
-  $access_key = $_POST['access_key'] ?? '';
-  $confirm_key = $_POST['confirm_authorization'] ?? '';
+function sendVerificationEmail(string $toEmail, string $token): void
+{
+    $verifyUrl = sprintf(
+        '%s://%s/bocaue-flood-system/main/verify-email.php?token=%s',
+        (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http',
+        $_SERVER['HTTP_HOST'] ?? 'localhost',
+        urlencode($token)
+    );
 
-  if (strlen($access_key) < 12) {
-    $error = 'Password must be at least 12 characters long.';
+    $mail = new PHPMailer(true);
+    $mail->isSMTP();
+    $mail->Host = 'smtp.gmail.com';
+    $mail->SMTPAuth = true;
+    $mail->Username = 'itsdanecalma@gmail.com';
+    $mail->Password = 'nstdugapmsfayanv';
+    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+    $mail->Port = 587;
+    $mail->Timeout = 20;
+    $mail->SMTPOptions = [
+        'ssl' => [
+            'verify_peer' => false,
+            'verify_peer_name' => false,
+            'allow_self_signed' => true,
+        ],
+    ];
 
-  } elseif (!preg_match('/[a-zA-Z]/', $access_key) || !preg_match('/[0-9]/', $access_key)) {
-    $error = 'Password must contain both letters and numbers.';
+    $mail->setFrom('itsdanecalma@gmail.com', 'Bocaue Flood Information System');
+    $mail->addAddress($toEmail);
+    $mail->isHTML(true);
+    $mail->Subject = 'Verify your BFIS account';
+    $mail->Body = 'Your account has been created.<br><br>Please verify your email by clicking this link:<br><a href="' .
+        htmlspecialchars($verifyUrl, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($verifyUrl, ENT_QUOTES, 'UTF-8') . '</a>';
+    $mail->AltBody = 'Verify your account by opening this link: ' . $verifyUrl;
+    $mail->send();
+}
 
-  } elseif ($access_key !== $confirm_key) {
-    $error = 'Passwords do not match. Please confirm your password carefully.';
+function getEmailVerificationColumns(PDO $pdo): array
+{
+    $stmt = $pdo->query('SHOW COLUMNS FROM email_verifications');
+    $columns = [];
+    foreach ($stmt as $row) {
+        $columns[] = $row['Field'];
+    }
+    return $columns;
+}
 
-  } else {
-    // Hash immediately — raw password never travels further
-    $_SESSION['reg_password_hashed'] = password_hash($access_key, PASSWORD_BCRYPT);
-    $_SESSION['reg_step3_ok'] = true;
+$email = $_SESSION['reg_completion_email'] ?? '';
+$userId = (int) ($_SESSION['reg_completion_user_id'] ?? 0);
+$mailStatus = $_SESSION['reg_mail_status'] ?? 'sent';
+$mailError = $_SESSION['reg_mail_error'] ?? '';
+$resendMessage = '';
 
-    header('Location: registerComplete.php');
-    exit;
-  }
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['resend_verification']) && $email !== '' && $userId > 0) {
+    try {
+        $token = bin2hex(random_bytes(32));
+        $verificationColumns = getEmailVerificationColumns($pdo);
+        $hasEmailColumn = in_array('email', $verificationColumns, true);
+        $hasUserIdColumn = in_array('user_id', $verificationColumns, true);
+
+        if ($hasEmailColumn) {
+            $cleanupTokenStmt = $pdo->prepare('DELETE FROM email_verifications WHERE email = ?');
+            $cleanupTokenStmt->execute([$email]);
+        } elseif ($hasUserIdColumn) {
+            $cleanupTokenStmt = $pdo->prepare('DELETE FROM email_verifications WHERE user_id = ?');
+            $cleanupTokenStmt->execute([$userId]);
+        }
+
+        if ($hasEmailColumn && $hasUserIdColumn) {
+            $tokenStmt = $pdo->prepare(
+                'INSERT INTO email_verifications (user_id, email, token, expires_at)
+                 VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR))'
+            );
+            $tokenStmt->execute([$userId, $email, $token]);
+        } elseif ($hasUserIdColumn) {
+            $tokenStmt = $pdo->prepare(
+                'INSERT INTO email_verifications (user_id, token, expires_at)
+                 VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR))'
+            );
+            $tokenStmt->execute([$userId, $token]);
+        } else {
+            throw new RuntimeException('email_verifications table missing required user_id/email columns.');
+        }
+
+        sendVerificationEmail($email, $token);
+        $resendMessage = 'A new verification email has been sent.';
+        $mailStatus = 'sent';
+        $mailError = '';
+    } catch (Throwable $throwable) {
+        $resendMessage = 'Unable to resend verification email right now.';
+        $mailStatus = 'failed';
+        $mailError = $throwable->getMessage();
+        error_log('Resend verification email failed: ' . $throwable->getMessage());
+    }
 }
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bocaue FIS — Step 3: Security Setup</title>
+  <title>Bocaue FIS - Step 3: Complete</title>
   <link rel="stylesheet" href="../main/assets/css/styles.css">
+  <style>
+    .completion-shell {
+      width: min(980px, 100%);
+      margin: 0 auto;
+      display: grid;
+      gap: 1.35rem;
+      padding: 0.5rem 0.75rem 2rem;
+    }
+    .completion-header {
+      background: linear-gradient(135deg, #0b3a75, #3f8fe8);
+      color: #fff;
+      border-radius: 16px;
+      padding: 1.2rem 1.4rem;
+    }
+    .completion-card {
+      background: #fff;
+      border: 1px solid #dbe7f3;
+      border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(18, 62, 117, 0.08);
+      padding: 1.5rem;
+      text-align: center;
+    }
+    .success-icon-modern {
+      width: 72px;
+      height: 72px;
+      border-radius: 999px;
+      margin: 0 auto 1rem;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #0ea5e9, #2563eb);
+      color: #fff;
+      box-shadow: 0 12px 20px rgba(37, 99, 235, 0.25);
+    }
+    .success-icon-modern svg {
+      width: 34px;
+      height: 34px;
+    }
+    .info-strip {
+      margin: 1rem auto 0;
+      max-width: 620px;
+      text-align: left;
+      border: 1px solid #dbe7f3;
+      background: #f7fbff;
+      border-radius: 12px;
+      padding: 0.9rem 1rem;
+      font-size: 0.88rem;
+      color: #27486f;
+    }
+    .email-pill {
+      margin-top: 0.75rem;
+      display: inline-block;
+      background: #eef6ff;
+      border: 1px solid #cddff5;
+      color: #1f4f86;
+      border-radius: 999px;
+      padding: 0.35rem 0.8rem;
+      font-weight: 700;
+      font-size: 0.82rem;
+      word-break: break-all;
+    }
+    .completion-actions {
+      margin-top: 1.2rem;
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    @media (max-width: 900px) {
+      .completion-shell {
+        padding: 0.3rem 0.2rem 1.2rem;
+      }
+    }
+  </style>
 </head>
-
 <body>
-
   <div class="reg-page">
-
-    <!-- ══ Sidebar Progress ══ -->
     <aside class="reg-sidebar">
-      <div class="sidebar-brand">
-        <div class="brand-icon">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z" />
-          </svg>
-        </div>
-        <div>
-          <div class="brand-name">Bocaue Flood Information System</div>
-        </div>
-      </div>
-
-      <p class="sidebar-section-label">Registration<br>Secure your Account</p>
-
+      <div class="sidebar-brand"><div class="brand-name">Bocaue Flood Information System</div></div>
+      <p class="sidebar-section-label">Registration<br>Completed</p>
       <ul class="sidebar-steps">
-        <li class="step-item done">
-          <div class="step-dot">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </div>
-          <div class="step-meta">
-            <span class="step-label">Verify</span>
-            <span class="step-desc">Phone &amp; OTP</span>
-          </div>
-        </li>
-        <li class="step-item done">
-          <div class="step-dot">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </div>
-          <div class="step-meta">
-            <span class="step-label">Profile</span>
-            <span class="step-desc">Personal details</span>
-          </div>
-        </li>
-        <li class="step-item active">
-          <div class="step-dot">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z" />
-            </svg>
-          </div>
-          <div class="step-meta">
-            <span class="step-label">Security</span>
-            <span class="step-desc">Username &amp; password</span>
-          </div>
-        </li>
-        <li class="step-item pending">
-          <div class="step-dot">4</div>
-          <div class="step-meta">
-            <span class="step-label">Complete</span>
-            <span class="step-desc">Account created</span>
-          </div>
-        </li>
+        <li class="step-item done"><div class="step-dot">1</div><span class="step-label">Profile</span></li>
+        <li class="step-item done"><div class="step-dot">2</div><span class="step-label">Password</span></li>
+        <li class="step-item active"><div class="step-dot">3</div><span class="step-label">Complete</span></li>
       </ul>
-
-      <div class="sidebar-tip">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="8" x2="12" y2="12" />
-          <line x1="12" y1="16" x2="12.01" y2="16" />
-        </svg>
-        <p>Use a strong password with letters, numbers, and special characters for best security.</p>
-      </div>
     </aside>
-
-    <!-- ══ Main Content ══ -->
     <main class="reg-main">
-
-      <div class="reg-header">
-        <p class="step-tag">Step 03 of 03</p>
-        <h1 class="reg-title fade-up">Secure your Account</h1>
-        <p class="reg-subtitle fade-up">Choose a strong password to protect your account.</p>
-
-        <div class="progress-bar-wrap fade-up fade-up-delay-1">
-          <div class="progress-track">
-            <div class="progress-fill" style="width: 90%;"></div>
+      <div class="completion-shell">
+        <section class="completion-header fade-up">
+          <p class="step-tag" style="color:#cfe5ff;">Step 03 of 03</p>
+          <h1 class="reg-title" style="color:#fff; margin-bottom:0.35rem;">Registration Completed</h1>
+          <p style="margin:0; color:#e5f1ff; font-size:0.92rem;">Your profile and password setup are complete. Final step: verify your email.</p>
+          <div class="progress-bar-wrap" style="margin-top:0.85rem;">
+            <div class="progress-track"><div class="progress-fill" style="width: 100%;"></div></div>
+            <span class="progress-pct">100% Complete</span>
           </div>
-          <span class="progress-pct">Almost done!</span>
-        </div>
-      </div>
+        </section>
 
-      <!-- Error alert -->
-      <?php if (!empty($error)): ?>
-        <div class="alert alert-danger fade-up" style="max-width:800px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-          <?php echo htmlspecialchars($error); ?>
-          <button class="alert-dismiss" type="button">&#x2715;</button>
-        </div>
-      <?php endif; ?>
-
-      <div class="security-card-grid fade-up fade-up-delay-1" style="max-width:800px;">
-
-        <!-- Left: form -->
-        <div class="reg-card">
-
-          <form method="POST" action="register_step3.php" novalidate id="step3Form">
-
-            <!-- Password -->
-            <div class="form-group">
-              <label class="form-label" for="access_key">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="11" width="18" height="11" rx="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-                Password
-              </label>
-              <div class="input-wrap">
-                <span class="input-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                </span>
-                <input type="password" id="access_key" name="access_key" class="form-control"
-                  placeholder="Min. 12 characters" required autocomplete="new-password">
-                <button type="button" class="toggle-pass" aria-label="Toggle password visibility">
-                  <span class="icon-eye" style="display:block;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                  </span>
-                  <span class="icon-eye-off" style="display:none;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path
-                        d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                      <line x1="1" y1="1" x2="23" y2="23" />
-                    </svg>
-                  </span>
-                </button>
-              </div>
-
-              <!-- Strength meter -->
-              <div class="strength-wrap" style="margin-top:0.5rem;">
-                <div class="strength-bar">
-                  <div class="strength-fill" id="strengthFill" style="width:0%;"></div>
-                </div>
-                <span class="strength-text" id="strengthText"></span>
-              </div>
-            </div>
-
-            <!-- Confirm Password -->
-            <div class="form-group">
-              <label class="form-label" for="confirm_authorization">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="11" width="18" height="11" rx="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-                Confirm Password
-              </label>
-              <div class="input-wrap">
-                <span class="input-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                </span>
-                <input type="password" id="confirm_authorization" name="confirm_authorization" class="form-control"
-                  placeholder="Re-enter your password" required autocomplete="new-password">
-                <button type="button" class="toggle-pass" aria-label="Toggle confirm password visibility">
-                  <span class="icon-eye" style="display:block;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                  </span>
-                  <span class="icon-eye-off" style="display:none;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path
-                        d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                      <line x1="1" y1="1" x2="23" y2="23" />
-                    </svg>
-                  </span>
-                </button>
-              </div>
-              <p id="matchHint" class="form-hint" style="display:none; margin-top:0.35rem;"></p>
-            </div>
-
-            <div class="reg-nav" style="margin-top:1.5rem;">
-              <a href="register_step2.php" class="btn-back">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
-                Go Back
-              </a>
-              <button type="submit" class="btn-next" id="submitBtn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z" />
-                </svg>
-                Complete Registration
-              </button>
-            </div>
-
-          </form>
-        </div><!-- /.reg-card -->
-
-        <!-- Right: info panels -->
-        <div style="display:flex; flex-direction:column; gap:1rem;">
-
-          <div class="security-info-card">
-            <h4>End-to-End Protection</h4>
-            <p>
-              Your account is protected with bcrypt hashing.
-              We never store raw passwords — only a secure hash.
-            </p>
-          </div>
-
-          <div class="security-info-card">
-            <h4 style="margin-bottom:0.75rem;">Password Requirements</h4>
-            <ul class="req-list">
-              <li class="unmet" id="req-min">
-                <svg class="req-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="9" />
-                </svg>
-                Minimum 12 characters
-              </li>
-              <li class="unmet" id="req-alpha">
-                <svg class="req-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="9" />
-                </svg>
-                Letters &amp; numbers (alphanumeric)
-              </li>
-              <li class="unmet" id="req-special">
-                <svg class="req-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="9" />
-                </svg>
-                Special characters (!%&amp;@#)
-              </li>
-            </ul>
-          </div>
-
-          <div style="
-          background: linear-gradient(135deg, var(--navy-mid), var(--navy));
-          border-radius: var(--radius-lg); padding: 1.25rem;
-          display: flex; flex-direction: column; align-items: center;
-          justify-content: center; min-height: 100px; text-align: center;
-        ">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(186,230,253,0.7)"
-              stroke-width="1.5">
-              <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z" />
-              <polyline points="9 12 11 14 15 10" />
+        <section class="completion-card fade-up fade-up-delay-1">
+          <div class="success-icon-modern">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12" />
             </svg>
-            <p style="font-size:0.75rem; color:rgba(186,230,253,0.8); margin-top:0.5rem; line-height:1.4;">
-              Final Step — your account<br>will be saved on the next page.
-            </p>
+          </div>
+          <h2 class="reg-title" style="font-size:1.6rem; margin-bottom:0.55rem;">Account Created Successfully</h2>
+          <p class="complete-desc" style="max-width:650px; margin:0 auto;">
+            Your account has been created. We have sent a verification email to your email address.
+            Please verify your email before logging in.
+          </p>
+          <?php if ($mailStatus === 'failed'): ?>
+            <div class="alert alert-danger" style="max-width:650px;margin:0.9rem auto 0;" role="alert">
+              We could not send the verification email automatically. Please resend below.
+            </div>
+          <?php endif; ?>
+          <?php if ($resendMessage !== ''): ?>
+            <div class="alert <?php echo $mailStatus === 'sent' ? 'alert-success' : 'alert-danger'; ?>" style="max-width:650px;margin:0.9rem auto 0;" role="alert">
+              <?php echo htmlspecialchars($resendMessage); ?>
+            </div>
+          <?php endif; ?>
+          <?php if ($email !== ''): ?>
+            <div class="email-pill">Verification email sent to: <?php echo htmlspecialchars($email); ?></div>
+          <?php endif; ?>
+
+          <div class="info-strip">
+            <strong>What happens next?</strong><br>
+            Open your email inbox and click the verification link to activate your account.
+            You will only be able to log in after email verification is completed.
           </div>
 
-        </div><!-- /right column -->
-
-      </div><!-- /.security-card-grid -->
-
+          <div class="completion-actions">
+            <form method="POST" action="register_step3.php" style="display:inline;">
+              <input type="hidden" name="resend_verification" value="1">
+              <button type="submit" class="btn-back">Resend Verification Email</button>
+            </form>
+            <a href="register_step1.php" class="btn-back" style="text-decoration:none;">Register Another Account</a>
+            <a href="login.php" class="btn-next" style="text-decoration:none;">Go to Login</a>
+          </div>
+        </section>
+      </div>
     </main>
-
-  </div><!-- /.reg-page -->
-
+  </div>
   <script src="../main/assets/js/script.js"></script>
-  <script>
-    (function () {
-      'use strict';
-
-      var passInput = document.getElementById('access_key');
-      var confirmInput = document.getElementById('confirm_authorization');
-      var matchHint = document.getElementById('matchHint');
-      var submitBtn = document.getElementById('submitBtn');
-
-      function checkMatch() {
-        if (!confirmInput.value) { matchHint.style.display = 'none'; return; }
-        matchHint.style.display = 'block';
-        if (passInput.value === confirmInput.value) {
-          matchHint.textContent = '✓ Passwords match.';
-          matchHint.style.color = 'var(--success)';
-        } else {
-          matchHint.textContent = '✗ Passwords do not match yet.';
-          matchHint.style.color = 'var(--danger)';
-        }
-      }
-
-      if (passInput) passInput.addEventListener('input', checkMatch);
-      if (confirmInput) confirmInput.addEventListener('input', checkMatch);
-
-      var form = document.getElementById('step3Form');
-      if (form && submitBtn) {
-        form.addEventListener('submit', function () {
-          submitBtn.disabled = true;
-          submitBtn.innerHTML = 'Saving&hellip;';
-        });
-      }
-    })();
-  </script>
 </body>
-
 </html>

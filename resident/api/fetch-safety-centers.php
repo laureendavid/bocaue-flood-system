@@ -4,6 +4,7 @@
    Place in: resident/api/fetch-safety-centers.php
    ============================================================= */
 header('Content-Type: application/json');
+mysqli_report(MYSQLI_REPORT_OFF);
 
 // ── Step 1: find and load db.php ──────────────────────────────
 // Adjust this path if your folder structure is different.
@@ -37,14 +38,15 @@ $sql = "
         ec.capacity,
         ec.occupancy,
         l.full_address,
-        l.barangay,
-        l.municipality,
-        l.province,
+        b.barangay_name AS barangay,
+        b.municipality,
+        b.province,
         l.latitude,
         l.longitude
     FROM evacuation_centers ec
     JOIN locations l ON ec.location_id = l.location_id
-    ORDER BY l.barangay ASC, ec.center_name ASC
+    LEFT JOIN barangays b ON l.barangay_id = b.barangay_id
+    ORDER BY b.barangay_name ASC, ec.center_name ASC
 ";
 
 $result = $conn->query($sql);
@@ -60,18 +62,22 @@ if (!$result) {
 // ── Step 4: build response ─────────────────────────────────────
 $centers = [];
 while ($row = $result->fetch_assoc()) {
+    $barangay = (string) ($row['barangay'] ?? '');
+    $municipality = (string) ($row['municipality'] ?? 'Bocaue');
+    $addressFallback = trim($barangay . ', ' . $municipality, ', ');
+    $address = $row['full_address'] ?: $addressFallback;
     $centers[] = [
         'center_id'    => (int) $row['center_id'],
         'center_name'  => $row['center_name'],
         'capacity'     => (int) $row['capacity'],
         'occupancy'    => (int) $row['occupancy'],
-        'full_address' => $row['full_address']
-                          ?: ($row['barangay'] . ', ' . $row['municipality']),
-        'barangay'     => $row['barangay'],
-        'municipality' => $row['municipality'],
-        'province'     => $row['province'],
-        'latitude'     => $row['latitude'],
-        'longitude'    => $row['longitude'],
+        'address'      => $address,
+        'full_address' => $address,
+        'barangay'     => $barangay,
+        'municipality' => $municipality,
+        'province'     => (string) ($row['province'] ?? 'Bulacan'),
+        'latitude'     => $row['latitude'] !== null ? (float) $row['latitude'] : null,
+        'longitude'    => $row['longitude'] !== null ? (float) $row['longitude'] : null,
         'contact'      => null, // add a contact_number column or hotline join here later
     ];
 }

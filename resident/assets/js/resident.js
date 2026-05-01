@@ -1666,22 +1666,23 @@ document.addEventListener("DOMContentLoaded", () => {
 (function () {
   "use strict";
 
-  /* ----------------------------------------------------------
-     Status config
-  ---------------------------------------------------------- */
   var CFG = {
-    available: { label: "Available", dot: "g", badge: "available", bar: "#22c55e", pin: "#22c55e" },
-    limited:   { label: "Limited",   dot: "y", badge: "limited",   bar: "#f59e0b", pin: "#f59e0b" },
-    full:      { label: "Full",      dot: "r", badge: "full",      bar: "#ef4444", pin: "#ef4444" },
+    available: { label: "Available", emoji: "🟢", dot: "g", badge: "available", bar: "#22c55e", pin: "#22c55e" },
+    limited:   { label: "Nearly Full", emoji: "🟡", dot: "y", badge: "limited", bar: "#f59e0b", pin: "#f59e0b" },
+    full:      { label: "Full", emoji: "🔴", dot: "r", badge: "full", bar: "#ef4444", pin: "#ef4444" },
   };
 
   var allCenters = [];
-  var mapMarkers = [];
+  var filteredCenters = [];
+  var markerLayer = null;
+  var markerByCenterId = {};
+  var selectedCenterId = null;
+  var activeSearchQuery = "";
+  var userPosition = null;
+  var userLocationMarker = null;
   var map        = null;
+  var refreshIntervalId = null;
 
-  /* ----------------------------------------------------------
-     Derive status from occupancy / capacity
-  ---------------------------------------------------------- */
   function getStatus(occupancy, capacity) {
     if (capacity <= 0) return "available";
     var pct = (occupancy / capacity) * 100;
@@ -1690,25 +1691,24 @@ document.addEventListener("DOMContentLoaded", () => {
     return "available";
   }
 
-  /* ----------------------------------------------------------
-     SVG drop-pin icon
-  ---------------------------------------------------------- */
-  function makePin(color) {
+  function makePin(color, isSelected) {
+    var size = isSelected ? 34 : 28;
+    var height = isSelected ? 44 : 38;
+    var cx = isSelected ? 17 : 16;
+    var cy = isSelected ? 17 : 16;
+    var cr = isSelected ? 8 : 7;
     return L.divIcon({
       className: "",
-      html: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="38" viewBox="0 0 32 42">' +
-              '<path d="M16 0C7.163 0 0 7.163 0 16c0 10.5 16 26 16 26S32 26.5 32 16C32 7.163 24.837 0 16 0z" fill="' + color + '"/>' +
-              '<circle cx="16" cy="16" r="7" fill="white"/>' +
+      html: '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + height + '" viewBox="0 0 32 42">' +
+              '<path d="M16 0C7.163 0 0 7.163 0 16c0 10.5 16 26 16 26S32 26.5 32 16C32 7.163 24.837 0 16 0z" fill="' + color + '" stroke="' + (isSelected ? "#0f172a" : "none") + '" stroke-width="' + (isSelected ? "1.2" : "0") + '"/>' +
+              '<circle cx="' + cx + '" cy="' + cy + '" r="' + cr + '" fill="white"/>' +
             '</svg>',
-      iconSize:    [28, 38],
-      iconAnchor:  [14, 38],
+      iconSize:    [size, height],
+      iconAnchor:  [Math.round(size / 2), height],
       popupAnchor: [0, -40],
     });
   }
 
-  /* ----------------------------------------------------------
-     Init Leaflet map
-  ---------------------------------------------------------- */
   function initMap() {
     var mapEl = document.getElementById("safety-map");
     if (!mapEl || typeof L === "undefined") return;
@@ -1720,6 +1720,11 @@ document.addEventListener("DOMContentLoaded", () => {
       maxZoom: 19,
     }).setView(BOCAUE_CENTER, 14);
 
+    if (BOCAUE_BOUNDS) {
+      map.options.maxBoundsViscosity = 1.0;
+      map.setMaxBounds(BOCAUE_BOUNDS);
+    }
+
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap contributors",
       maxZoom: 19,
@@ -1727,65 +1732,145 @@ document.addEventListener("DOMContentLoaded", () => {
 
     applyBocaueBoundaryMask(map);
 
-    var userLocationMarker = null;
     addUseCurrentLocationButton(map, function onCurrentLocation(lat, lng) {
+      userPosition = [lat, lng];
+
       if (userLocationMarker) {
         userLocationMarker.setLatLng([lat, lng]);
       } else {
         userLocationMarker = L.marker([lat, lng]).addTo(map);
       }
       userLocationMarker.bindPopup("Your current location").openPopup();
+      renderCards(filteredCenters);
       map.flyTo([lat, lng], 16, { duration: 0.7 });
     });
 
     setTimeout(function () { map.invalidateSize(); }, 300);
   }
 
-  /* ----------------------------------------------------------
-     Refresh map markers
-  ---------------------------------------------------------- */
-  function refreshMarkers() {
-    mapMarkers.forEach(function (m) { if (map) map.removeLayer(m); });
-    mapMarkers = [];
+  function initMarkerLayer() {
+    if (!map) return;
+    if (markerLayer) {
+      map.removeLayer(markerLayer);
+      markerLayer = null;
+    }
+    markerLayer = typeof L.markerClusterGroup === "function"
+      ? L.markerClusterGroup({
+          showCoverageOnHover: false,
+          spiderfyOnMaxZoom: true,
+          maxClusterRadius: 45,
+        })
+      : L.layerGroup();
+    markerLayer.addTo(map);
+  }
 
-    allCenters.forEach(function (c, i) {
-      if (!c.lat || !c.lng || !map) { mapMarkers.push(null); return; }
-      var s = CFG[c.status] || CFG.available;
-      var m = L.marker([parseFloat(c.lat), parseFloat(c.lng)], {
-        icon: makePin(s.pin),
-      }).bindPopup(
-        '<div style="font-family:Inter,sans-serif;min-width:150px;">' +
-          '<strong style="font-size:0.83rem;color:#0f172a;display:block;margin-bottom:2px;">' + escHtml(c.name) + '</strong>' +
-          '<span style="font-size:0.7rem;color:#64748b;">' + escHtml(c.address) + '</span><br>' +
-          '<span style="font-size:0.7rem;font-weight:700;color:' + s.pin + ';margin-top:4px;display:inline-block;">● ' + s.label + '</span>' +
-        '</div>'
-      ).addTo(map);
+  function updateCountPill(total, shown) {
+    var el = document.getElementById("sc-count-pill");
+    if (!el) return;
+    el.textContent = shown + " of " + total + " centers";
+  }
 
-      (function (idx) {
-        m.on("click", function () { highlightCard(idx); });
-      })(i);
+  function getOccupancyPct(center) {
+    if (!center.capacity) return 0;
+    var pct = Math.round((center.occupancy / center.capacity) * 100);
+    return Math.max(0, Math.min(pct, 100));
+  }
 
-      mapMarkers.push(m);
+  function getDistanceLabel(center) {
+    if (!map || !userPosition || !center.lat || !center.lng) return "";
+    var meters = map.distance(userPosition, [center.lat, center.lng]);
+    if (!isFinite(meters)) return "";
+    if (meters >= 1000) return (meters / 1000).toFixed(2) + " km away";
+    return Math.round(meters) + " m away";
+  }
+
+  function buildPopup(center) {
+    var s = CFG[center.status] || CFG.available;
+    var pct = getOccupancyPct(center);
+    return '<div style="font-family:Inter,sans-serif;min-width:190px;">' +
+      '<h4 class="sc-popup-title">' + escapeHtml(center.name) + '</h4>' +
+      '<p class="sc-popup-meta">' + escapeHtml(center.address) + '</p>' +
+      '<p class="sc-popup-meta">Capacity: ' + center.capacity + ' | Occupancy: ' + center.occupancy + ' (' + pct + '%)</p>' +
+      (userPosition ? '<p class="sc-popup-meta">Distance: ' + escapeHtml(getDistanceLabel(center)) + '</p>' : '') +
+      '<span class="sc-popup-status ' + center.status + '">' + s.emoji + ' ' + s.label + '</span>' +
+    '</div>';
+  }
+
+  function clearSelectedCard() {
+    document.querySelectorAll(".center-card").forEach(function (el) {
+      el.classList.remove("active");
+      el.classList.remove("selected");
     });
   }
 
-  /* ----------------------------------------------------------
-     Highlight a card
-  ---------------------------------------------------------- */
-  function highlightCard(idx) {
-    document.querySelectorAll(".center-card").forEach(function (el) {
-      el.classList.remove("active");
-    });
-    var card = document.querySelector('.center-card[data-idx="' + idx + '"]');
+  function highlightCard(centerId) {
+    clearSelectedCard();
+    var card = document.querySelector('.center-card[data-id="' + centerId + '"]');
     if (card) {
       card.classList.add("active");
+      card.classList.add("selected");
       card.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
   }
 
-  /* ----------------------------------------------------------
-     Render card list
-  ---------------------------------------------------------- */
+  function updateMarkerIcons() {
+    Object.keys(markerByCenterId).forEach(function (id) {
+      var marker = markerByCenterId[id];
+      var center = allCenters.find(function (item) {
+        return String(item.center_id) === String(id);
+      });
+      if (!marker || !center) return;
+      var style = CFG[center.status] || CFG.available;
+      marker.setIcon(makePin(style.pin, String(center.center_id) === String(selectedCenterId)));
+    });
+  }
+
+  function focusCenter(centerId, openPopup) {
+    var center = allCenters.find(function (item) {
+      return String(item.center_id) === String(centerId);
+    });
+    if (!center) return;
+    selectedCenterId = center.center_id;
+    highlightCard(selectedCenterId);
+    updateMarkerIcons();
+    var marker = markerByCenterId[String(center.center_id)];
+    if (marker && map && center.lat && center.lng) {
+      map.flyTo([center.lat, center.lng], 16, { duration: 0.7 });
+      if (openPopup) marker.openPopup();
+    }
+  }
+
+  function renderMarkers(data, fitToResults) {
+    if (!map || !markerLayer) return;
+    markerLayer.clearLayers();
+    markerByCenterId = {};
+
+    var boundsPoints = [];
+    data.forEach(function (center) {
+      if (!center.lat || !center.lng) return;
+      var style = CFG[center.status] || CFG.available;
+      var marker = L.marker([center.lat, center.lng], {
+        icon: makePin(style.pin, String(center.center_id) === String(selectedCenterId)),
+      }).bindPopup(buildPopup(center));
+
+      marker.on("click", function () {
+        focusCenter(center.center_id, false);
+      });
+
+      markerLayer.addLayer(marker);
+      markerByCenterId[String(center.center_id)] = marker;
+      boundsPoints.push([center.lat, center.lng]);
+    });
+
+    if (fitToResults && boundsPoints.length && map) {
+      if (boundsPoints.length === 1) {
+        map.flyTo(boundsPoints[0], 16, { duration: 0.7 });
+      } else {
+        map.fitBounds(boundsPoints, { padding: [24, 24], maxZoom: 16 });
+      }
+    }
+  }
+
   function renderCards(data) {
     var list  = document.getElementById("sc-list");
     var noRes = document.getElementById("sc-no-results");
@@ -1800,26 +1885,25 @@ document.addEventListener("DOMContentLoaded", () => {
     if (noRes) noRes.style.display = "none";
 
     data.forEach(function (c) {
-      var idx = allCenters.indexOf(c);
       var s   = CFG[c.status] || CFG.available;
-      var pct = c.capacity > 0
-        ? Math.min(Math.round((c.occupancy / c.capacity) * 100), 100)
-        : 0;
+      var pct = getOccupancyPct(c);
       var cardStatusClass = c.status !== "available" ? " " + c.status : "";
+      var distanceLabel = getDistanceLabel(c);
 
       var card = document.createElement("div");
       card.className   = "center-card" + cardStatusClass;
-      card.dataset.idx = idx;
+      card.dataset.id = c.center_id;
 
       card.innerHTML =
         '<div class="center-top">' +
           '<div class="center-name">' + escHtml(c.name) + '</div>' +
-          '<span class="cap-badge ' + s.badge + '">' + s.label + '</span>' +
+          '<span class="cap-badge ' + s.badge + '">' + s.emoji + " " + s.label + '</span>' +
         '</div>' +
         '<div class="center-addr">' +
           '<span class="material-symbols-outlined">location_on</span>' +
           escHtml(c.address) +
         '</div>' +
+        (distanceLabel ? '<div class="center-distance">Distance: ' + escHtml(distanceLabel) + '</div>' : "") +
         '<div class="cap-row">' +
           '<div class="cap-bar-bg">' +
             '<div class="cap-bar-fill" style="width:' + pct + '%;background:' + s.bar + ';"></div>' +
@@ -1828,7 +1912,7 @@ document.addEventListener("DOMContentLoaded", () => {
         '</div>' +
         '<div class="center-bottom">' +
           '<div class="status-pill ' + c.status + '">' +
-            '<div class="sdot ' + s.dot + '"></div>' + s.label +
+            '<div class="sdot ' + s.dot + '"></div>' + s.emoji + " " + s.label +
           '</div>' +
           (c.contact
             ? '<a class="center-phone" href="tel:' + escHtml(c.contact.replace(/\D/g, "")) + '">' +
@@ -1838,23 +1922,36 @@ document.addEventListener("DOMContentLoaded", () => {
         '</div>';
 
       card.addEventListener("click", function () {
-        if (map && c.lat && c.lng) {
-          map.flyTo([parseFloat(c.lat), parseFloat(c.lng)], 16, { duration: 0.7 });
-          if (mapMarkers[idx]) mapMarkers[idx].openPopup();
-        }
-        highlightCard(idx);
+        focusCenter(c.center_id, true);
       });
 
       list.appendChild(card);
+
+      if (String(c.center_id) === String(selectedCenterId)) {
+        card.classList.add("active");
+        card.classList.add("selected");
+      }
     });
   }
 
-  /* ----------------------------------------------------------
-     Fetch centers from API
-  ---------------------------------------------------------- */
-  function fetchCenters() {
-    showLoading(true);
-    hideError();
+  function applyFilter(opts) {
+    var fitToResults = opts && opts.fitToResults;
+    var query = activeSearchQuery.toLowerCase().trim();
+    filteredCenters = allCenters.filter(function (center) {
+      if (!query) return true;
+      return center.name.toLowerCase().includes(query)
+        || center.address.toLowerCase().includes(query);
+    });
+    renderCards(filteredCenters);
+    renderMarkers(filteredCenters, !!fitToResults);
+    updateCountPill(allCenters.length, filteredCenters.length);
+  }
+
+  function fetchCenters(silent) {
+    if (!silent) {
+      showLoading(true);
+      hideError();
+    }
 
     fetch("api/fetch-safety-centers.php")
       .then(function (r) {
@@ -1862,46 +1959,41 @@ document.addEventListener("DOMContentLoaded", () => {
         return r.json();
       })
       .then(function (json) {
-        showLoading(false);
+        if (!silent) showLoading(false);
 
-        // API returned an error message — show it directly
         if (!json.success) {
           showError("Error: " + (json.message || "Unknown error from server."));
           return;
         }
 
-        // Success but no data yet — show friendly empty state
-        if (!json.data || json.data.length === 0) {
-          var noRes = document.getElementById("sc-no-results");
-          if (noRes) {
-            noRes.textContent = "No safety centers have been added yet.";
-            noRes.style.display = "block";
-          }
-          return;
-        }
-
-        allCenters = json.data.map(function (c) {
+        allCenters = (json.data || []).map(function (c) {
           var occ = parseInt(c.occupancy) || 0;
           var cap = parseInt(c.capacity)  || 0;
           return {
             center_id: c.center_id,
             name:      c.center_name,
-            address:   c.full_address || (c.barangay + ", " + c.municipality),
+            address:   c.address || c.full_address || (c.barangay + ", " + c.municipality),
             contact:   c.contact || "",
             occupancy: occ,
             capacity:  cap,
-            lat:       c.latitude,
-            lng:       c.longitude,
+            lat:       c.latitude !== null && c.latitude !== "" ? parseFloat(c.latitude) : null,
+            lng:       c.longitude !== null && c.longitude !== "" ? parseFloat(c.longitude) : null,
             status:    getStatus(occ, cap),
           };
         });
 
-        refreshMarkers();
-        renderCards(allCenters);
+        applyFilter({ fitToResults: !silent });
+
+        if (!allCenters.length) {
+          var noRes = document.getElementById("sc-no-results");
+          if (noRes) {
+            noRes.textContent = "No safety centers have been added yet.";
+            noRes.style.display = "block";
+          }
+        }
       })
       .catch(function (err) {
-        showLoading(false);
-        // Show the actual JS/network error so it's easier to debug
+        if (!silent) showLoading(false);
         showError(
           "Could not load safety centers. " +
           "Check that api/fetch-safety-centers.php exists and db.php path is correct. " +
@@ -1910,9 +2002,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
 
-  /* ----------------------------------------------------------
-     UI helpers
-  ---------------------------------------------------------- */
   function showLoading(show) {
     var el = document.getElementById("sc-loading");
     if (el) el.style.display = show ? "flex" : "none";
@@ -1939,30 +2028,28 @@ document.addEventListener("DOMContentLoaded", () => {
       .replace(/"/g, "&quot;");
   }
 
-  /* ----------------------------------------------------------
-     Search
-  ---------------------------------------------------------- */
   function initSearch() {
     var input = document.getElementById("sc-search-input");
     if (!input) return;
+
     input.addEventListener("input", function () {
-      var q = input.value.toLowerCase().trim();
-      var filtered = allCenters.filter(function (c) {
-        return c.name.toLowerCase().includes(q) ||
-               c.address.toLowerCase().includes(q);
-      });
-      renderCards(filtered);
+      activeSearchQuery = input.value || "";
+      applyFilter({ fitToResults: false });
+      if (activeSearchQuery.trim() && filteredCenters.length === 1) {
+        focusCenter(filteredCenters[0].center_id, true);
+      }
     });
   }
 
-  /* ----------------------------------------------------------
-     Boot
-  ---------------------------------------------------------- */
   function init() {
     if (!document.getElementById("safety-map")) return;
     initMap();
+    initMarkerLayer();
     initSearch();
-    fetchCenters();
+    fetchCenters(false);
+    refreshIntervalId = setInterval(function () {
+      fetchCenters(true);
+    }, 30000);
   }
 
   if (document.readyState === "loading") {
