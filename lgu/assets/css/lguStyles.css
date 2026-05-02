@@ -2052,3 +2052,48 @@ body.sidebar-mobile-open {
     padding: 11px 14px;
   }
 }
+.dashboard-bottom-row {
+  display: grid;
+
+  grid-template-columns: 1fr; /* was: 1fr 1fr */
+
+  gap: 20px;
+
+  padding-bottom: 32px;
+}
+
+.stat-card {
+  position: relative;
+
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 4px;
+}
+
+/* Add these two classes to your PHP output on the stat cards */
+
+.stat-card.pending::before {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.stat-card.approved::before {
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+}
+
+.stat-card.pending .stat-value {
+  color: #d97706;
+}
+
+.stat-card.approved .stat-value {
+  color: #16a34a;
+}
