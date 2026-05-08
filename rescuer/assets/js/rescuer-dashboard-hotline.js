@@ -5,41 +5,61 @@
     var container = document.getElementById("dash-hotlines-list");
     if (!container) return;
 
+    // Show loading state
+    container.innerHTML = "<p class='rdb-empty'>Loading hotlines...</p>";
+
     fetch("/soe/api/fetch_hotlines.php")
       .then(function (res) {
         return res.json();
       })
       .then(function (json) {
-        if (!json.success || Object.keys(json.data).length === 0) {
+        if (
+          !json.success ||
+          !json.data ||
+          Object.keys(json.data).length === 0
+        ) {
           container.innerHTML =
-            "<li class='empty-state-inline'>No hotlines available.</li>";
+            "<p class='rdb-empty'>No hotlines available.</p>";
           return;
         }
 
         var html = "";
+
         Object.entries(json.data).forEach(function ([barangay, entries]) {
-          html += "<li class='hotline-district'>";
-          html += "<div class='hotline-district-name'>" + barangay + "</div>";
+          html += "<div class='rdb-hotline-district'>";
+          html += "<p class='rdb-hotline-name'>" + escHtml(barangay) + "</p>";
+
           entries.forEach(function (e) {
             html +=
-              "<div class='hotline-row'>" +
-              "<span class='hotline-type'>" +
-              e.hotline_name +
+              "<div class='rdb-hotline-row'>" +
+              "<span class='rdb-hotline-type'>" +
+              escHtml(e.hotline_name) +
               "</span>" +
-              "<span class='hotline-number' style='color:#1a1a2e;font-family:monospace;font-weight:500;'>" +
-              e.contact_number +
+              "<span class='rdb-hotline-number'>" +
+              escHtml(e.contact_number) +
               "</span>" +
               "</div>";
           });
-          html += "</li>";
+
+          html += "</div>";
         });
 
         container.innerHTML = html;
       })
-      .catch(function () {
+      .catch(function (err) {
+        console.error("Failed to load hotlines:", err);
         container.innerHTML =
-          "<li class='empty-state-inline'>Failed to load hotlines.</li>";
+          "<p class='rdb-empty'>Failed to load hotlines.</p>";
       });
+  }
+
+  function escHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
   }
 
   function init() {

@@ -122,6 +122,7 @@ $pageIcons = [
   <script src="assets/js/rescuer-hotlines.js"></script>
   <script src="assets/js/rescuer-dashboard-hotline.js"></script>
   <script src="assets/js/flood-map-rescuer.js"></script>
+  <script src="assets/js/rescuer_dashboard_stats.js"></script>
 </body>
 
 </html>

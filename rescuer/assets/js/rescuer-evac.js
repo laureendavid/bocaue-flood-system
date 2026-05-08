@@ -5,28 +5,47 @@
   var allCenters = [];
   var BOCAUE_BOUNDS = L.latLngBounds([14.747, 120.865], [14.845, 120.99]);
   var BOCAUE_POLYGON = [
-    [14.844, 120.888], [14.839, 120.924], [14.831, 120.963], [14.816, 120.986],
-    [14.787, 120.988], [14.764, 120.975], [14.751, 120.948], [14.748, 120.91],
-    [14.757, 120.882], [14.779, 120.867], [14.809, 120.868],
+    [14.844, 120.888],
+    [14.839, 120.924],
+    [14.831, 120.963],
+    [14.816, 120.986],
+    [14.787, 120.988],
+    [14.764, 120.975],
+    [14.751, 120.948],
+    [14.748, 120.91],
+    [14.757, 120.882],
+    [14.779, 120.867],
+    [14.809, 120.868],
   ];
 
   function pointInsideBocaue(lat, lng) {
     var x = lng;
     var y = lat;
     var inside = false;
-    for (var i = 0, j = BOCAUE_POLYGON.length - 1; i < BOCAUE_POLYGON.length; j = i++) {
+    for (
+      var i = 0, j = BOCAUE_POLYGON.length - 1;
+      i < BOCAUE_POLYGON.length;
+      j = i++
+    ) {
       var yi = BOCAUE_POLYGON[i][0];
       var xi = BOCAUE_POLYGON[i][1];
       var yj = BOCAUE_POLYGON[j][0];
       var xj = BOCAUE_POLYGON[j][1];
-      var intersects = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi + Number.EPSILON) + xi;
+      var intersects =
+        yi > y !== yj > y &&
+        x < ((xj - xi) * (y - yi)) / (yj - yi + Number.EPSILON) + xi;
       if (intersects) inside = !inside;
     }
     return inside;
   }
 
   function applyBoundaryLayer(map) {
-    var worldRing = [[-90, -180], [-90, 180], [90, 180], [90, -180]];
+    var worldRing = [
+      [-90, -180],
+      [-90, 180],
+      [90, 180],
+      [90, -180],
+    ];
     L.polygon([worldRing, BOCAUE_POLYGON], {
       stroke: false,
       fillColor: "#0b1f3b",
@@ -91,14 +110,14 @@
    Render dashboard evac widget (ul#dash-evac-list)
 ---------------------------------------------------------- */
   function renderDashboardEvac(data) {
-    var list = document.getElementById("dash-evac-list");
-    if (!list) return;
+    var container = document.getElementById("dash-evac-list");
+    if (!container) return;
 
-    list.innerHTML = "";
+    container.innerHTML = "";
 
     if (!data.length) {
-      list.innerHTML =
-        "<li class='empty-state-inline'>No evacuation centers available.</li>";
+      container.innerHTML =
+        "<p class='rdb-empty'>No evacuation centers available.</p>";
       return;
     }
 
@@ -107,54 +126,55 @@
       var cap = parseInt(center.capacity) || 0;
       var pct = cap > 0 ? Math.round((occ / cap) * 100) : 0;
 
-      var barColor = "#22c55e";
-      var badgeClass = "badge-available"; // was badge--available
+      var barClass = "rdb-progress__bar--available";
+      var badgeClass = "badge-available";
       var statusText = "Available";
 
       if (occ >= cap) {
-        barColor = "#ef4444";
-        badgeClass = "badge-full"; // was badge--full
+        barClass = "rdb-progress__bar--full";
+        badgeClass = "badge-full";
         statusText = "Full";
       } else if (occ >= cap * 0.8) {
-        barColor = "#eab308";
-        badgeClass = "badge-nearfull"; // was badge--near-full
+        barClass = "rdb-progress__bar--nearfull";
+        badgeClass = "badge-nearfull";
         statusText = "Near Full";
       }
 
-      var li = document.createElement("li");
-      li.style.cssText =
-        "list-style:none; padding:10px 0; border-bottom:1px solid #f1f5f9; cursor:pointer;";
-      li.innerHTML =
-        "<div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;'>" +
-        "<div>" +
-        "<div style='font-weight:600; font-size:0.85rem;'>" +
+      var row = document.createElement("div");
+      row.className = "rdb-evac-row";
+      row.innerHTML =
+        "<div class='rdb-evac-top'>" +
+        "<div class='rdb-evac-info'>" +
+        "<span class='rdb-evac-name'>" +
         escHtml(center.center_name) +
-        "</div>" +
-        "<div style='font-size:0.72rem; color:#64748b; margin-top:1px;'>" +
+        "</span>" +
+        "<span class='rdb-evac-addr'>" +
         escHtml(center.location || "—") +
-        "</div>" +
-        "</div>" +
-        "<span class='badge " +
-        badgeClass +
-        "' style='flex-shrink:0; margin-left:8px;'>" +
-        statusText +
         "</span>" +
         "</div>" +
-        "<div class='capacity-bar-wrap'>" +
-        "<div class='capacity-bar' style='width:" +
-        pct +
-        "%; background:" +
-        barColor +
-        ";'></div>" +
-        "</div>" +
-        "<div style='font-size:0.72rem; color:#64748b; margin-top:4px; text-align:right;'>" +
+        "<div class='rdb-evac-right'>" +
+        "<span class='badge " +
+        badgeClass +
+        "'>" +
+        statusText +
+        "</span>" +
+        "<span class='rdb-evac-count'>" +
         occ +
         "/" +
         cap +
+        "</span>" +
+        "</div>" +
+        "</div>" +
+        "<div class='rdb-progress'>" +
+        "<div class='rdb-progress__bar " +
+        barClass +
+        "' style='width:" +
+        Math.min(pct, 100) +
+        "%'></div>" +
         "</div>";
 
       (function (c) {
-        li.addEventListener("click", function () {
+        row.addEventListener("click", function () {
           openModal({
             name: c.center_name,
             address: c.location || "—",
@@ -162,15 +182,15 @@
             lng: c.longitude,
           });
         });
-        li.addEventListener("mouseenter", function () {
+        row.addEventListener("mouseenter", function () {
           this.style.background = "#f0f9ff";
         });
-        li.addEventListener("mouseleave", function () {
+        row.addEventListener("mouseleave", function () {
           this.style.background = "";
         });
       })(center);
 
-      list.appendChild(li);
+      container.appendChild(row);
     });
   }
   /* ----------------------------------------------------------
@@ -191,10 +211,7 @@
       maxZoom: 19,
       maxBounds: BOCAUE_BOUNDS,
       maxBoundsViscosity: 1.0,
-    }).setView(
-      [lat, lng],
-      16,
-    );
+    }).setView([lat, lng], 16);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap contributors",
