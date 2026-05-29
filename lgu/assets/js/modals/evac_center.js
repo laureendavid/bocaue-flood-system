@@ -184,6 +184,59 @@ document.addEventListener("click", function (e) {
   openModal("modal-edit-center");
 });
 
+// ── Evac Filter Dropdown Toggle ─────────────────────────────
+document
+  .getElementById("evac-filter-btn")
+  ?.addEventListener("click", function (e) {
+    e.stopPropagation();
+    const dropdown = document.getElementById("evac-filter-dropdown");
+    dropdown.style.display =
+      dropdown.style.display === "none" ? "block" : "none";
+  });
+
+document.addEventListener("click", function (e) {
+  const dropdown = document.getElementById("evac-filter-dropdown");
+  if (
+    dropdown &&
+    !dropdown.contains(e.target) &&
+    e.target.id !== "evac-filter-btn"
+  ) {
+    dropdown.style.display = "none";
+  }
+});
+
+// ── Search + Filter Evacuation Centers ──────────────────────
+function filterEvacTable() {
+  const term =
+    document.getElementById("evac-search")?.value.toLowerCase() ?? "";
+  const selected =
+    document
+      .querySelector("#evac-status-filters input:checked")
+      ?.value.toLowerCase() ?? "all";
+
+  document.querySelectorAll("#evac-tbody tr").forEach((row) => {
+    if (row.classList.contains("empty-row")) return;
+
+    const text = row.textContent.toLowerCase();
+    const statusCell = row.querySelector("td:nth-child(3) .badge");
+    const status = statusCell
+      ? statusCell.textContent.trim().toLowerCase()
+      : "";
+
+    const matchesSearch = text.includes(term);
+    const matchesStatus = selected === "all" || status === selected;
+
+    row.style.display = matchesSearch && matchesStatus ? "" : "none";
+  });
+}
+
+document
+  .getElementById("evac-search")
+  ?.addEventListener("input", filterEvacTable);
+document.querySelectorAll("#evac-status-filters input").forEach((rb) => {
+  rb.addEventListener("change", filterEvacTable);
+});
+
 // ── Confirm Edit Center ─────────────────────────────────────
 document
   .getElementById("confirm-edit-center")

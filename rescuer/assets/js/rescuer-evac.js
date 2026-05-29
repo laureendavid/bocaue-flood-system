@@ -281,17 +281,58 @@
   ---------------------------------------------------------- */
   function initSearch() {
     var input = document.getElementById("evac-search");
-    if (!input) return;
-    input.addEventListener("input", function () {
-      var q = input.value.toLowerCase().trim();
-      var filtered = allCenters.filter(function (c) {
-        return (
-          c.center_name.toLowerCase().includes(q) ||
-          (c.location || "").toLowerCase().includes(q)
-        );
+    var filterBtn = document.getElementById("evac-filter-btn");
+    var filterDropdown = document.getElementById("evac-filter-dropdown");
+
+    // ── Dropdown toggle ──────────────────────────────────────
+    if (filterBtn && filterDropdown) {
+      filterBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        filterDropdown.style.display =
+          filterDropdown.style.display === "none" ? "block" : "none";
       });
+
+      document.addEventListener("click", function (e) {
+        if (!filterDropdown.contains(e.target) && e.target !== filterBtn) {
+          filterDropdown.style.display = "none";
+        }
+      });
+    }
+
+    // ── Combined search + filter ─────────────────────────────
+    function applyFilters() {
+      var q = input ? input.value.toLowerCase().trim() : "";
+      var selected = (
+        document.querySelector("#evac-status-filters input:checked")?.value ||
+        "all"
+      ).toLowerCase();
+
+      var filtered = allCenters.filter(function (c) {
+        var matchesSearch =
+          c.center_name.toLowerCase().includes(q) ||
+          (c.location || "").toLowerCase().includes(q);
+
+        var occ = parseInt(c.occupancy) || 0;
+        var cap = parseInt(c.capacity) || 0;
+        var statusText = "available";
+        if (occ >= cap) statusText = "full";
+        else if (occ >= cap * 0.8) statusText = "near full";
+
+        var matchesStatus = selected === "all" || statusText === selected;
+
+        return matchesSearch && matchesStatus;
+      });
+
       renderTable(filtered);
-    });
+    }
+
+    if (input) input.addEventListener("input", applyFilters);
+
+    document
+      .querySelectorAll("#evac-status-filters input")
+      .forEach(function (rb) {
+        rb.addEventListener("change", applyFilters);
+      });
   }
 
   /* ----------------------------------------------------------
