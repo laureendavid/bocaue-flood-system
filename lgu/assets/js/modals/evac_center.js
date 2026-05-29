@@ -36,6 +36,27 @@ document
       return;
     }
 
+    // Validate representative name — letters and spaces only
+    if (!/^[a-zA-Z\s]+$/.test(rep)) {
+      showEvacToast("Representative name must contain letters only.", "error");
+      return;
+    }
+
+    // Validate Philippine number — 09XXXXXXXXX or +639XXXXXXXXX
+    if (!/^(09\d{9}|(\+63)9\d{9})$/.test(contact)) {
+      showEvacToast(
+        "Enter a valid Philippine number (e.g. 09XX-XXX-XXXX).",
+        "error",
+      );
+      return;
+    }
+
+    // Validate count
+    if (parseInt(count) <= 0) {
+      showEvacToast("Number of people must be greater than zero.", "error");
+      return;
+    }
+
     const body = new URLSearchParams({
       center_id,
       representative: rep,
@@ -46,9 +67,13 @@ document
     fetch("../api/add_evacuee.php", { method: "POST", body })
       .then((r) => r.json())
       .then((data) => {
-        closeModal("modal-add-evacuee");
-        showEvacToast(data.message, data.success ? "success" : "error");
-        if (data.success) setTimeout(() => location.reload(), 1500);
+        if (data.success) {
+          closeModal("modal-add-evacuee"); // ← only close on success
+          showEvacToast(data.message, "success");
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          showEvacToast(data.message, "error"); // ← stays open on error
+        }
       })
       .catch(() => showEvacToast("Something went wrong.", "error"));
   });
