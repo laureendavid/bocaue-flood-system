@@ -249,7 +249,7 @@ if ($result && $result->num_rows > 0):
                     </button>
                     <a class="btn-gmaps" href="https://www.google.com/maps?q=<?= $report['latitude'] ?>,<?= $report['longitude'] ?>"
                         target="_blank" rel="noopener noreferrer">
-                        Google Maps 🗺️
+                        View in Google Maps 🗺️
                     </a>
                 <?php endif; ?>
 
