@@ -2097,3 +2097,35 @@ body.sidebar-mobile-open {
 .stat-card.approved .stat-value {
   color: #16a34a;
 }
+
+.btn-gmaps {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background-color: #4285f4;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.btn-gmaps:hover {
+  background-color: #2563eb;
+}
+
+.post-card__avatar--initials {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+}

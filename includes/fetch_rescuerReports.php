@@ -1,18 +1,23 @@
 <?php
+session_start(); // make sure session is started so we can read user_id
 require_once '../config/db.php';
 
 $limit = 5;
 $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
 $offset = ($page - 1) * $limit;
 
+// Currently logged-in rescuer
+$currentUserId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
+
 $sql = "
-    SELECT 
+    SELECT
         r.report_id,
         r.description,
         r.report_image,
         r.created_at,
         r.rescue_people_count,
         r.rescue_description,
+        r.assigned_rescuer_id,
         u.full_name,
         u.profile_picture,
         wl.level_name    AS water_level,
@@ -24,14 +29,16 @@ $sql = "
         l.longitude,
         b.barangay_name,
         b.municipality,
-        b.province
+        b.province,
+        ru.full_name     AS assigned_rescuer_name
     FROM reports r
-    JOIN users u          ON r.user_id           = u.user_id
-    JOIN locations l      ON r.location_id        = l.location_id
-    JOIN barangays b      ON l.barangay_id         = b.barangay_id
-    LEFT JOIN water_levels   wl ON r.water_level_id  = wl.water_level_id
-    LEFT JOIN flood_severity fs ON r.severity_id     = fs.severity_id
-    LEFT JOIN rescue_status  rs ON r.rescue_status_id = rs.rescue_status_id
+    JOIN  users          u  ON r.user_id              = u.user_id
+    JOIN  locations      l  ON r.location_id           = l.location_id
+    JOIN  barangays      b  ON l.barangay_id            = b.barangay_id
+    LEFT JOIN water_levels   wl ON r.water_level_id    = wl.water_level_id
+    LEFT JOIN flood_severity fs ON r.severity_id       = fs.severity_id
+    LEFT JOIN rescue_status  rs ON r.rescue_status_id  = rs.rescue_status_id
+    LEFT JOIN users          ru ON r.assigned_rescuer_id = ru.user_id
     WHERE r.status_id = 2
     ORDER BY r.created_at DESC
     LIMIT $limit OFFSET $offset
@@ -44,56 +51,73 @@ if ($result && $result->num_rows > 0):
 
         $hasImage = !empty($report['report_image']);
 
-        /* Profile picture */
+        /* ── Profile picture ── */
         $profilePic = !empty($report['profile_picture'])
             ? (filter_var($report['profile_picture'], FILTER_VALIDATE_URL)
                 ? $report['profile_picture']
                 : '/' . ltrim($report['profile_picture'], '/'))
             : '/assets/img/default-avatar.png';
 
-        /* Report image */
+        /* ── Report image ── */
         $reportImage = trim($report['report_image'] ?? '');
         $imageSrc = filter_var($reportImage, FILTER_VALIDATE_URL)
             ? $reportImage
             : ($reportImage ? '/' . ltrim($reportImage, '/') : '');
 
-        /* Address */
+        /* ── Address ── */
         $address = !empty($report['full_address'])
             ? htmlspecialchars($report['full_address'])
             : htmlspecialchars($report['barangay_name'] . ', ' . $report['municipality'] . ', ' . $report['province']);
 
-        /* Date */
+        /* ── Date ── */
         $date = date('F j, Y, g:i a', strtotime($report['created_at']));
 
-        /* ─────────────────────────────────────────────────
-         * Flow:  Rescue Needed (2) → Being Rescued (3) → Rescued (4)
+        /* ─────────────────────────────────────────────────────────────────
+         * Rescue status logic
+         *   Flow: Rescue Needed (2) → Being Rescued (3) → Rescued (4)
          *
-         * Only "Rescue Needed" is clickable on load.
-         * After clicking → updates to "Being Rescued" (still clickable).
-         * After clicking again → updates to "Rescued" (static).
-         * "Not Required" (1) is always static.
-         * ───────────────────────────────────────────────── */
+         * Assignment rules:
+         *   • status 2, no assigned rescuer  → ANY rescuer can click (assigns them)
+         *   • status 2, already assigned     → locked for everyone else
+         *   • status 3, assigned = me        → I can click to finish
+         *   • status 3, assigned = other     → locked for me
+         *   • status 4 / Not Required        → always static
+         * ───────────────────────────────────────────────────────────────── */
         $rescueStatus = $report['rescue_status'] ?? 'Not Required';
         $rescueLabel = htmlspecialchars($rescueStatus);
+        $assignedRescuerId = $report['assigned_rescuer_id'] ? (int) $report['assigned_rescuer_id'] : null;
+        $assignedRescuerName = htmlspecialchars($report['assigned_rescuer_name'] ?? '');
 
-        $nextStatusId = null;   // what clicking will advance to
-        $modalType = null;   // which confirmation copy to show
+        $isAssignedToMe = $assignedRescuerId && ($assignedRescuerId === $currentUserId);
+        $isAssignedToOther = $assignedRescuerId && ($assignedRescuerId !== $currentUserId);
+
+        $nextStatusId = null;
+        $modalType = null;
         $rescueBadgeClass = 'badge--neutral';
 
         switch ($rescueStatus) {
             case 'Rescue Needed':
                 $rescueBadgeClass = 'badge--danger';
-                $nextStatusId = 3;        // → Being Rescued
-                $modalType = 'start';
+                if (!$isAssignedToOther) {
+                    // Not yet taken by someone else — allow this rescuer to claim it
+                    $nextStatusId = 3;
+                    $modalType = 'start';
+                }
                 break;
+
             case 'Being Rescued':
                 $rescueBadgeClass = 'badge--warning';
-                $nextStatusId = 4;        // → Rescued
-                $modalType = 'finish';
+                if ($isAssignedToMe) {
+                    // Only the assigned rescuer can finish it
+                    $nextStatusId = 4;
+                    $modalType = 'finish';
+                }
                 break;
+
             case 'Rescued':
                 $rescueBadgeClass = 'badge--success';
                 break;
+
             case 'Not Required':
             default:
                 $rescueBadgeClass = 'badge--neutral';
@@ -102,7 +126,7 @@ if ($result && $result->num_rows > 0):
 
         $isClickable = $nextStatusId !== null;
 
-        /* Severity class */
+        /* ── Severity class ── */
         $severityClass = 'severity--neutral';
         switch ($report['severity']) {
             case 'Impassable':
@@ -122,8 +146,19 @@ if ($result && $result->num_rows > 0):
             <!-- HEADER -->
             <div class="post-card__header">
                 <div class="post-card__user">
-                    <img src="<?= htmlspecialchars($profilePic) ?>" class="post-card__avatar"
-                        onerror="this.src='/assets/img/default-avatar.png'">
+                    <?php
+                    $nameParts = explode(' ', trim($report['full_name']));
+                    $initials = strtoupper(
+                        substr($nameParts[0], 0, 1) .
+                        (isset($nameParts[1]) ? substr($nameParts[1], 0, 1) : '')
+                    );
+                    $avatarColors = ['#1d4ed8', '#1e5bb8', '#0b1f47', '#2563eb', '#1e40af', '#1d4ed8'];
+                    $colorIndex = abs(crc32($report['full_name'])) % count($avatarColors);
+                    $avatarBg = $avatarColors[$colorIndex];
+                    ?>
+                    <div class="post-card__avatar post-card__avatar--initials" style="background:<?= $avatarBg ?>;">
+                        <?= $initials ?>
+                    </div>
                     <div class="post-card__user-info">
                         <span class="post-card__name"><?= htmlspecialchars($report['full_name']) ?></span>
                         <span class="post-card__meta"><?= $date ?> &bull; <?= $address ?></span>
@@ -181,13 +216,27 @@ if ($result && $result->num_rows > 0):
             <div class="post-card__footer">
 
                 <?php if ($isClickable): ?>
+                    <!-- Clickable: either unclaimed "Rescue Needed" or assigned-to-me "Being Rescued" -->
                     <button type="button" class="rescue-badge rescue-badge--btn <?= $rescueBadgeClass ?>"
                         data-report-id="<?= (int) $report['report_id'] ?>" data-next-status-id="<?= $nextStatusId ?>"
                         data-modal-type="<?= $modalType ?>" data-reporter="<?= htmlspecialchars($report['full_name']) ?>"
                         title="Click to update rescue status">
                         <?= $rescueLabel ?>
+                        <?php if ($isAssignedToMe): ?>
+                            <small>(You)</small>
+                        <?php endif; ?>
                     </button>
+
+                <?php elseif ($isAssignedToOther): ?>
+                    <!-- Locked: another rescuer already claimed this -->
+                    <span class="rescue-badge badge--warning rescue-badge--locked"
+                        title="Being rescued by <?= $assignedRescuerName ?>">
+                        🔒 Being Rescued
+                        <small>by <?= $assignedRescuerName ?></small>
+                    </span>
+
                 <?php else: ?>
+                    <!-- Static: Rescued or Not Required -->
                     <span class="rescue-badge <?= $rescueBadgeClass ?>">
                         <?= $rescueLabel ?>
                     </span>
@@ -198,6 +247,10 @@ if ($result && $result->num_rows > 0):
                         data-lng="<?= $report['longitude'] ?>" data-name="<?= htmlspecialchars($report['full_name']) ?>">
                         View on Map 📍
                     </button>
+                    <a class="btn-gmaps" href="https://www.google.com/maps?q=<?= $report['latitude'] ?>,<?= $report['longitude'] ?>"
+                        target="_blank" rel="noopener noreferrer">
+                        Google Maps 🗺️
+                    </a>
                 <?php endif; ?>
 
             </div>
