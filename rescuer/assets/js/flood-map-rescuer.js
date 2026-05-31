@@ -127,6 +127,7 @@
         : "") +
       '<div style="font-size:0.72rem;color:#94a3b8;margin-top:6px;">Reported ' +
       date +
+      (r.reported_by ? " · " + escHtml(r.reported_by) : "") +
       "</div>" +
       "</div></div>"
     );
