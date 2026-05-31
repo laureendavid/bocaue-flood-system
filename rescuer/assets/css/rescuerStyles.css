@@ -2498,3 +2498,72 @@ html.dark .announce-card {
   color: #fff;
   font-size: 20px;
 }
+
+.rdb-section-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 20px 0 10px;
+}
+.rdb-section-label__icon {
+  font-size: 1rem;
+}
+.rdb-section-label__sub {
+  font-weight: 400;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 4px;
+}
+.rdb-section-label--personal {
+  margin-top: 24px;
+}
+
+.rdb-stats--personal {
+  grid-template-columns: repeat(2, 1fr); /* only 2 cards */
+}
+
+.rdb-stat__icon {
+  font-size: 1.4rem;
+  margin-bottom: 4px;
+}
+
+/* ===== RESPONSIVE: Overall Rescue Status ===== */
+
+.rdb-stats {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, 1fr); /* default: 2 columns para sa mobile */
+}
+
+/* 3rd card ng Overall — i-center sa mobile */
+.rdb-stats:not(.rdb-stats--personal) > .rdb-stat:last-child {
+  grid-column: 1 / -1;
+  max-width: calc(50% - 6px);
+  margin-inline: auto;
+}
+
+/* Desktop/tablet: 3 columns para sa Overall */
+@media (min-width: 600px) {
+  .rdb-stats:not(.rdb-stats--personal) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Remove centering trick sa desktop — lahat equal */
+  .rdb-stats:not(.rdb-stats--personal) > .rdb-stat:last-child {
+    grid-column: auto;
+    max-width: unset;
+    margin-inline: unset;
+  }
+}
+
+/* Your Rescue Status — lagi 2 columns */
+.rdb-stats--personal {
+  grid-template-columns: repeat(2, 1fr);
+}
