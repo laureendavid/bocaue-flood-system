@@ -36,22 +36,22 @@ document
       return;
     }
 
-    // Validate representative name — letters and spaces only
+    // Letters and spaces only
     if (!/^[a-zA-Z\s]+$/.test(rep)) {
       showEvacToast("Representative name must contain letters only.", "error");
       return;
     }
 
-    // Validate Philippine number — 09XXXXXXXXX or +639XXXXXXXXX
-    if (!/^(09\d{9}|(\+63)9\d{9})$/.test(contact)) {
+    // Exactly 11 digits, must start with 09
+    if (!/^09\d{9}$/.test(contact)) {
       showEvacToast(
-        "Enter a valid Philippine number (e.g. 09XX-XXX-XXXX).",
+        "Enter a valid Philippine number (e.g. 09XXXXXXXXX).",
         "error",
       );
       return;
     }
 
-    // Validate count
+    // Count must be > 0
     if (parseInt(count) <= 0) {
       showEvacToast("Number of people must be greater than zero.", "error");
       return;
@@ -68,11 +68,11 @@ document
       .then((r) => r.json())
       .then((data) => {
         if (data.success) {
-          closeModal("modal-add-evacuee"); // ← only close on success
+          closeModal("modal-add-evacuee");
           showEvacToast(data.message, "success");
           setTimeout(() => location.reload(), 1500);
         } else {
-          showEvacToast(data.message, "error"); // ← stays open on error
+          showEvacToast(data.message, "error");
         }
       })
       .catch(() => showEvacToast("Something went wrong.", "error"));
