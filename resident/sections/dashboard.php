@@ -212,17 +212,28 @@ usort($feedItems, static function (array $a, array $b): int {
     <!-- ===== LEFT COLUMN ===== -->
     <div class="dashboard-left">
 
-      <!-- FLOOD MAP -->
-      <div class="map-card card">
-        <h2 class="card-section-label">Flood Map</h2>
+      <!-- FLOOD MONITORING MAP (verified / approved reports from database) -->
+      <div class="map-card card dash-flood-card">
+        <h2 class="card-section-label">Flood Monitoring Map</h2>
         <div class="map-embed-wrap">
-          <iframe
-            class="map-embed"
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15440.123456789!2d120.9!3d14.8!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397b0e2d3e3e3e3%3A0x1234567890abcdef!2sBocaue%2C+Bulacan!5e0!3m2!1sen!2sph!4v1234567890"
-            allowfullscreen="" loading="lazy"
-            referrerpolicy="no-referrer-when-downgrade"
-            title="Flood Map — Bocaue, Bulacan">
-          </iframe>
+          <div id="dashboard-flood-map" class="resident-leaflet-map" aria-label="Flood monitoring map — verified reports, Bocaue, Bulacan"></div>
+        </div>
+        <div class="dash-flood-filter-bar" id="dash-flood-filter-bar" aria-label="Filter verified flood reports by severity">
+          <button type="button" class="dash-flood-filter-btn impassable active" data-filter="3">
+            <span class="dot" aria-hidden="true"></span> Impassable
+          </button>
+          <button type="button" class="dash-flood-filter-btn limited active" data-filter="2">
+            <span class="dot" aria-hidden="true"></span> Limited Access
+          </button>
+          <button type="button" class="dash-flood-filter-btn passable active" data-filter="1">
+            <span class="dot" aria-hidden="true"></span> Passable
+          </button>
+          <span class="dash-flood-report-count" id="dash-flood-report-count"></span>
+        </div>
+        <div class="dash-map-legend-pills map-legend" aria-label="Flood severity legend">
+          <span class="legend-pill legend-impassable">Impassable</span>
+          <span class="legend-pill legend-limited">Limited Access</span>
+          <span class="legend-pill legend-passable">Passable</span>
         </div>
       </div>
 

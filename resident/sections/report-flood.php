@@ -298,9 +298,6 @@ $severityHintMap = [
 $initialWaterHint = $severityHintMap[$postSeverity] ?? 'Select flood severity first to see allowed water levels.';
 ?>
 
-<!-- Leaflet CSS -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-
 <section id="page-report-flood" class="page active">
 
   <div id="page-content-report">
@@ -312,8 +309,7 @@ $initialWaterHint = $severityHintMap[$postSeverity] ?? 'Select flood severity fi
         Click or tap the map to drop your pin. You can drag it to adjust.
       </p>
 
-      <!-- Leaflet map -->
-      <div id="report-map"></div>
+      <div id="report-map" class="resident-leaflet-map"></div>
 
       <!-- Pin info strip -->
       <div class="pin-info" id="pin-info">
@@ -497,7 +493,3 @@ $initialWaterHint = $severityHintMap[$postSeverity] ?? 'Select flood severity fi
     <button class="btn-report-ok" id="ok-btn">Ok</button>
   </div>
 </div>
-
-<!-- Leaflet JS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="assets/js/report-flood.js"></script>

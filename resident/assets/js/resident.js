@@ -59,10 +59,13 @@ function escapeHtml(value) {
 }
 
 const BOCAUE_CENTER = [14.7982, 120.926];
-const BOCAUE_BOUNDS =
-  typeof L !== "undefined" && typeof L.latLngBounds === "function"
-    ? L.latLngBounds([14.747, 120.865], [14.845, 120.99])
-    : null;
+
+function getBocaueBounds() {
+  if (typeof L === "undefined" || typeof L.latLngBounds !== "function") {
+    return null;
+  }
+  return L.latLngBounds([14.747, 120.865], [14.845, 120.99]);
+}
 const BOCAUE_POLYGON = [
   [14.844, 120.888],
   [14.839, 120.924],
@@ -123,9 +126,55 @@ function applyBocaueBoundaryMask(map) {
     interactive: false,
   }).addTo(map);
 
-  if (BOCAUE_BOUNDS) {
-    map.setMaxBounds(BOCAUE_BOUNDS);
+  const bounds = getBocaueBounds();
+  if (bounds) {
+    map.setMaxBounds(bounds);
   }
+}
+
+function createBocaueLeafletMap(elementId, extraOptions) {
+  const bounds = getBocaueBounds();
+  const map = L.map(elementId, Object.assign(
+    {
+      center: BOCAUE_CENTER,
+      zoom: 14,
+      minZoom: 13,
+      maxZoom: 19,
+      maxBounds: bounds,
+      maxBoundsViscosity: 1.0,
+    },
+    extraOptions || {},
+  ));
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19,
+  }).addTo(map);
+
+  applyBocaueBoundaryMask(map);
+  return map;
+}
+
+function getBocauePolygonLatLngBounds() {
+  if (typeof L === "undefined" || typeof L.latLngBounds !== "function") {
+    return null;
+  }
+  return L.latLngBounds(
+    BOCAUE_POLYGON.map(function (point) {
+      return [point[0], point[1]];
+    }),
+  );
+}
+
+function fitMapToBocaueBoundary(map, padding) {
+  if (!map) return;
+  const bounds = getBocauePolygonLatLngBounds();
+  if (!bounds) return;
+  map.fitBounds(bounds, {
+    padding: padding || [32, 32],
+    maxZoom: 14,
+  });
 }
 
 function addUseCurrentLocationButton(map, onLocationFound) {
@@ -264,6 +313,42 @@ async function searchPlacesInBocaue(query, limit = 5) {
       isPointInsideBocaue(lat, lon)
     );
   });
+}
+
+async function geocodeAddressQuery(address) {
+  const query = String(address || "").trim();
+  if (!query) {
+    return null;
+  }
+
+  const endpoint =
+    "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=ph&q=" +
+    encodeURIComponent(query);
+  const response = await fetch(endpoint, {
+    headers: {
+      Accept: "application/json",
+      "Accept-Language": "en",
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const rows = await response.json();
+  const row = rows && rows[0];
+  if (!row) {
+    return null;
+  }
+
+  const lat = Number.parseFloat(row.lat);
+  const lon = Number.parseFloat(row.lon);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    return null;
+  }
+
+  return [lat, lon];
 }
 
 async function reverseGeocodeInBocaue(lat, lng) {
@@ -877,335 +962,485 @@ document.addEventListener("DOMContentLoaded", () => {
     loadDashboardSafetyCenters();
     loadCommunityFeed();
     loadBocaueWeather();
+    initDashboardFloodMap();
+    setTimeout(initDashboardFloodMap, 400);
   }
 });
 
 /* =============================================================
-   flood-map.js — Flood Map page logic
-   Depends on: Leaflet 1.9.4, script.js (sidebar/theme/modal)
+   Flood maps — Leaflet + OpenStreetMap (aligned with LGU/Rescuer)
+   Data: includes/fetch_flood_severity_map.php
    ============================================================= */
 
-(function () {
-  "use strict";
+const FLOOD_SEVERITY_META = {
+  1: { color: "#22c55e", label: "Passable", border: "#16a34a" },
+  2: { color: "#eab308", label: "Limited Access", border: "#ca8a04" },
+  3: { color: "#ef4444", label: "Impassable", border: "#dc2626" },
+};
 
-  /* ----------------------------------------------------------
-     Road & incident data
-     Replace these arrays with fetch() calls to your PHP API
-     endpoints when ready (e.g. api/get_flood_roads.php)
-  ---------------------------------------------------------- */
-  const roads = [
-    {
-      name: "MacArthur Highway (Bocaue Proper)",
-      status: "impassable",
-      coords: [
-        [14.806, 120.893],
-        [14.801, 120.901],
-        [14.796, 120.91],
-      ],
-    },
-    {
-      name: "Bocaue–Sta. Maria Road",
-      status: "impassable",
-      coords: [
-        [14.813, 120.906],
-        [14.808, 120.913],
-        [14.803, 120.919],
-      ],
-    },
-    {
-      name: "National Road (South Bocaue)",
-      status: "impassable",
-      coords: [
-        [14.789, 120.899],
-        [14.784, 120.906],
-        [14.78, 120.912],
-      ],
-    },
-    {
-      name: "Balagtas Access Road",
-      status: "limited",
-      coords: [
-        [14.821, 120.888],
-        [14.815, 120.893],
-        [14.81, 120.898],
-      ],
-    },
-    {
-      name: "San Juan Road",
-      status: "limited",
-      coords: [
-        [14.796, 120.882],
-        [14.801, 120.888],
-        [14.806, 120.894],
-      ],
-    },
-    {
-      name: "Tambobong Road",
-      status: "passable",
-      coords: [
-        [14.799, 120.911],
-        [14.794, 120.917],
-        [14.79, 120.923],
-      ],
-    },
-    {
-      name: "Bagbaguin Road",
-      status: "passable",
-      coords: [
-        [14.816, 120.916],
-        [14.811, 120.921],
-        [14.807, 120.927],
-      ],
-    },
-    {
-      name: "Manggahan Road",
-      status: "passable",
-      coords: [
-        [14.823, 120.921],
-        [14.818, 120.927],
-        [14.814, 120.933],
-      ],
-    },
-  ];
+const FLOOD_MAP_API = "../includes/fetch_flood_severity_map.php";
 
-  const incidents = [
-    {
-      lat: 14.813,
-      lng: 120.906,
-      level: "impassable",
-      desc: "Chest-deep flooding",
-    },
-    {
-      lat: 14.801,
-      lng: 120.9,
-      level: "impassable",
-      desc: "Waist-deep flooding",
-    },
-    {
-      lat: 14.796,
-      lng: 120.916,
-      level: "impassable",
-      desc: "Flash flood — road closed",
-    },
-    {
-      lat: 14.808,
-      lng: 120.921,
-      level: "limited",
-      desc: "Ankle-deep flooding",
-    },
-    {
-      lat: 14.82,
-      lng: 120.911,
-      level: "limited",
-      desc: "Minor flooding, slow down",
-    },
-    {
-      lat: 14.815,
-      lng: 120.894,
-      level: "passable",
-      desc: "Slight water on road",
-    },
-  ];
+function makeFloodSeverityIcon(severityId) {
+  const meta = FLOOD_SEVERITY_META[severityId] || {
+    color: "#94a3b8",
+    border: "#64748b",
+  };
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="38" viewBox="0 0 30 38">
+      <defs>
+        <filter id="ds" x="-30%" y="-20%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="rgba(0,0,0,0.35)"/>
+        </filter>
+      </defs>
+      <path filter="url(#ds)" fill="${meta.color}" stroke="${meta.border}" stroke-width="1.5"
+        d="M15 1C8.373 1 3 6.373 3 13c0 9 12 24 12 24S27 22 27 13C27 6.373 21.627 1 15 1z"/>
+      <circle cx="15" cy="13" r="5.5" fill="#fff" opacity="0.9"/>
+    </svg>`;
 
-  /* ----------------------------------------------------------
-     Colour map
-  ---------------------------------------------------------- */
-  const colors = {
-    impassable: "#dc2626",
-    limited: "#f59e0b",
-    passable: "#22c55e",
+  return L.divIcon({
+    html: svg,
+    className: "",
+    iconSize: [30, 38],
+    iconAnchor: [15, 38],
+    popupAnchor: [0, -38],
+  });
+}
+
+function buildFloodSeverityPopup(report) {
+  const severityId = Number.parseInt(report.severity_id, 10);
+  const meta = FLOOD_SEVERITY_META[severityId] || {
+    color: report.severity_color || "#94a3b8",
+    label: "Unknown",
+    border: "#64748b",
+  };
+  const severityLabel = String(
+    report.severity_name || meta.label || "Unknown",
+  ).trim();
+  const dot = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;
+    background:${meta.color};margin-right:6px;vertical-align:middle;"></span>`;
+  const date = report.created_at
+    ? new Date(report.created_at).toLocaleDateString("en-PH", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : "—";
+  const locationTitle = [
+    report.barangay_name,
+    report.municipality || "Bocaue",
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  return (
+    `<div style="font-family:'Segoe UI',sans-serif;min-width:220px;max-width:280px;">` +
+    `<div style="background:${meta.color};color:#fff;margin:-1px -1px 0;padding:8px 12px;
+      border-radius:8px 8px 0 0;font-weight:700;font-size:0.82rem;letter-spacing:0.03em;">` +
+    `${dot}${escapeHtml(severityLabel).toUpperCase()}</div>` +
+    `<div style="padding:10px 12px;">` +
+    `<div style="font-weight:700;font-size:0.9rem;color:#1e293b;margin-bottom:2px;">` +
+    `${escapeHtml(locationTitle)}</div>` +
+    (report.full_address
+      ? `<div style="font-size:0.75rem;color:#64748b;margin-bottom:6px;">${escapeHtml(report.full_address)}</div>`
+      : "") +
+    `<hr style="border:none;border-top:1px solid #e2e8f0;margin:6px 0;">` +
+    (report.water_level
+      ? `<div style="font-size:0.78rem;color:#475569;margin-bottom:4px;"><strong>Water level:</strong> ${escapeHtml(report.water_level)}</div>`
+      : "") +
+    (report.description
+      ? `<div style="font-size:0.78rem;color:#475569;margin-bottom:4px;"><strong>Details:</strong> ${escapeHtml(report.description)}</div>`
+      : "") +
+    `<div style="font-size:0.72rem;color:#94a3b8;margin-top:6px;">Reported ${date}` +
+    (report.reported_by ? " · " + escapeHtml(report.reported_by) : "") +
+    `</div></div></div>`
+  );
+}
+
+function attachFloodMarkers(map, reports, activeFilters, markerStore) {
+  markerStore.list.forEach((marker) => map.removeLayer(marker));
+  markerStore.list = [];
+
+  reports.forEach((report) => {
+    const severityKey = String(report.severity_id);
+    if (
+      activeFilters &&
+      !activeFilters.has("all") &&
+      !activeFilters.has(severityKey)
+    ) {
+      return;
+    }
+
+    const lat = Number.parseFloat(report.latitude);
+    const lng = Number.parseFloat(report.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+    const marker = L.marker([lat, lng], {
+      icon: makeFloodSeverityIcon(Number.parseInt(report.severity_id, 10)),
+    })
+      .addTo(map)
+      .bindPopup(buildFloodSeverityPopup(report), {
+        maxWidth: 290,
+        className: "flood-severity-popup",
+      });
+
+    markerStore.list.push(marker);
+  });
+}
+
+function fetchFloodSeverityReports() {
+  return fetch(FLOOD_MAP_API)
+    .then((res) => res.json())
+    .then((json) => {
+      if (!json.success) {
+        throw new Error(json.message || "Failed to load flood reports.");
+      }
+      return json.data || [];
+    });
+}
+
+function addCurrentLocationToMap(map, markerStore) {
+  addUseCurrentLocationButton(map, function onCurrentLocation(lat, lng) {
+    if (markerStore.user) {
+      markerStore.user.setLatLng([lat, lng]);
+    } else {
+      markerStore.user = L.marker([lat, lng]).addTo(map);
+    }
+    markerStore.user.bindPopup("Your current location").openPopup();
+    map.flyTo([lat, lng], 16, { duration: 0.7 });
+  });
+}
+
+function addDashboardFloodLegend(map, onFilterChange) {
+  if (map._dashFloodLegend) {
+    return;
+  }
+
+  const legend = L.control({ position: "bottomleft" });
+  legend.onAdd = function () {
+    const div = L.DomUtil.create("div", "dash-flood-map-legend");
+    div.innerHTML =
+      '<div class="dash-flood-map-legend__title">Flood Severity</div>' +
+      Object.entries(FLOOD_SEVERITY_META)
+        .map(
+          ([id, meta]) =>
+            `<button type="button" class="dash-flood-map-legend__item" data-severity-filter="${id}">` +
+            `<span class="dash-flood-map-legend__dot" style="background:${meta.color};border-color:${meta.border};"></span>` +
+            `<span>${escapeHtml(meta.label)}</span>` +
+            `</button>`,
+        )
+        .join("") +
+      '<button type="button" class="dash-flood-map-legend__show-all" data-severity-filter="all">Show All</button>';
+
+    L.DomEvent.disableClickPropagation(div);
+    div.querySelectorAll("[data-severity-filter]").forEach((el) => {
+      L.DomEvent.on(el, "click", function () {
+        const filterId = this.getAttribute("data-severity-filter");
+        onFilterChange(filterId);
+      });
+    });
+
+    return div;
   };
 
-  /* ----------------------------------------------------------
-     Status label helper
-  ---------------------------------------------------------- */
-  function statusLabel(status) {
-    if (status === "limited") return "Limited Access";
-    if (status === "impassable") return "Impassable";
-    return status.charAt(0).toUpperCase() + status.slice(1);
+  legend.addTo(map);
+  map._dashFloodLegend = legend;
+}
+
+const dashboardFloodState = {
+  map: null,
+  markerStore: { list: [], user: null },
+  reports: [],
+  activeFilters: new Set(["1", "2", "3"]),
+  refreshTimer: null,
+  bound: false,
+};
+
+function updateDashboardFloodFilterButtons() {
+  document
+    .querySelectorAll("#dash-flood-filter-bar .dash-flood-filter-btn")
+    .forEach((btn) => {
+      const filterId = btn.dataset.filter;
+      const isActive = dashboardFloodState.activeFilters.has(filterId);
+      btn.classList.toggle("active", isActive);
+    });
+}
+
+function setDashboardFloodFilter(filterId) {
+  const filters = dashboardFloodState.activeFilters;
+  filters.clear();
+
+  if (filterId === "all") {
+    ["1", "2", "3"].forEach((id) => filters.add(id));
+  } else {
+    filters.add(String(filterId));
   }
 
-  /* ----------------------------------------------------------
-     Map initialisation
-  ---------------------------------------------------------- */
-  function initFloodMap() {
-    const mapEl = document.getElementById("flood-map");
-    if (!mapEl) return;
+  updateDashboardFloodFilterButtons();
+  renderDashboardFloodMarkers();
+}
 
-    const map = L.map("flood-map", {
-      zoomControl: true,
-      minZoom: 13,
-      maxZoom: 19,
-    }).setView(BOCAUE_CENTER, 14);
+function renderDashboardFloodMarkers(options) {
+  const map = dashboardFloodState.map;
+  if (!map) return;
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap contributors",
-      maxZoom: 19,
-    }).addTo(map);
+  attachFloodMarkers(
+    map,
+    dashboardFloodState.reports,
+    dashboardFloodState.activeFilters,
+    dashboardFloodState.markerStore,
+  );
 
-    applyBocaueBoundaryMask(map);
+  const countEl = document.getElementById("dash-flood-report-count");
+  const visible = dashboardFloodState.markerStore.list.length;
+  if (countEl) {
+    countEl.textContent =
+      visible +
+      " verified report" +
+      (visible === 1 ? "" : "s") +
+      " on map";
+  }
 
-    let userMarker = null;
-    addUseCurrentLocationButton(map, function onCurrentLocation(lat, lng) {
-      if (userMarker) {
-        userMarker.setLatLng([lat, lng]);
-      } else {
-        userMarker = L.marker([lat, lng]).addTo(map);
-      }
-      userMarker.bindPopup("Your current location").openPopup();
-      map.flyTo([lat, lng], 16, { duration: 0.7 });
-    });
+  const shouldFit = options && options.fitBounds;
+  if (shouldFit) {
+    if (visible > 0) {
+      const bounds = L.latLngBounds(
+        dashboardFloodState.markerStore.list.map((marker) => marker.getLatLng()),
+      );
+      map.fitBounds(bounds.pad(0.12), { padding: [24, 24], maxZoom: 15 });
+    } else {
+      fitMapToBocaueBoundary(map);
+    }
+  }
 
-    /* -- Layer buckets -- */
-    const roadLayers = { impassable: [], limited: [], passable: [] };
-    const markerLayers = { impassable: [], limited: [], passable: [] };
+  map.invalidateSize();
+}
 
-    /* -- Draw road polylines -- */
-    roads.forEach((road) => {
-      const line = L.polyline(road.coords, {
-        color: colors[road.status],
-        weight: 7,
-        opacity: 0.88,
-        lineCap: "round",
-        lineJoin: "round",
-      })
-        .bindPopup(
-          `<div class="popup-title">${road.name}</div>
-         <span class="popup-status ${road.status}">${statusLabel(road.status)}</span>`,
-        )
-        .addTo(map);
+function bindDashboardFloodFilterBar() {
+  if (dashboardFloodState.bound) return;
+  dashboardFloodState.bound = true;
 
-      roadLayers[road.status].push(line);
-    });
-
-    /* -- Draw incident circle markers -- */
-    incidents.forEach((m) => {
-      const marker = L.circleMarker([m.lat, m.lng], {
-        radius: 10,
-        fillColor: colors[m.level],
-        color: "#fff",
-        weight: 2.5,
-        opacity: 1,
-        fillOpacity: 0.92,
-      })
-        .bindPopup(
-          `<div class="popup-title">Flood Incident</div>
-         <span class="popup-status ${m.level}">${statusLabel(m.level)}</span>
-         <div style="margin-top:5px;font-size:0.75rem;color:#475569;">${m.desc}</div>`,
-        )
-        .addTo(map);
-
-      markerLayers[m.level].push(marker);
-    });
-
-    /* -- Filter toggle logic -- */
-    const activeFilters = new Set(["impassable", "limited", "passable"]);
-
-    document.querySelectorAll(".filter-btn").forEach((btn) => {
+  document
+    .querySelectorAll("#dash-flood-filter-bar .dash-flood-filter-btn")
+    .forEach((btn) => {
       btn.addEventListener("click", () => {
-        const f = btn.dataset.filter;
-        if (activeFilters.has(f)) {
-          activeFilters.delete(f);
-          btn.classList.remove("active");
-          roadLayers[f].forEach((l) => map.removeLayer(l));
-          markerLayers[f].forEach((l) => map.removeLayer(l));
+        const filterId = btn.dataset.filter;
+        const filters = dashboardFloodState.activeFilters;
+
+        if (filters.has(filterId)) {
+          filters.delete(filterId);
+          if (!filters.size) {
+            ["1", "2", "3"].forEach((id) => filters.add(id));
+          }
         } else {
-          activeFilters.add(f);
-          btn.classList.add("active");
-          roadLayers[f].forEach((l) => l.addTo(map));
-          markerLayers[f].forEach((l) => l.addTo(map));
+          filters.add(filterId);
         }
+
+        updateDashboardFloodFilterButtons();
+        renderDashboardFloodMarkers();
       });
     });
+}
 
-    let searchMarker = null;
-    let activeSuggestionResults = [];
-
-    function placeSearchMarker(lat, lng, label) {
-      if (searchMarker) {
-        searchMarker.setLatLng([lat, lng]);
-      } else {
-        searchMarker = L.marker([lat, lng]).addTo(map);
+function loadDashboardFloodReports() {
+  const fitBounds = !dashboardFloodState.didInitialFit;
+  return fetchFloodSeverityReports()
+    .then((reports) => {
+      dashboardFloodState.reports = reports;
+      renderDashboardFloodMarkers({ fitBounds: fitBounds });
+      dashboardFloodState.didInitialFit = true;
+    })
+    .catch((err) => {
+      console.error("Dashboard flood map:", err);
+      const countEl = document.getElementById("dash-flood-report-count");
+      if (countEl) {
+        countEl.textContent = "Could not load verified reports";
       }
-      searchMarker
-        .bindPopup(label || `${lat.toFixed(6)}, ${lng.toFixed(6)}`)
-        .openPopup();
-      map.flyTo([lat, lng], 16, { duration: 0.6 });
-    }
+    });
+}
 
-    /* -- Search (Nominatim geocoder, Bocaue-bounded) -- */
-    const searchInput = document.getElementById("map-search");
-    if (searchInput) {
-      const suggestionId = "map-search-suggestions";
-      let suggestionList = document.getElementById(suggestionId);
-      if (!suggestionList) {
-        suggestionList = document.createElement("datalist");
-        suggestionList.id = suggestionId;
-        document.body.appendChild(suggestionList);
-      }
-      searchInput.setAttribute("list", suggestionId);
+function initDashboardFloodMap() {
+  const mapEl = document.getElementById("dashboard-flood-map");
+  if (!mapEl || typeof L === "undefined") {
+    return;
+  }
 
-      let suggestionTimer = null;
-      searchInput.addEventListener("input", () => {
-        const query = searchInput.value.trim();
-        window.clearTimeout(suggestionTimer);
-        if (query.length < 3) {
-          activeSuggestionResults = [];
-          suggestionList.innerHTML = "";
+  if (mapEl._leafletMap) {
+    mapEl._leafletMap.invalidateSize();
+    loadDashboardFloodReports();
+    return;
+  }
+
+  const map = createBocaueLeafletMap("dashboard-flood-map", { minZoom: 11 });
+  mapEl._leafletMap = map;
+  dashboardFloodState.map = map;
+
+  addCurrentLocationToMap(map, dashboardFloodState.markerStore);
+  addDashboardFloodLegend(map, setDashboardFloodFilter);
+  bindDashboardFloodFilterBar();
+  updateDashboardFloodFilterButtons();
+
+  const refreshMapSize = () => map.invalidateSize();
+  refreshMapSize();
+  requestAnimationFrame(refreshMapSize);
+  setTimeout(refreshMapSize, 200);
+  setTimeout(refreshMapSize, 600);
+
+  loadDashboardFloodReports();
+
+  if (dashboardFloodState.refreshTimer) {
+    clearInterval(dashboardFloodState.refreshTimer);
+  }
+  dashboardFloodState.refreshTimer = setInterval(loadDashboardFloodReports, 30000);
+}
+
+(function initResidentFloodMapPage() {
+  "use strict";
+
+  let floodPageMap = null;
+  let allReports = [];
+  const markerStore = { list: [], user: null };
+  let searchMarker = null;
+  let activeSuggestionResults = [];
+  const activeFilters = new Set(["1", "2", "3"]);
+
+  function renderFloodPageMarkers() {
+    if (!floodPageMap) return;
+    attachFloodMarkers(floodPageMap, allReports, activeFilters, markerStore);
+  }
+
+  function bindFilterButtons() {
+    document.querySelectorAll("#page-flood-map .filter-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const filter = btn.dataset.filter;
+        if (filter === "all") {
+          const allSelected = activeFilters.size === 3;
+          activeFilters.clear();
+          document
+            .querySelectorAll("#page-flood-map .filter-btn[data-filter]")
+            .forEach((el) => {
+              if (el.dataset.filter === "all") return;
+              if (allSelected) {
+                el.classList.remove("active");
+              } else {
+                el.classList.add("active");
+                activeFilters.add(el.dataset.filter);
+              }
+            });
+          btn.classList.toggle("active", !allSelected);
+          if (!allSelected) ["1", "2", "3"].forEach((id) => activeFilters.add(id));
+          renderFloodPageMarkers();
           return;
         }
-        suggestionTimer = window.setTimeout(async () => {
-          try {
-            const rows = await searchPlacesInBocaue(query, 6);
-            activeSuggestionResults = rows;
-            suggestionList.innerHTML = rows
-              .map(
-                (row, idx) =>
-                  `<option value="${escapeHtml(formatNominatimLabel(row) || query)}" data-idx="${idx}"></option>`,
-              )
-              .join("");
-          } catch {
-            activeSuggestionResults = [];
-            suggestionList.innerHTML = "";
-          }
-        }, 280);
-      });
 
-      searchInput.addEventListener("keydown", async (e) => {
-        if (e.key !== "Enter") return;
-        e.preventDefault();
-        const query = e.target.value.trim();
-        if (!query) return;
-        try {
-          let target = activeSuggestionResults.find(
-            (row) => formatNominatimLabel(row) === query,
-          );
-          if (!target) {
-            const rows = await searchPlacesInBocaue(query, 1);
-            target = rows[0];
-          }
-          if (target) {
-            const lat = Number.parseFloat(target.lat);
-            const lng = Number.parseFloat(target.lon);
-            const label = formatNominatimLabel(target);
-            placeSearchMarker(lat, lng, label);
-          } else {
-            alert("Location not found.");
-          }
-        } catch (error) {
-          alert(error.message || "Search unavailable. Check your connection.");
+        if (activeFilters.has(filter)) {
+          activeFilters.delete(filter);
+          btn.classList.remove("active");
+        } else {
+          activeFilters.add(filter);
+          btn.classList.add("active");
         }
+        renderFloodPageMarkers();
       });
-    }
-
-    /* -- Invalidate map size after sidebar transitions -- */
-    setTimeout(() => map.invalidateSize(), 300);
+    });
   }
 
-  /* ----------------------------------------------------------
-     Boot on DOMContentLoaded
-  ---------------------------------------------------------- */
-  document.addEventListener("DOMContentLoaded", initFloodMap);
+  function bindMapSearch(map) {
+    const searchInput = document.getElementById("map-search");
+    if (!searchInput) return;
+
+    const suggestionId = "map-search-suggestions";
+    let suggestionList = document.getElementById(suggestionId);
+    if (!suggestionList) {
+      suggestionList = document.createElement("datalist");
+      suggestionList.id = suggestionId;
+      document.body.appendChild(suggestionList);
+    }
+    searchInput.setAttribute("list", suggestionId);
+
+    let suggestionTimer = null;
+    searchInput.addEventListener("input", () => {
+      const query = searchInput.value.trim();
+      window.clearTimeout(suggestionTimer);
+      if (query.length < 3) {
+        activeSuggestionResults = [];
+        suggestionList.innerHTML = "";
+        return;
+      }
+      suggestionTimer = window.setTimeout(async () => {
+        try {
+          const rows = await searchPlacesInBocaue(query, 6);
+          activeSuggestionResults = rows;
+          suggestionList.innerHTML = rows
+            .map(
+              (row, idx) =>
+                `<option value="${escapeHtml(formatNominatimLabel(row) || query)}" data-idx="${idx}"></option>`,
+            )
+            .join("");
+        } catch {
+          activeSuggestionResults = [];
+          suggestionList.innerHTML = "";
+        }
+      }, 280);
+    });
+
+    searchInput.addEventListener("keydown", async (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      const query = e.target.value.trim();
+      if (!query) return;
+      try {
+        let target = activeSuggestionResults.find(
+          (row) => formatNominatimLabel(row) === query,
+        );
+        if (!target) {
+          const rows = await searchPlacesInBocaue(query, 1);
+          target = rows[0];
+        }
+        if (!target) {
+          alert("Location not found in Bocaue.");
+          return;
+        }
+        const lat = Number.parseFloat(target.lat);
+        const lng = Number.parseFloat(target.lon);
+        const label = formatNominatimLabel(target);
+        if (searchMarker) searchMarker.setLatLng([lat, lng]);
+        else searchMarker = L.marker([lat, lng]).addTo(map);
+        searchMarker.bindPopup(label).openPopup();
+        map.flyTo([lat, lng], 16, { duration: 0.6 });
+      } catch (error) {
+        alert(error.message || "Search unavailable. Check your connection.");
+      }
+    });
+  }
+
+  function initFloodMapPage() {
+    if (!document.getElementById("flood-map") || typeof L === "undefined") {
+      return;
+    }
+    if (floodPageMap) {
+      floodPageMap.invalidateSize();
+      return;
+    }
+
+    floodPageMap = createBocaueLeafletMap("flood-map");
+    addCurrentLocationToMap(floodPageMap, markerStore);
+    bindFilterButtons();
+    bindMapSearch(floodPageMap);
+
+    fetchFloodSeverityReports()
+      .then((reports) => {
+        allReports = reports;
+        renderFloodPageMarkers();
+        setTimeout(() => floodPageMap.invalidateSize(), 300);
+      })
+      .catch((err) => {
+        console.error("Flood map:", err);
+        alert("Could not load flood map data. Please try again later.");
+      });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(initFloodMapPage, 200);
+  });
 })();
 
 /* =============================================================
@@ -1218,7 +1453,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   var map, pinMarker;
   var reverseRequestToken = 0;
-  var BOCAUE = [14.7983, 120.9067];
 
   /* ----------------------------------------------------------
      Custom red pin icon
@@ -1313,18 +1547,7 @@ document.addEventListener("DOMContentLoaded", () => {
     var mapEl = document.getElementById("report-map");
     if (!mapEl || typeof L === "undefined") return;
 
-    map = L.map("report-map", {
-      zoomControl: true,
-      minZoom: 13,
-      maxZoom: 19,
-    }).setView(BOCAUE_CENTER, 14);
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap contributors",
-      maxZoom: 19,
-    }).addTo(map);
-
-    applyBocaueBoundaryMask(map);
+    map = createBocaueLeafletMap("report-map");
 
     map.on("click", function (e) {
       placePin(e.latlng.lat, e.latlng.lng);
@@ -1602,101 +1825,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* =============================================================
    hotlines.js — Hotlines page logic
-   Fetches from api/fetch-hotlines.php (grouped by barangay)
-   and merges with static emergency hotlines.
-   Depends on: resident.js (already loaded by main.php)
+   Data from sections/hotlines.php (#hl-db-json) — flood_information DB
    ============================================================= */
 
 (function () {
   "use strict";
-
-  /* ----------------------------------------------------------
-     Static / national hotlines that don't come from the DB.
-     These are always shown and can be filtered by category.
-  ---------------------------------------------------------- */
-  var STATIC_HOTLINES = [
-    {
-      name: "PNP Emergency",
-      number: "117",
-      category: "police",
-      icon: "shield_person",
-      iconClass: "icon-police",
-      tagClass: "tag-police",
-      barangay: "",
-    },
-    {
-      name: "NDRRMC Hotline",
-      number: "8-911",
-      category: "emergency",
-      icon: "emergency",
-      iconClass: "icon-emergency",
-      tagClass: "tag-emergency",
-      barangay: "",
-    },
-    {
-      name: "Red Cross Bulacan",
-      number: "0922-999-0000",
-      category: "medical",
-      icon: "health_and_safety",
-      iconClass: "icon-medical",
-      tagClass: "tag-medical",
-      barangay: "",
-    },
-    {
-      name: "MDRRMO Bocaue",
-      number: "0917-111-2222",
-      category: "emergency",
-      icon: "crisis_alert",
-      iconClass: "icon-emergency",
-      tagClass: "tag-emergency",
-      barangay: "",
-    },
-    {
-      name: "Bocaue Police Station",
-      number: "0920-555-6666",
-      category: "police",
-      icon: "local_police",
-      iconClass: "icon-police",
-      tagClass: "tag-police",
-      barangay: "",
-    },
-    {
-      name: "Bocaue Rural Health Unit",
-      number: "0921-777-8888",
-      category: "medical",
-      icon: "local_hospital",
-      iconClass: "icon-medical",
-      tagClass: "tag-medical",
-      barangay: "",
-    },
-    {
-      name: "Search & Rescue Team",
-      number: "0923-112-3334",
-      category: "rescue",
-      icon: "medical_services",
-      iconClass: "icon-rescue",
-      tagClass: "tag-rescue",
-      barangay: "",
-    },
-    {
-      name: "Ambulance Services",
-      number: "0924-445-6667",
-      category: "medical",
-      icon: "ambulance",
-      iconClass: "icon-medical",
-      tagClass: "tag-medical",
-      barangay: "",
-    },
-    {
-      name: "Coast Guard Bulacan",
-      number: "0926-001-1122",
-      category: "rescue",
-      icon: "directions_boat",
-      iconClass: "icon-rescue",
-      tagClass: "tag-rescue",
-      barangay: "",
-    },
-  ];
 
   var TAG_LABELS = {
     emergency: "Emergency",
@@ -1707,55 +1840,108 @@ document.addEventListener("DOMContentLoaded", () => {
     barangay: "Barangay",
   };
 
-  /* All hotlines (static + DB), populated after fetch */
   var allHotlines = [];
   var activeCategory = "all";
 
-  /* ----------------------------------------------------------
-     Fetch DB hotlines from the API
-  ---------------------------------------------------------- */
-  function fetchHotlines() {
+  function mapGroupedApiData(data) {
+    var rows = [];
+    if (!data || typeof data !== "object") return rows;
+    Object.keys(data).forEach(function (barangay) {
+      (data[barangay] || []).forEach(function (h) {
+        rows.push({
+          name: h.hotline_name,
+          number: h.contact_number,
+          barangay: barangay,
+          category: inferCategory(h.hotline_name),
+        });
+      });
+    });
+    return rows.map(applyDisplayMeta);
+  }
+
+  function inferCategory(name) {
+    var n = String(name || "").toLowerCase();
+    if (/police|pnp|bantay/.test(n)) return "police";
+    if (/medical|health|hospital|ambulance|red cross/.test(n)) return "medical";
+    if (/rescue|fire|search|coast guard/.test(n)) return "rescue";
+    if (/emergency|mdrrmo|ndrrmc|911/.test(n)) return "emergency";
+    return "lgu";
+  }
+
+  function applyDisplayMeta(h) {
+    var cat = h.category || inferCategory(h.name);
+    var icons = {
+      police: { icon: "local_police", iconClass: "icon-police", tagClass: "tag-police" },
+      medical: { icon: "local_hospital", iconClass: "icon-medical", tagClass: "tag-medical" },
+      rescue: { icon: "medical_services", iconClass: "icon-rescue", tagClass: "tag-rescue" },
+      emergency: { icon: "emergency", iconClass: "icon-emergency", tagClass: "tag-emergency" },
+      lgu: { icon: "account_balance", iconClass: "icon-lgu", tagClass: "tag-lgu" },
+    };
+    var meta = icons[cat] || icons.lgu;
+    return {
+      name: h.name,
+      number: h.number,
+      barangay: h.barangay || "",
+      category: cat,
+      icon: h.icon || meta.icon,
+      iconClass: h.iconClass || meta.iconClass,
+      tagClass: h.tagClass || meta.tagClass,
+    };
+  }
+
+  function readHotlinesFromPage() {
+    var el = document.getElementById("hl-db-json");
+    if (!el || !el.textContent) return null;
+    try {
+      return JSON.parse(el.textContent);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function loadHotlines() {
     showLoading(true);
     hideError();
 
-    fetch("api/fetch-hotlines.php")
+    var payload = readHotlinesFromPage();
+    if (payload) {
+      showLoading(false);
+      if (payload.error) {
+        showError(payload.error);
+      }
+      allHotlines = (payload.items || []).map(applyDisplayMeta);
+      if (!allHotlines.length && !payload.error) {
+        showError("No hotlines found in the database. Add hotlines from the LGU portal.");
+      }
+      renderCards(getFiltered());
+      return;
+    }
+
+    var apiUrl = "api/fetch-hotlines.php";
+    fetch(apiUrl)
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
       })
       .then(function (json) {
         showLoading(false);
-        var dbHotlines = [];
-
-        if (json.success && json.data) {
-          // json.data is an object keyed by barangay name
-          Object.keys(json.data).forEach(function (barangay) {
-            json.data[barangay].forEach(function (h) {
-              dbHotlines.push({
-                name: h.hotline_name,
-                number: h.contact_number,
-                category: "lgu", // DB hotlines are barangay/LGU contacts
-                icon: "account_balance",
-                iconClass: "icon-lgu",
-                tagClass: "tag-lgu",
-                barangay: barangay,
-              });
-            });
-          });
+        if (!json.success) {
+          showError(json.message || "Could not load hotlines from the database.");
+          allHotlines = [];
+          renderCards([]);
+          return;
         }
-
-        // Merge: static first, then DB entries
-        allHotlines = STATIC_HOTLINES.concat(dbHotlines);
+        allHotlines = mapGroupedApiData(json.data);
+        if (!allHotlines.length) {
+          showError("No hotlines found in the database.");
+        }
         renderCards(getFiltered());
       })
-      .catch(function (err) {
+      .catch(function () {
         showLoading(false);
-        showError(
-          "Could not load barangay hotlines. Showing national lines only.",
-        );
-        // Fallback to static only
-        allHotlines = STATIC_HOTLINES.slice();
-        renderCards(getFiltered());
+        showError("Could not load hotlines from the database.");
+        allHotlines = [];
+        renderCards([]);
       });
   }
 
@@ -1918,9 +2104,9 @@ document.addEventListener("DOMContentLoaded", () => {
      Boot
   ---------------------------------------------------------- */
   function init() {
-    if (!document.getElementById("hl-list")) return; // not on this page
+    if (!document.getElementById("hl-list")) return;
     initEvents();
-    fetchHotlines();
+    loadHotlines();
   }
 
   if (document.readyState === "loading") {
@@ -1953,8 +2139,11 @@ document.addEventListener("DOMContentLoaded", () => {
   var activeSearchQuery = "";
   var userPosition = null;
   var userLocationMarker = null;
-  var map        = null;
+  var map = null;
   var refreshIntervalId = null;
+  var modalEventsBound = false;
+  var modalCenter = null;
+  var geocodeCache = {};
 
   function getStatus(occupancy, capacity) {
     if (capacity <= 0) return "available";
@@ -1971,7 +2160,7 @@ document.addEventListener("DOMContentLoaded", () => {
     var cy = isSelected ? 17 : 16;
     var cr = isSelected ? 8 : 7;
     return L.divIcon({
-      className: "",
+      className: "sc-map-marker-icon",
       html: '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + height + '" viewBox="0 0 32 42">' +
               '<path d="M16 0C7.163 0 0 7.163 0 16c0 10.5 16 26 16 26S32 26.5 32 16C32 7.163 24.837 0 16 0z" fill="' + color + '" stroke="' + (isSelected ? "#0f172a" : "none") + '" stroke-width="' + (isSelected ? "1.2" : "0") + '"/>' +
               '<circle cx="' + cx + '" cy="' + cy + '" r="' + cr + '" fill="white"/>' +
@@ -1982,28 +2171,124 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function getCenterLatLng(center) {
+    var lat = Number(center.lat);
+    var lng = Number(center.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return null;
+    }
+    return [lat, lng];
+  }
+
+  function hasValidMapCoords(center) {
+    return getCenterLatLng(center) !== null;
+  }
+
+  function centersWithMapPosition(data) {
+    return data.filter(hasValidMapCoords);
+  }
+
+  function fitSafetyMapView(markerLatLngs) {
+    if (!map) return;
+    var points = (markerLatLngs || []).filter(function (ll) {
+      return ll && Number.isFinite(ll[0]) && Number.isFinite(ll[1]);
+    });
+
+    if (points.length === 1) {
+      map.setView(points[0], 15);
+    } else if (points.length > 1) {
+      map.fitBounds(L.latLngBounds(points), {
+        padding: [40, 40],
+        maxZoom: 16,
+      });
+    } else {
+      fitMapToBocaueBoundary(map);
+    }
+    refreshMapSize();
+  }
+
+  function delayMs(ms) {
+    return new Promise(function (resolve) {
+      setTimeout(resolve, ms);
+    });
+  }
+
+  function resolveCenterCoordinates(centers) {
+    var pending = [];
+
+    centers.forEach(function (center) {
+      if (hasValidMapCoords(center)) {
+        return;
+      }
+
+      var cached = geocodeCache[center.center_id];
+      if (cached) {
+        center.lat = cached[0];
+        center.lng = cached[1];
+        center.coordsSource = "geocoded";
+        return;
+      }
+
+      if (String(center.address || "").trim() !== "") {
+        pending.push(center);
+      }
+    });
+
+    if (!pending.length) {
+      return Promise.resolve();
+    }
+
+    var chain = Promise.resolve();
+    pending.forEach(function (center, index) {
+      chain = chain
+        .then(function () {
+          if (index > 0) {
+            return delayMs(1100);
+          }
+          return null;
+        })
+        .then(function () {
+          return geocodeAddressQuery(center.address).then(function (coords) {
+            if (!coords) {
+              return;
+            }
+            center.lat = coords[0];
+            center.lng = coords[1];
+            center.coordsSource = "geocoded";
+            geocodeCache[center.center_id] = coords;
+          });
+        });
+    });
+
+    return chain;
+  }
+
+  function refreshMapSize() {
+    if (!map) return;
+    map.invalidateSize();
+  }
+
   function initMap() {
     var mapEl = document.getElementById("safety-map");
     if (!mapEl || typeof L === "undefined") return;
 
-    map = L.map("safety-map", {
-      zoomControl: true,
-      scrollWheelZoom: false,
-      minZoom: 13,
-      maxZoom: 19,
-    }).setView(BOCAUE_CENTER, 14);
-
-    if (BOCAUE_BOUNDS) {
-      map.options.maxBoundsViscosity = 1.0;
-      map.setMaxBounds(BOCAUE_BOUNDS);
+    if (mapEl._leafletMap) {
+      map = mapEl._leafletMap;
+      refreshMapSize();
+      return;
     }
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap contributors",
-      maxZoom: 19,
-    }).addTo(map);
+    map = createBocaueLeafletMap("safety-map", {
+      scrollWheelZoom: true,
+      zoomControl: true,
+      minZoom: 11,
+    });
+    mapEl._leafletMap = map;
 
-    applyBocaueBoundaryMask(map);
+    if (!map.getPane("scMarkerPane")) {
+      var markerPane = map.createPane("scMarkerPane");
+      markerPane.style.zIndex = "650";
+    }
 
     addUseCurrentLocationButton(map, function onCurrentLocation(lat, lng) {
       userPosition = [lat, lng];
@@ -2018,9 +2303,153 @@ document.addEventListener("DOMContentLoaded", () => {
       map.flyTo([lat, lng], 16, { duration: 0.7 });
     });
 
-    setTimeout(function () {
-      map.invalidateSize();
-    }, 300);
+    refreshMapSize();
+    requestAnimationFrame(refreshMapSize);
+    setTimeout(refreshMapSize, 300);
+    setTimeout(refreshMapSize, 700);
+
+    if (!mapEl._scResizeBound) {
+      mapEl._scResizeBound = true;
+      window.addEventListener("resize", refreshMapSize);
+    }
+  }
+
+  function initModalEvents() {
+    if (modalEventsBound) return;
+    modalEventsBound = true;
+
+    var modal = document.getElementById("sc-center-modal");
+    var backdrop = document.getElementById("sc-modal-backdrop");
+    var closeBtn = document.getElementById("sc-modal-close");
+    var mapBtn = document.getElementById("sc-modal-map-btn");
+
+    function closeModal() {
+      if (!modal) return;
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+      modalCenter = null;
+    }
+
+    if (closeBtn) closeBtn.addEventListener("click", closeModal);
+    if (backdrop) backdrop.addEventListener("click", closeModal);
+    if (modal) {
+      modal.addEventListener("click", function (e) {
+        if (e.target === modal) closeModal();
+      });
+    }
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && modal && modal.classList.contains("is-open")) {
+        closeModal();
+      }
+    });
+
+    if (mapBtn) {
+      mapBtn.addEventListener("click", function () {
+        if (!modalCenter) return;
+        closeModal();
+        focusCenter(modalCenter.center_id, false);
+      });
+    }
+  }
+
+  function openCenterModal(center) {
+    var modal = document.getElementById("sc-center-modal");
+    if (!modal || !center) return;
+
+    modalCenter = center;
+    var style = CFG[center.status] || CFG.available;
+    var pct = getOccupancyPct(center);
+    var availablePct = Math.max(0, 100 - pct);
+
+    var titleEl = document.getElementById("sc-modal-title");
+    var subtitleEl = document.getElementById("sc-modal-subtitle");
+    var addressEl = document.getElementById("sc-modal-address");
+    var contactEl = document.getElementById("sc-modal-contact");
+    var capacityEl = document.getElementById("sc-modal-capacity");
+    var occupancyEl = document.getElementById("sc-modal-occupancy");
+    var availabilityEl = document.getElementById("sc-modal-availability");
+    var fillEl = document.getElementById("sc-modal-capacity-fill");
+    var distanceEl = document.getElementById("sc-modal-distance");
+    var badgeEl = document.getElementById("sc-modal-status-badge");
+    var iconWrap = document.getElementById("sc-modal-status-icon");
+    var callBtn = document.getElementById("sc-modal-call-btn");
+
+    if (titleEl) titleEl.textContent = center.name || "Safety Center";
+    if (subtitleEl) {
+      var locationParts = [center.barangay, center.municipality, center.province]
+        .map(function (part) {
+          return String(part || "").trim();
+        })
+        .filter(Boolean);
+      subtitleEl.textContent = locationParts.length
+        ? locationParts.join(", ")
+        : "";
+      subtitleEl.style.display = locationParts.length ? "" : "none";
+    }
+    if (addressEl) addressEl.textContent = center.address || "—";
+    if (contactEl) {
+      contactEl.textContent = center.contact
+        ? center.contact
+        : "No contact on file — check barangay hotlines.";
+    }
+
+    var hoursRow = document.getElementById("sc-modal-hours-row");
+    var hoursEl = document.getElementById("sc-modal-hours");
+    if (hoursRow && hoursEl) {
+      if (center.operating_hours) {
+        hoursEl.textContent = center.operating_hours;
+        hoursRow.style.display = "";
+      } else {
+        hoursRow.style.display = "none";
+      }
+    }
+
+    var descRow = document.getElementById("sc-modal-description-row");
+    var descEl = document.getElementById("sc-modal-description");
+    if (descRow && descEl) {
+      if (center.description) {
+        descEl.textContent = center.description;
+        descRow.style.display = "";
+      } else {
+        descRow.style.display = "none";
+      }
+    }
+
+    if (capacityEl) capacityEl.textContent = String(center.capacity);
+    if (occupancyEl) occupancyEl.textContent = String(center.occupancy);
+    if (availabilityEl) {
+      availabilityEl.textContent = availablePct + "% slots open";
+    }
+    if (fillEl) {
+      fillEl.style.width = pct + "%";
+      fillEl.style.background = style.bar;
+    }
+    if (distanceEl) {
+      var dist = getDistanceLabel(center);
+      distanceEl.textContent = dist ? dist : "";
+      distanceEl.style.display = dist ? "block" : "none";
+    }
+    if (badgeEl) {
+      badgeEl.textContent = style.emoji + " " + style.label;
+      badgeEl.className = "sc-modal-status-badge " + center.status;
+    }
+    if (iconWrap) {
+      iconWrap.className = "sc-modal-icon " + center.status;
+    }
+    if (callBtn) {
+      if (center.contact) {
+        callBtn.href = "tel:" + center.contact.replace(/\D/g, "");
+        callBtn.style.display = "inline-flex";
+      } else {
+        callBtn.style.display = "none";
+      }
+    }
+
+    modal.classList.add("is-open");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
   }
 
   function initMarkerLayer() {
@@ -2029,20 +2458,18 @@ document.addEventListener("DOMContentLoaded", () => {
       map.removeLayer(markerLayer);
       markerLayer = null;
     }
-    markerLayer = typeof L.markerClusterGroup === "function"
-      ? L.markerClusterGroup({
-          showCoverageOnHover: false,
-          spiderfyOnMaxZoom: true,
-          maxClusterRadius: 45,
-        })
-      : L.layerGroup();
+    markerLayer = L.layerGroup();
     markerLayer.addTo(map);
   }
 
-  function updateCountPill(total, shown) {
+  function updateCountPill(total, onMap) {
     var el = document.getElementById("sc-count-pill");
     if (!el) return;
-    el.textContent = shown + " of " + total + " centers";
+    if (typeof onMap === "number" && onMap !== total) {
+      el.textContent = total + " centers · " + onMap + " on map";
+      return;
+    }
+    el.textContent = total + (total === 1 ? " center" : " centers");
   }
 
   function getOccupancyPct(center) {
@@ -2057,18 +2484,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!isFinite(meters)) return "";
     if (meters >= 1000) return (meters / 1000).toFixed(2) + " km away";
     return Math.round(meters) + " m away";
-  }
-
-  function buildPopup(center) {
-    var s = CFG[center.status] || CFG.available;
-    var pct = getOccupancyPct(center);
-    return '<div style="font-family:Inter,sans-serif;min-width:190px;">' +
-      '<h4 class="sc-popup-title">' + escapeHtml(center.name) + '</h4>' +
-      '<p class="sc-popup-meta">' + escapeHtml(center.address) + '</p>' +
-      '<p class="sc-popup-meta">Capacity: ' + center.capacity + ' | Occupancy: ' + center.occupancy + ' (' + pct + '%)</p>' +
-      (userPosition ? '<p class="sc-popup-meta">Distance: ' + escapeHtml(getDistanceLabel(center)) + '</p>' : '') +
-      '<span class="sc-popup-status ' + center.status + '">' + s.emoji + ' ' + s.label + '</span>' +
-    '</div>';
   }
 
   function clearSelectedCard() {
@@ -2100,7 +2515,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function focusCenter(centerId, openPopup) {
+  function focusCenter(centerId, openModal) {
     var center = allCenters.find(function (item) {
       return String(item.center_id) === String(centerId);
     });
@@ -2108,42 +2523,45 @@ document.addEventListener("DOMContentLoaded", () => {
     selectedCenterId = center.center_id;
     highlightCard(selectedCenterId);
     updateMarkerIcons();
-    var marker = markerByCenterId[String(center.center_id)];
-    if (marker && map && center.lat && center.lng) {
-      map.flyTo([center.lat, center.lng], 16, { duration: 0.7 });
-      if (openPopup) marker.openPopup();
+    if (openModal) {
+      openCenterModal(center);
+    }
+    var latLng = getCenterLatLng(center);
+    if (map && latLng) {
+      map.flyTo(latLng, 16, { duration: 0.7 });
     }
   }
 
-  function renderMarkers(data, fitToResults) {
+  function renderMarkers(data) {
     if (!map || !markerLayer) return;
     markerLayer.clearLayers();
     markerByCenterId = {};
 
-    var boundsPoints = [];
     data.forEach(function (center) {
-      if (!center.lat || !center.lng) return;
-      var style = CFG[center.status] || CFG.available;
-      var marker = L.marker([center.lat, center.lng], {
-        icon: makePin(style.pin, String(center.center_id) === String(selectedCenterId)),
-      }).bindPopup(buildPopup(center));
+      var latLng = getCenterLatLng(center);
+      if (!latLng) return;
 
-      marker.on("click", function () {
-        focusCenter(center.center_id, false);
+      var style = CFG[center.status] || CFG.available;
+      var marker = L.marker(latLng, {
+        icon: makePin(
+          style.pin,
+          String(center.center_id) === String(selectedCenterId),
+        ),
+        pane: "scMarkerPane",
+        riseOnHover: true,
+        riseOffset: 250,
+      });
+
+      marker.on("click", function (e) {
+        if (e.originalEvent) {
+          L.DomEvent.stopPropagation(e.originalEvent);
+        }
+        focusCenter(center.center_id, true);
       });
 
       markerLayer.addLayer(marker);
       markerByCenterId[String(center.center_id)] = marker;
-      boundsPoints.push([center.lat, center.lng]);
     });
-
-    if (fitToResults && boundsPoints.length && map) {
-      if (boundsPoints.length === 1) {
-        map.flyTo(boundsPoints[0], 16, { duration: 0.7 });
-      } else {
-        map.fitBounds(boundsPoints, { padding: [24, 24], maxZoom: 16 });
-      }
-    }
   }
 
   function renderCards(data) {
@@ -2207,6 +2625,14 @@ document.addEventListener("DOMContentLoaded", () => {
       card.addEventListener("click", function () {
         focusCenter(c.center_id, true);
       });
+      card.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          focusCenter(c.center_id, true);
+        }
+      });
+      card.setAttribute("tabindex", "0");
+      card.setAttribute("role", "button");
 
       list.appendChild(card);
 
@@ -2225,9 +2651,32 @@ document.addEventListener("DOMContentLoaded", () => {
       return center.name.toLowerCase().includes(query)
         || center.address.toLowerCase().includes(query);
     });
+    var mapCenters = centersWithMapPosition(filteredCenters);
     renderCards(filteredCenters);
-    renderMarkers(filteredCenters, !!fitToResults);
-    updateCountPill(allCenters.length, filteredCenters.length);
+    renderMarkers(mapCenters);
+    updateCountPill(allCenters.length, mapCenters.length);
+    if (fitToResults) {
+      fitSafetyMapView(
+        mapCenters.map(getCenterLatLng).filter(function (ll) {
+          return ll !== null;
+        }),
+      );
+    }
+
+    var mapNotice = document.getElementById("sc-map-notice");
+    if (mapNotice) {
+      var unmapped = filteredCenters.filter(function (center) {
+        return !hasValidMapCoords(center);
+      }).length;
+      if (unmapped > 0) {
+        mapNotice.textContent =
+          unmapped +
+          " center(s) are not on the map yet. Save latitude and longitude in the database, or provide a complete address for automatic placement.";
+        mapNotice.style.display = "block";
+      } else {
+        mapNotice.style.display = "none";
+      }
+    }
   }
 
   function fetchCenters(silent) {
@@ -2250,30 +2699,49 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         allCenters = (json.data || []).map(function (c) {
-          var occ = parseInt(c.occupancy) || 0;
-          var cap = parseInt(c.capacity) || 0;
+          var occ = parseInt(c.occupancy, 10) || 0;
+          var cap = parseInt(c.capacity, 10) || 0;
+          var lat = Number(c.latitude);
+          var lng = Number(c.longitude);
+          if (!Number.isFinite(lat)) lat = null;
+          if (!Number.isFinite(lng)) lng = null;
+
           return {
             center_id: c.center_id,
-            name:      c.center_name,
-            address:   c.address || c.full_address || (c.barangay + ", " + c.municipality),
-            contact:   c.contact || "",
+            name: c.center_name,
+            address:
+              c.address ||
+              c.full_address ||
+              [c.barangay, c.municipality, c.province]
+                .filter(Boolean)
+                .join(", "),
+            barangay: c.barangay || "",
+            municipality: c.municipality || "",
+            province: c.province || "",
+            contact: c.contact || "",
+            description: c.description || "",
+            operating_hours: c.operating_hours || "",
             occupancy: occ,
-            capacity:  cap,
-            lat:       c.latitude !== null && c.latitude !== "" ? parseFloat(c.latitude) : null,
-            lng:       c.longitude !== null && c.longitude !== "" ? parseFloat(c.longitude) : null,
-            status:    getStatus(occ, cap),
+            capacity: cap,
+            lat: lat,
+            lng: lng,
+            coordsSource: lat !== null && lng !== null ? "database" : null,
+            status: getStatus(occ, cap),
           };
         });
 
-        applyFilter({ fitToResults: !silent });
+        return resolveCenterCoordinates(allCenters).then(function () {
+          applyFilter({ fitToResults: !silent });
+          refreshMapSize();
 
-        if (!allCenters.length) {
-          var noRes = document.getElementById("sc-no-results");
-          if (noRes) {
-            noRes.textContent = "No safety centers have been added yet.";
-            noRes.style.display = "block";
+          if (!allCenters.length) {
+            var noRes = document.getElementById("sc-no-results");
+            if (noRes) {
+              noRes.textContent = "No evacuation centers in the database yet.";
+              noRes.style.display = "block";
+            }
           }
-        }
+        });
       })
       .catch(function (err) {
         if (!silent) showLoading(false);
@@ -2328,18 +2796,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function init() {
     if (!document.getElementById("safety-map")) return;
+    initModalEvents();
     initMap();
     initMarkerLayer();
+    fitSafetyMapView([]);
     initSearch();
     fetchCenters(false);
+    if (refreshIntervalId) clearInterval(refreshIntervalId);
     refreshIntervalId = setInterval(function () {
       fetchCenters(true);
     }, 30000);
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
+  function bootSafetyCenters() {
+    if (!document.getElementById("safety-map")) return;
+    if (typeof L === "undefined") {
+      setTimeout(bootSafetyCenters, 80);
+      return;
+    }
     init();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+      setTimeout(bootSafetyCenters, 100);
+    });
+  } else {
+    setTimeout(bootSafetyCenters, 100);
   }
 })();

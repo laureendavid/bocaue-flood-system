@@ -62,7 +62,7 @@ try {
         LEFT JOIN water_levels wl ON wl.water_level_id = r.water_level_id
         LEFT JOIN users     u   ON u.user_id       = r.user_id
 
-        WHERE r.status_id = 2          -- Approved only
+        WHERE rs.status_name = 'Approved'
           AND r.severity_id IS NOT NULL
           AND l.latitude  IS NOT NULL
           AND l.longitude IS NOT NULL

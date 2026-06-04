@@ -46,6 +46,7 @@ $currentPageTitle = $pageLabels[$page] ?? 'Dashboard';
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/residentStyles.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
 <div class="app-shell">
@@ -117,6 +118,7 @@ $currentPageTitle = $pageLabels[$page] ?? 'Dashboard';
   </main>
 </div>
 
-<script src="assets/js/resident.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="assets/js/resident.js?v=<?= (int) @filemtime(__DIR__ . '/assets/js/resident.js') ?>"></script>
 </body>
 </html>

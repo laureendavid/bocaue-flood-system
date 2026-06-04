@@ -2,12 +2,22 @@
 header('Content-Type: application/json');
 mysqli_report(MYSQLI_REPORT_OFF);
 
-require_once __DIR__ . '/../config/db.php';
+$dbPath = __DIR__ . '/../../config/db.php';
+
+if (!file_exists($dbPath)) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'db.php not found.',
+    ]);
+    exit;
+}
+
+require_once $dbPath;
 
 if (!isset($conn) || $conn->connect_error) {
     echo json_encode([
         'success' => false,
-        'message' => 'Database connection failed.',
+        'message' => 'Database connection failed: ' . ($conn->connect_error ?? 'unknown'),
     ]);
     exit;
 }
