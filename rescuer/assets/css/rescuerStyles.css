@@ -1738,84 +1738,83 @@ html.dark .announce-card {
 }
 
 /* ================================================================
-   RESCUER DASHBOARD — SCOPED STYLES
-   Add to the bottom of rescuer.css
-   Uses .rdb-* classes to avoid conflicts with global styles
+   RESCUER DASHBOARD — fresh .rdb-* classes, no conflicts
    ================================================================ */
 
-/* ===== TOP STAT ROW LAYOUT ===== */
-#page-dashboard .dashboard-stats-row {
-  display: grid;
-  grid-template-columns: 3fr 2fr;
-  gap: 16px;
-  margin-bottom: 20px;
-  flex-shrink: 0;
-}
-
-/* ===== STAT CARD BASE (blue gradient) ===== */
-#page-dashboard .rdb-stat-card {
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  border: none !important;
-  box-shadow: 0 8px 24px rgba(29, 78, 216, 0.28) !important;
-  padding: 20px;
-}
-
-/* ===== STAT CARD VARIANT (green gradient) ===== */
-#page-dashboard .rdb-stat-card--green {
-  background: linear-gradient(135deg, #22c55e, #15803d);
-  box-shadow: 0 8px 24px rgba(21, 128, 61, 0.28) !important;
-}
-
-/* Section label inside stat cards */
-#page-dashboard .rdb-stat-card .card-section-label {
-  color: rgba(255, 255, 255, 0.88);
-  font-size: 0.82rem;
-  font-weight: 700;
-  margin-bottom: 16px;
-  letter-spacing: 0.02em;
-}
-
-/* ===== RESCUE STATS GRID — always 3 col inside blue card ===== */
-#page-dashboard .rescue-stats-grid {
+/* ── STAT ROW ── */
+.rdb-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0;
-  width: 100%;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
-#page-dashboard .rescue-stat-item {
-  padding: 6px 16px;
-  border-left: 2px solid rgba(255, 255, 255, 0.25);
-}
-#page-dashboard .rescue-stat-item:first-child {
-  border-left: none;
-  padding-left: 0;
+.rdb-stat {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--lgu-border, #dbe7ff);
+  border-radius: var(--lgu-radius, 16px);
+  padding: 22px 20px 20px;
+  box-shadow: var(--lgu-shadow, 0 12px 30px rgba(15, 23, 42, 0.1));
+  overflow: hidden;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
-#page-dashboard .rescue-stat-label {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.72);
+.rdb-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.13);
+}
+
+/* coloured top accent bar */
+.rdb-stat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 16px 16px 0 0;
+}
+
+.stat--rescue::before {
+  background: linear-gradient(90deg, #ef4444, #f87171);
+}
+.stat--inprogress::before {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+.stat--rescued::before {
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+}
+
+.rdb-stat__label {
+  font-size: 0.8rem;
   font-weight: 500;
-  line-height: 1.35;
+  color: var(--lgu-muted, #64748b);
   margin-bottom: 10px;
+  line-height: 1.3;
 }
-#page-dashboard .rescue-stat-value {
-  font-size: 2.6rem;
-  font-weight: 700;
-  color: #fff;
+
+.rdb-stat__value {
   display: block;
+  font-size: 2.8rem;
+  font-weight: 700;
   line-height: 1;
 }
 
-/* ===== ACTIVITY GRID — always 2 col inside green card ===== */
-#page-dashboard .activity-stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0;
+.stat--rescue .rdb-stat__value {
+  color: #dc2626;
+}
+.stat--inprogress .rdb-stat__value {
+  color: #d97706;
+}
+.stat--rescued .rdb-stat__value {
+  color: #16a34a;
 }
 
-/* ===== BOTTOM ROW ===== */
-#page-dashboard .dashboard-bottom-row {
+/* ── BOTTOM ROW ── */
+.rdb-bottom {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
@@ -1823,143 +1822,748 @@ html.dark .announce-card {
   align-items: start;
 }
 
-/* Bottom cards: no default padding — header + list handle spacing */
-#page-dashboard .rdb-bottom-card {
-  padding: 0 !important;
+.rdb-panel {
+  background: #fff;
+  border: 1px solid var(--lgu-border, #dbe7ff);
+  border-radius: var(--lgu-radius, 16px);
+  box-shadow: var(--lgu-shadow, 0 12px 30px rgba(15, 23, 42, 0.1));
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  min-height: 180px;
-  max-height: 320px;
+  max-height: 340px;
 }
 
-/* Blue soft header inside bottom cards */
-#page-dashboard .rdb-card-header {
+.rdb-panel__header {
   flex-shrink: 0;
-  padding: 13px 20px;
+  padding: 14px 20px;
   margin: 0;
-  background: #dbeafe;
-  color: #0f1f40;
   font-size: 0.9rem;
   font-weight: 700;
+  color: #0f1f40;
+  background: #dbeafe;
   border-bottom: 1px solid var(--lgu-border, #dbe7ff);
   border-radius: var(--lgu-radius, 16px) var(--lgu-radius, 16px) 0 0;
 }
 
-/* Scrollable list area inside bottom cards */
-#page-dashboard .rdb-scroll-list {
+.rdb-panel__body {
   flex: 1;
   overflow-y: auto;
-  min-height: 0;
   padding: 12px 20px;
-  list-style: none;
+  min-height: 0;
 }
-#page-dashboard .rdb-scroll-list::-webkit-scrollbar {
+
+.rdb-panel__body--table {
+  padding: 0;
+  overflow-x: auto;
+}
+
+.rdb-panel__body::-webkit-scrollbar {
   width: 4px;
 }
-#page-dashboard .rdb-scroll-list::-webkit-scrollbar-thumb {
+.rdb-panel__body::-webkit-scrollbar-thumb {
   background: var(--lgu-border, #dbe7ff);
   border-radius: 999px;
 }
 
-/* ================================================================
-   TABLET (≤1024px)
-   ================================================================ */
+.rdb-empty {
+  color: var(--lgu-muted, #64748b);
+  font-style: italic;
+  font-size: 0.82rem;
+  padding: 16px 0;
+  text-align: center;
+}
+
+/* ── RESPONSIVE ── */
 @media (max-width: 1024px) {
-  #page-dashboard .dashboard-stats-row {
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-
-  #page-dashboard .rescue-stat-value {
-    font-size: 2.1rem;
-  }
-
-  /* rescue-stats-grid stays 3 col — just smaller font */
-  #page-dashboard .rescue-stats-grid {
+  .rdb-stats {
     grid-template-columns: repeat(3, 1fr);
   }
-
-  #page-dashboard .dashboard-bottom-row {
+  .rdb-bottom {
     grid-template-columns: 1fr;
   }
+  .rdb-panel {
+    max-height: 260px;
+  }
+}
 
-  #page-dashboard .rdb-bottom-card {
+@media (max-width: 640px) {
+  .rdb-stats {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .rdb-stat__value {
+    font-size: 2.2rem;
+  }
+  .rdb-panel {
+    max-height: 220px;
+  }
+}
+
+/* ================================================================
+   RESCUER DASHBOARD — final value fix + polish
+   ================================================================ */
+
+/* Values were invisible — force colors explicitly */
+.rdb-stat__value {
+  display: block;
+  font-size: 2.6rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #1e293b; /* fallback dark */
+}
+
+.stat--rescue .rdb-stat__value {
+  color: #dc2626;
+}
+.stat--inprogress .rdb-stat__value {
+  color: #d97706;
+}
+.stat--rescued .rdb-stat__value {
+  color: #16a34a;
+}
+
+/* Label sits below the 4px ::before bar — needs top breathing room */
+.rdb-stat__label {
+  margin-top: 6px;
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+/* Tighten card padding so cards don't look empty */
+.rdb-stat {
+  padding: 18px 20px 16px;
+}
+
+/* Evac table — add thead back and fix min-width conflict */
+.rdb-panel__body--table table {
+  min-width: unset !important;
+  width: 100%;
+}
+
+.rdb-panel__body--table thead th {
+  background: #f8fbff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--lgu-border, #dbe7ff);
+  white-space: nowrap;
+}
+
+.rdb-panel__body--table tbody td {
+  padding: 10px 16px;
+  font-size: 0.82rem;
+  vertical-align: middle;
+}
+
+/* Evac center name + address stacked */
+.rdb-evac-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #0f172a;
+  display: block;
+}
+
+.rdb-evac-addr {
+  font-size: 0.73rem;
+  color: #64748b;
+  display: block;
+  margin-top: 1px;
+}
+
+/* Hotline rows inside panel */
+.rdb-panel__body .hotline-district-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.rdb-panel__body .hotline-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  padding: 2px 0;
+}
+
+.rdb-panel__body .hotline-row span:first-child {
+  color: #64748b;
+}
+.rdb-panel__body .hotline-row span:last-child {
+  font-weight: 600;
+  font-family: monospace;
+  color: #3b82f6;
+}
+
+.rdb-panel__body .hotline-district {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--lgu-border, #dbe7ff);
+}
+.rdb-panel__body .hotline-district:last-child {
+  border-bottom: none;
+}
+.rdb-panel__body .hotline-district:first-child {
+  padding-top: 4px;
+}
+
+/* ================================================================
+   RESCUER DASHBOARD — clean rewrite matching LGU pattern
+   ================================================================ */
+
+/* ── STAT ROW ── */
+.rdb-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.rdb-stat {
+  position: relative;
+  background: #fff;
+  border: 1px solid #dbe7ff;
+  border-radius: 16px;
+  padding: 28px 20px 24px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.1);
+  overflow: hidden;
+  text-align: center;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.rdb-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.13);
+}
+
+/* Coloured top accent bar */
+.rdb-stat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  border-radius: 16px 16px 0 0;
+}
+
+.stat--rescue::before {
+  background: linear-gradient(90deg, #ef4444, #f87171);
+}
+.stat--inprogress::before {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+.stat--rescued::before {
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+}
+
+/* Value — BIG, centered, colored */
+.rdb-stat__value {
+  display: block;
+  font-size: 3.5rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+.stat--rescue .rdb-stat__value {
+  color: #dc2626 !important;
+}
+.stat--inprogress .rdb-stat__value {
+  color: #d97706 !important;
+}
+.stat--rescued .rdb-stat__value {
+  color: #16a34a !important;
+}
+
+/* Label — below value, muted */
+.rdb-stat__label {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* ── BOTTOM ROW ── */
+.rdb-bottom {
+  display: grid;
+  grid-template-columns: 3fr 2fr; /* evac wider, hotlines narrower — like LGU */
+  gap: 16px;
+  padding-bottom: 28px;
+  align-items: start;
+}
+
+.rdb-panel {
+  background: #fff;
+  border: 1px solid #dbe7ff;
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 420px;
+}
+
+/* Header with optional hint text */
+.rdb-panel__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  background: #dbeafe;
+  border-bottom: 1px solid #dbe7ff;
+  border-radius: 16px 16px 0 0;
+  flex-shrink: 0;
+}
+
+.rdb-panel__header {
+  flex-shrink: 0;
+  padding: 14px 20px;
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0f1f40;
+  background: #dbeafe;
+  border-bottom: 1px solid #dbe7ff;
+  border-radius: 16px 16px 0 0;
+}
+
+/* When inside header-row, remove own padding/bg (parent handles it) */
+.rdb-panel__header-row .rdb-panel__header {
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+}
+
+.rdb-panel__hint {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-style: italic;
+  white-space: nowrap;
+}
+
+.rdb-panel__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+  min-height: 0;
+}
+
+.rdb-panel__body::-webkit-scrollbar {
+  width: 4px;
+}
+.rdb-panel__body::-webkit-scrollbar-thumb {
+  background: #dbe7ff;
+  border-radius: 999px;
+}
+
+.rdb-empty {
+  color: #64748b;
+  font-style: italic;
+  font-size: 0.82rem;
+  padding: 20px;
+  text-align: center;
+}
+
+/* ── EVAC CENTER ROWS (matches LGU progress bar style) ── */
+.rdb-panel__body--evac {
+  padding: 0;
+}
+
+.rdb-evac-row {
+  padding: 14px 20px;
+  border-bottom: 1px solid #f0f4ff;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.rdb-evac-row:last-child {
+  border-bottom: none;
+}
+.rdb-evac-row:hover {
+  background: #f8fbff;
+}
+
+.rdb-evac-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.rdb-evac-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.rdb-evac-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: #0f172a;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rdb-evac-addr {
+  font-size: 0.73rem;
+  color: #64748b;
+  display: block;
+  margin-top: 2px;
+}
+
+.rdb-evac-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.rdb-evac-count {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-family: monospace;
+}
+
+/* Progress bar */
+.rdb-progress {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.rdb-progress__bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.rdb-progress__bar--available {
+  background: #22c55e;
+}
+.rdb-progress__bar--nearfull {
+  background: #eab308;
+}
+.rdb-progress__bar--full {
+  background: #ef4444;
+}
+
+/* ── HOTLINE ROWS ── */
+.rdb-hotline-district {
+  padding: 12px 20px;
+  border-bottom: 1px solid #f0f4ff;
+}
+
+.rdb-hotline-district:last-child {
+  border-bottom: none;
+}
+
+.rdb-hotline-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.rdb-hotline-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  padding: 2px 0;
+}
+
+.rdb-hotline-row span:first-child {
+  color: #64748b;
+}
+.rdb-hotline-row span:last-child {
+  font-weight: 600;
+  font-family: monospace;
+  color: #3b82f6;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1024px) {
+  .rdb-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .rdb-bottom {
+    grid-template-columns: 1fr;
+  }
+  .rdb-panel {
+    max-height: 300px;
+  }
+  .rdb-panel__hint {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .rdb-stats {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .rdb-stat__value {
+    font-size: 2.6rem;
+  }
+  .rdb-panel {
     max-height: 240px;
   }
 }
 
-/* ================================================================
-   MOBILE (≤640px)
-   ================================================================ */
-@media (max-width: 640px) {
-  /* Stat cards stay side-by-side */
-  #page-dashboard .dashboard-stats-row {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 10px;
+/* Evac rows in dashboard panel */
+.rdb-evac-row {
+  padding: 14px 20px;
+  border-bottom: 1px solid #f0f4ff;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.rdb-evac-row:last-child {
+  border-bottom: none;
+}
+
+.rdb-evac-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.rdb-evac-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.rdb-evac-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: #0f172a;
+  display: block;
+}
+
+.rdb-evac-addr {
+  font-size: 0.73rem;
+  color: #64748b;
+  display: block;
+  margin-top: 2px;
+}
+
+.rdb-evac-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.rdb-evac-count {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-family: monospace;
+}
+
+.rdb-progress {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.rdb-progress__bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.rdb-progress__bar--available {
+  background: #22c55e;
+}
+.rdb-progress__bar--nearfull {
+  background: #eab308;
+}
+.rdb-progress__bar--full {
+  background: #ef4444;
+}
+
+.btn-gmaps {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background-color: #4285f4;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.btn-gmaps:hover {
+  background-color: #2563eb;
+}
+.post-card__avatar--initials {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+}
+
+/* ===== SIDEBAR BRAND TEXT ===== */
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-text h1 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  letter-spacing: 0.01em;
+}
+
+.brand-text p {
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 4px;
+  font-size: 0.75rem;
+  line-height: 1.3;
+}
+
+/* ===== TOPBAR HEADING ===== */
+.topbar-heading {
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar-heading h1 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f1f40;
+}
+
+.topbar-heading p {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+/* ===== SIDEBAR LOGOUT BTN ===== */
+.sidebar-logout-btn {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-radius: 12px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.sidebar-logout-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.sidebar-logout-btn .material-symbols-outlined {
+  color: #fff;
+  font-size: 20px;
+}
+
+.rdb-section-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 20px 0 10px;
+}
+.rdb-section-label__icon {
+  font-size: 1rem;
+}
+.rdb-section-label__sub {
+  font-weight: 400;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 4px;
+}
+.rdb-section-label--personal {
+  margin-top: 24px;
+}
+
+.rdb-stats--personal {
+  grid-template-columns: repeat(2, 1fr); /* only 2 cards */
+}
+
+.rdb-stat__icon {
+  font-size: 1.4rem;
+  margin-bottom: 4px;
+}
+
+/* ===== RESPONSIVE: Overall Rescue Status ===== */
+
+.rdb-stats {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, 1fr); /* default: 2 columns para sa mobile */
+}
+
+/* 3rd card ng Overall — i-center sa mobile */
+.rdb-stats:not(.rdb-stats--personal) > .rdb-stat:last-child {
+  grid-column: 1 / -1;
+  max-width: calc(50% - 6px);
+  margin-inline: auto;
+}
+
+/* Desktop/tablet: 3 columns para sa Overall */
+@media (min-width: 600px) {
+  .rdb-stats:not(.rdb-stats--personal) {
+    grid-template-columns: repeat(3, 1fr);
   }
 
-  /* Stack the 3 rescue stats vertically — cards are too narrow */
-  #page-dashboard .rescue-stats-grid {
-    grid-template-columns: 1fr !important;
-  }
-  #page-dashboard .rescue-stat-item {
-    border-left: none !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.25);
-    padding: 7px 0 !important;
-  }
-  #page-dashboard .rescue-stat-item:first-child {
-    border-top: none;
-    padding-top: 0 !important;
-  }
-
-  #page-dashboard .rescue-stat-value {
-    font-size: 1.8rem;
-  }
-  #page-dashboard .rescue-stat-label {
-    font-size: 0.68rem;
-    margin-bottom: 4px;
-  }
-  #page-dashboard .rdb-stat-card .card-section-label {
-    font-size: 0.72rem;
-    margin-bottom: 10px;
-  }
-
-  /* Activity stays 2 col */
-  #page-dashboard .activity-stats-grid {
-    grid-template-columns: 1fr 1fr !important;
-  }
-
-  /* Bottom already 1-col from tablet */
-  #page-dashboard .rdb-bottom-card {
-    max-height: 200px;
+  /* Remove centering trick sa desktop — lahat equal */
+  .rdb-stats:not(.rdb-stats--personal) > .rdb-stat:last-child {
+    grid-column: auto;
+    max-width: unset;
+    margin-inline: unset;
   }
 }
 
-/* ================================================================
-   TINY (≤380px) — very small phones
-   ================================================================ */
-@media (max-width: 380px) {
-  /* Now stack stat cards too */
-  #page-dashboard .dashboard-stats-row {
-    grid-template-columns: 1fr !important;
-  }
-
-  /* Restore rescue stats to 3-col since card is full width now */
-  #page-dashboard .rescue-stats-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
-  }
-  #page-dashboard .rescue-stat-item {
-    border-left: 2px solid rgba(255, 255, 255, 0.25) !important;
-    border-top: none !important;
-    padding: 6px 10px !important;
-  }
-  #page-dashboard .rescue-stat-item:first-child {
-    border-left: none !important;
-    padding-left: 0 !important;
-  }
-
-  #page-dashboard .rescue-stat-value {
-    font-size: 2.2rem;
-  }
+/* Your Rescue Status — lagi 2 columns */
+.rdb-stats--personal {
+  grid-template-columns: repeat(2, 1fr);
 }

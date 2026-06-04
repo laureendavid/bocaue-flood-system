@@ -32,6 +32,8 @@ $pageIcons = [
   'hotlines' => 'call',
   'community' => 'groups',
 ];
+
+$currentPageTitle = $pageLabels[$page] ?? 'Dashboard';
 ?>
 <!doctype html>
 <html lang="en">
@@ -59,32 +61,53 @@ $pageIcons = [
       <button id="sidebar-close-btn" class="sidebar-close-btn" aria-label="Close navigation">
         <span class="material-symbols-outlined">close</span>
       </button>
+
+      <!-- Brand — same structure as LGU -->
       <div class="sidebar-brand">
         <div class="brand-icon">
           <span class="material-symbols-outlined">person</span>
         </div>
-        <h1>Rescuer</h1>
+        <div class="brand-text">
+          <h1>Rescuer</h1>
+          <p>Bocaue Flood Information System</p>
+        </div>
       </div>
+
       <nav class="sidebar-nav">
         <?php foreach ($pageLabels as $key => $label): ?>
           <a class="nav-link<?= $page === $key ? ' active' : '' ?>" href="main.php?page=<?= $key ?>"
             data-page="<?= $key ?>" data-label="<?= $label ?>">
             <span class="material-symbols-outlined"><?= $pageIcons[$key] ?></span>
-            <?= $label ?>
+            <span class="nav-label"><?= $label ?></span>
           </a>
         <?php endforeach; ?>
       </nav>
+
+      <div class="sidebar-footer">
+        <button class="sidebar-logout-btn" type="button" onclick="window.location.href='../main/logout.php'">
+          <span class="material-symbols-outlined">logout</span>
+          <span class="nav-label">Logout</span>
+        </button>
+      </div>
     </aside>
 
     <!-- ===== MAIN CONTENT ===== -->
     <main class="main-content">
 
-      <!-- Top Bar (mobile) -->
+      <!-- Top Bar -->
       <div class="topbar" role="banner">
         <button id="hamburger-btn" class="hamburger-btn" aria-label="Open navigation" aria-controls="sidebar">
           <span class="material-symbols-outlined">menu</span>
         </button>
 
+        <!-- Page title + subtitle — same as LGU -->
+        <div class="topbar-heading">
+          <h1><?= htmlspecialchars($currentPageTitle) ?></h1>
+          <p>Rescuer Operations</p>
+        </div>
+
+        <!-- Toast notifications -->
+        <div id="toast-container"></div>
 
         <!-- Profile Avatar + Dropdown -->
         <div class="profile-wrapper" id="profile-wrapper">
@@ -116,12 +139,14 @@ $pageIcons = [
 
     </main>
   </div>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="assets/js/rescuer.js"></script>
   <script src="assets/js/rescuer-evac.js"></script>
   <script src="assets/js/rescuer-hotlines.js"></script>
   <script src="assets/js/rescuer-dashboard-hotline.js"></script>
   <script src="assets/js/flood-map-rescuer.js"></script>
+  <script src="assets/js/rescuer_dashboard_stats.js"></script>
 </body>
 
 </html>

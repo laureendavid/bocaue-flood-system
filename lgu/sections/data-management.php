@@ -62,8 +62,25 @@
     <div class="toolbar">
       <div class="search-box">
         <span class="material-symbols-outlined">search</span>
-        <input type="search" placeholder="Search Centers" aria-label="Search evacuation centers" />
+        <input type="search" id="evac-search" placeholder="Search Centers" aria-label="Search evacuation centers" />
       </div>
+
+      <div class="filter-wrapper">
+        <button class="btn-filter" id="evac-filter-btn">
+          <span class="material-symbols-outlined" style="font-size:16px">filter_list</span>
+          Filter by Status
+        </button>
+        <div class="filter-dropdown" id="evac-filter-dropdown" style="display:none;">
+          <p class="filter-label">Filter by Status</p>
+          <div id="evac-status-filters">
+            <label><input type="radio" name="evac-status" value="all" checked> All</label>
+            <label><input type="radio" name="evac-status" value="available"> Available</label>
+            <label><input type="radio" name="evac-status" value="near full"> Near Full</label>
+            <label><input type="radio" name="evac-status" value="full"> Full</label>
+          </div>
+        </div>
+      </div>
+
       <button class="btn-add" id="btn-add-center">
         <span class="material-symbols-outlined">add</span>
         Add Center
@@ -79,7 +96,7 @@
             <th>Action</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="evac-tbody">
           <?php include '../includes/fetch_evac_centers.php'; ?>
         </tbody>
       </table>

@@ -11,7 +11,8 @@
             <input type="hidden" id="add-evacuee-center-id" />
             <div class="form-group">
                 <label for="evacuee-rep">Representative Name</label>
-                <input type="text" id="evacuee-rep" class="form-input" placeholder="e.g. Juan dela Cruz" />
+                <input type="text" id="evacuee-rep" class="form-input" placeholder="e.g. Juan dela Cruz"
+                    oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')" />
             </div>
             <div class="form-group">
                 <label for="evacuee-count">Number of People</label>
@@ -19,7 +20,8 @@
             </div>
             <div class="form-group">
                 <label for="evacuee-contact">Contact Number</label>
-                <input type="text" id="evacuee-contact" class="form-input" placeholder="e.g. 09XX-XXX-XXXX" />
+                <input type="text" id="evacuee-contact" class="form-input" placeholder="e.g. 09XXXXXXXXX" maxlength="11"
+                    oninput="this.value = this.value.replace(/\D/g, '').slice(0, 11)" />
             </div>
         </div>
         <div class="modal-footer">

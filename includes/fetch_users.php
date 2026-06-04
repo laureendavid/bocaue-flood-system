@@ -1,7 +1,7 @@
 <?php
 require_once '../config/db.php';
 
-$sql = "SELECT u.user_id, u.full_name, u.email, u.phone, b.barangay_name, r.role_name AS role
+$sql = "SELECT u.user_id, u.full_name, u.email, b.barangay_name, r.role_name AS role
         FROM users u
         JOIN barangays b ON u.barangay_id = b.barangay_id
         JOIN roles r ON u.role_id = r.role_id
@@ -12,18 +12,9 @@ $result = mysqli_query($conn, $sql);
 if ($result && mysqli_num_rows($result) > 0):
     while ($row = mysqli_fetch_assoc($result)): ?>
         <tr>
-            <td>
-                <?= htmlspecialchars($row['full_name']) ?>
-            </td>
-            <td>
-                <?= htmlspecialchars($row['email']) ?>
-            </td>
-            <td>
-                <?= htmlspecialchars($row['phone'] ?? '—') ?>
-            </td>
-            <td>
-                <?= htmlspecialchars($row['barangay_name']) ?>
-            </td>
+            <td><?= htmlspecialchars($row['full_name']) ?></td>
+            <td><?= htmlspecialchars($row['email']) ?></td>
+            <td><?= htmlspecialchars($row['barangay_name']) ?></td>
             <td>
                 <span class="badge badge-<?= strtolower($row['role']) ?>">
                     <?= htmlspecialchars($row['role']) ?>
@@ -44,6 +35,6 @@ if ($result && mysqli_num_rows($result) > 0):
     <?php endwhile;
 else: ?>
     <tr class="empty-row">
-        <td colspan="6">No users to display.</td>
+        <td colspan="5">No users to display.</td>
     </tr>
 <?php endif; ?>

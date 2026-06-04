@@ -50,10 +50,10 @@ function pointInsideBocaue(lat, lng) {
     i < BOCAUE_POLYGON.length;
     j = i++
   ) {
-    const yi = BOCAUE_POLYGON[i][0];
-    const xi = BOCAUE_POLYGON[i][1];
-    const yj = BOCAUE_POLYGON[j][0];
-    const xj = BOCAUE_POLYGON[j][1];
+    const yi = BOCAUE_POLYGON[i][0],
+      xi = BOCAUE_POLYGON[i][1];
+    const yj = BOCAUE_POLYGON[j][0],
+      xj = BOCAUE_POLYGON[j][1];
     const intersects =
       yi > y !== yj > y &&
       x < ((xj - xi) * (y - yi)) / (yj - yi + Number.EPSILON) + xi;
@@ -101,10 +101,14 @@ function addCurrentLocationControl(map) {
   control.onAdd = function () {
     const button = L.DomUtil.create("button", "leaflet-bar");
     button.type = "button";
-    button.textContent = "Use My Current Location";
+    button.innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:middle;">' +
+      '<circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/>' +
+      "</svg>My Location";
     button.style.cssText =
-      "background:#fff;border:none;padding:8px 10px;font-size:12px;" +
-      "font-weight:600;cursor:pointer;min-width:168px;border-radius:6px;";
+      "background:#fff;border:none;padding:8px 12px;font-size:12px;" +
+      "font-weight:600;cursor:pointer;min-width:130px;border-radius:6px;" +
+      "color:#1e293b;display:flex;align-items:center;";
 
     L.DomEvent.disableClickPropagation(button);
     L.DomEvent.on(button, "click", () => {
@@ -141,23 +145,24 @@ function addCurrentLocationControl(map) {
 ---------------------------------------------------------------- */
 function makeSeverityIcon(severityId) {
   const meta = SEVERITY[severityId] || { color: "#94a3b8", border: "#64748b" };
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="38" viewBox="0 0 30 38">
-      <defs>
-        <filter id="ds" x="-30%" y="-20%" width="160%" height="160%">
-          <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="rgba(0,0,0,0.35)"/>
-        </filter>
-      </defs>
-      <path filter="url(#ds)" fill="${meta.color}" stroke="${meta.border}" stroke-width="1.5"
-        d="M15 1C8.373 1 3 6.373 3 13c0 9 12 24 12 24S27 22 27 13C27 6.373 21.627 1 15 1z"/>
-      <circle cx="15" cy="13" r="5.5" fill="#fff" opacity="0.9"/>
-    </svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42">
+    <defs>
+      <filter id="ds${severityId}" x="-40%" y="-20%" width="180%" height="170%">
+        <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="rgba(0,0,0,0.4)"/>
+      </filter>
+    </defs>
+    <path filter="url(#ds${severityId})" fill="${meta.color}" stroke="${meta.border}" stroke-width="1.5"
+      d="M16 2C9.373 2 4 7.373 4 14c0 9.5 12 26 12 26S28 23.5 28 14C28 7.373 22.627 2 16 2z"/>
+    <circle cx="16" cy="14" r="6" fill="rgba(255,255,255,0.95)"/>
+    <circle cx="16" cy="14" r="3.5" fill="${meta.color}"/>
+  </svg>`;
 
   return L.divIcon({
     html: svg,
     className: "",
-    iconSize: [30, 38],
-    iconAnchor: [15, 38],
-    popupAnchor: [0, -38],
+    iconSize: [32, 42],
+    iconAnchor: [16, 42],
+    popupAnchor: [0, -44],
   });
 }
 
@@ -169,8 +174,10 @@ function buildPopup(r) {
     color: "#94a3b8",
     label: "Unknown",
   };
-  const dot = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;
-    background:${meta.color};margin-right:6px;vertical-align:middle;"></span>`;
+  const lat = parseFloat(r.latitude);
+  const lng = parseFloat(r.longitude);
+  const gmapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+
   const date = r.created_at
     ? new Date(r.created_at).toLocaleDateString("en-PH", {
         year: "numeric",
@@ -179,37 +186,79 @@ function buildPopup(r) {
       })
     : "—";
 
+  const severityIcons = { 1: "✓", 2: "⚠", 3: "✕" };
+  const icon = severityIcons[r.severity_id] || "•";
+
   return `
-    <div style="font-family:'Segoe UI',sans-serif;min-width:220px;max-width:280px;">
-      <div style="background:${meta.color};color:#fff;margin:-1px -1px 0;padding:8px 12px;
-        border-radius:8px 8px 0 0;font-weight:700;font-size:0.82rem;letter-spacing:0.03em;">
-        ${dot}${escHtml(meta.label).toUpperCase()}
-      </div>
-      <div style="padding:10px 12px;">
-        <div style="font-weight:700;font-size:0.9rem;color:#1e293b;margin-bottom:2px;">
-          ${escHtml(r.barangay_name)}, ${escHtml(r.municipality)}
+    <div style="font-family:'Segoe UI',system-ui,sans-serif;min-width:230px;max-width:290px;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.15);">
+
+      <!-- Header -->
+      <div style="background:${meta.color};padding:10px 14px;display:flex;align-items:center;gap:8px;">
+        <span style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.25);display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#fff;">${icon}</span>
+        <div>
+          <div style="color:rgba(255,255,255,0.75);font-size:0.65rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">Flood Severity</div>
+          <div style="color:#fff;font-size:0.88rem;font-weight:700;line-height:1.2;">${escHtml(meta.label)}</div>
         </div>
-        ${
-          r.full_address
-            ? `<div style="font-size:0.75rem;color:#64748b;margin-bottom:6px;">${escHtml(r.full_address)}</div>`
-            : ""
-        }
-        <hr style="border:none;border-top:1px solid #e2e8f0;margin:6px 0;">
+      </div>
+
+      <!-- Body -->
+      <div style="padding:12px 14px;background:#fff;">
+
+        <!-- Location -->
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:10px;">
+          <span style="margin-top:2px;font-size:14px;flex-shrink:0;">📍</span>
+          <div>
+            <div style="font-weight:700;font-size:0.88rem;color:#0f172a;line-height:1.3;">${escHtml(r.barangay_name)}, ${escHtml(r.municipality)}</div>
+            ${r.full_address ? `<div style="font-size:0.73rem;color:#64748b;margin-top:1px;">${escHtml(r.full_address)}</div>` : ""}
+          </div>
+        </div>
+
+        <div style="height:1px;background:#f1f5f9;margin:8px 0;"></div>
+
+        <!-- Water level -->
         ${
           r.water_level
-            ? `<div style="font-size:0.78rem;color:#475569;margin-bottom:4px;">
-               <strong>Water level:</strong> ${escHtml(r.water_level)}</div>`
+            ? `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span style="font-size:13px;">💧</span>
+          <div style="font-size:0.78rem;color:#334155;"><span style="color:#94a3b8;">Water level</span> &nbsp;<strong style="color:#0f172a;">${escHtml(r.water_level)}</strong></div>
+        </div>`
             : ""
         }
+
+        <!-- Description -->
         ${
           r.description
-            ? `<div style="font-size:0.78rem;color:#475569;margin-bottom:4px;">
-               <strong>Details:</strong> ${escHtml(r.description)}</div>`
+            ? `
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;">
+          <span style="font-size:13px;margin-top:1px;">📝</span>
+          <div style="font-size:0.78rem;color:#334155;">${escHtml(r.description)}</div>
+        </div>`
             : ""
         }
-        <div style="font-size:0.72rem;color:#94a3b8;margin-top:6px;">
-          Reported ${date}${r.reported_by ? " · " + escHtml(r.reported_by) : ""}
+
+        <!-- Date + Reporter -->
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+          <span style="font-size:13px;">🕐</span>
+          <div style="font-size:0.72rem;color:#94a3b8;">
+            Reported ${date}${r.reported_by ? ` &nbsp;·&nbsp; <strong style="color:#64748b;">${escHtml(r.reported_by)}</strong>` : ""}
+          </div>
         </div>
+
+        <div style="height:1px;background:#f1f5f9;margin:10px 0 8px;"></div>
+
+        <!-- Google Maps button -->
+        <a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer"
+          style="display:flex;align-items:center;justify-content:center;gap:6px;
+          padding:7px 12px;border-radius:8px;background:#f8fafc;border:1.5px solid #e2e8f0;
+          text-decoration:none;color:#1e40af;font-size:0.76rem;font-weight:600;cursor:pointer;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+          </svg>
+          Open in Google Maps
+        </a>
+
       </div>
     </div>`;
 }
@@ -236,7 +285,7 @@ function renderMarkers() {
     })
       .addTo(floodMap)
       .bindPopup(buildPopup(r), {
-        maxWidth: 290,
+        maxWidth: 300,
         className: "flood-severity-popup",
       });
 
@@ -257,26 +306,31 @@ function addLegend(map) {
   legend.onAdd = function () {
     const div = L.DomUtil.create("div");
     div.style.cssText =
-      "background:#fff;border-radius:10px;padding:12px 14px;" +
-      "box-shadow:0 2px 12px rgba(0,0,0,0.18);font-family:'Segoe UI',sans-serif;" +
-      "font-size:0.78rem;line-height:1.7;min-width:150px;";
+      "background:#fff;border-radius:10px;padding:10px 12px;" +
+      "box-shadow:0 2px 16px rgba(0,0,0,0.15);font-family:'Segoe UI',system-ui,sans-serif;" +
+      "font-size:0.76rem;min-width:140px;";
 
     div.innerHTML =
-      `<div style="font-weight:700;color:#1e293b;margin-bottom:6px;font-size:0.8rem;
-         letter-spacing:0.04em;text-transform:uppercase;">Flood Severity</div>` +
+      `<div style="font-weight:700;color:#64748b;margin-bottom:8px;font-size:0.65rem;
+         letter-spacing:0.1em;text-transform:uppercase;">Flood Severity</div>` +
       Object.entries(SEVERITY)
         .map(
           ([id, meta]) =>
-            `<div style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:2px 0;"
-           data-severity-filter="${id}">
-           <span style="width:13px;height:13px;border-radius:50%;flex-shrink:0;
-             background:${meta.color};border:2px solid ${meta.border};display:inline-block;"></span>
-           <span style="color:#334155;">${meta.label}</span>
-         </div>`,
+            `<div style="display:flex;align-items:center;gap:8px;padding:3px 6px;border-radius:6px;
+               cursor:pointer;transition:background 0.15s;" data-severity-filter="${id}"
+               onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background='transparent'">
+               <span style="width:11px;height:11px;border-radius:50%;flex-shrink:0;
+                 background:${meta.color};border:2px solid ${meta.border};display:inline-block;"></span>
+               <span style="color:#334155;font-weight:500;">${meta.label}</span>
+             </div>`,
         )
         .join("") +
-      `<div style="margin-top:8px;border-top:1px solid #e2e8f0;padding-top:6px;
-         cursor:pointer;color:#3b82f6;font-weight:600;" data-severity-filter="all">Show All</div>`;
+      `<div style="margin-top:8px;padding:3px 6px;border-radius:6px;cursor:pointer;
+         color:#3b82f6;font-weight:600;font-size:0.73rem;transition:background 0.15s;"
+         data-severity-filter="all"
+         onmouseenter="this.style.background='#eff6ff'" onmouseleave="this.style.background='transparent'">
+         ⟳ Show All
+       </div>`;
 
     L.DomEvent.disableClickPropagation(div);
     div.querySelectorAll("[data-severity-filter]").forEach((el) => {
@@ -293,14 +347,72 @@ function addLegend(map) {
 }
 
 /* ----------------------------------------------------------------
-   Filter bar (above the map — #flood-filter-bar)
+   Filter bar (#flood-filter-bar)
 ---------------------------------------------------------------- */
 function buildFilterBar() {
   const bar = document.getElementById("flood-filter-bar");
   if (!bar) return;
 
+  /* Inject scoped styles once */
+  if (!document.getElementById("lgu-filter-styles")) {
+    const style = document.createElement("style");
+    style.id = "lgu-filter-styles";
+    style.textContent = `
+      #flood-filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding: 10px 14px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+      }
+      .lfb-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 16px;
+        border-radius: 8px;
+        border: 2px solid transparent;
+        background: #fff;
+        color: #475569;
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.18s ease;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        white-space: nowrap;
+      }
+      .lfb-btn:hover:not(.lfb-active) {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+      }
+      .lfb-btn.lfb-active {
+        color: #fff;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+        transform: translateY(-1px);
+      }
+      .lfb-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        border: 2px solid rgba(0,0,0,0.15);
+        flex-shrink: 0;
+      }
+      #flood-marker-count {
+        margin-left: auto;
+        font-size: 0.73rem;
+        color: #94a3b8;
+        font-weight: 500;
+        white-space: nowrap;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   const items = [
-    { id: "all", label: "All", color: "#3b82f6", border: "#2563eb" },
+    { id: "all", label: "All Reports", color: "#3b82f6", border: "#2563eb" },
     ...Object.entries(SEVERITY).map(([id, meta]) => ({
       id,
       label: meta.label,
@@ -312,68 +424,64 @@ function buildFilterBar() {
   bar.innerHTML =
     items
       .map(
-        (item) =>
-          `<button data-filter="${item.id}" style="
-        display:inline-flex;align-items:center;gap:6px;
-        padding:6px 14px;border-radius:999px;
-        border:2px solid ${item.border};
-        background:#fff;color:#1e293b;
-        font-size:0.78rem;font-weight:600;
-        cursor:pointer;transition:all 0.15s;">
-        ${
-          item.id !== "all"
-            ? `<span style="width:10px;height:10px;border-radius:50%;
-               background:${item.color};border:2px solid ${item.border};
-               display:inline-block;"></span>`
-            : ""
-        }
-        ${item.label}
-      </button>`,
+        (item) => `
+        <button class="lfb-btn" data-filter="${item.id}">
+          ${
+            item.id === "all"
+              ? `<span style="font-size:15px;line-height:1;">⊞</span>`
+              : `<span class="lfb-dot" style="background:${item.color};"></span>`
+          }
+          ${item.label}
+        </button>`,
       )
-      .join("") +
-    `<span id="flood-marker-count" style="margin-left:auto;font-size:0.75rem;
-       color:#64748b;align-self:center;"></span>`;
+      .join("") + `<span id="flood-marker-count"></span>`;
 
-  bar.querySelectorAll("button[data-filter]").forEach((btn) => {
+  bar.querySelectorAll(".lfb-btn").forEach((btn) => {
     btn.addEventListener("click", function () {
       activeFilter = this.getAttribute("data-filter");
       renderMarkers();
       updateFilterUI();
     });
-    // hover effects
-    btn.addEventListener("mouseenter", function () {
-      if (!this.classList.contains("active-filter")) {
-        const c = SEVERITY[this.dataset.filter] || { color: "#3b82f6" };
-        this.style.background = c.color;
-        this.style.color = "#fff";
-      }
-    });
-    btn.addEventListener("mouseleave", function () {
-      if (!this.classList.contains("active-filter")) {
-        this.style.background = "#fff";
-        this.style.color = "#1e293b";
-      }
-    });
   });
+
+  updateFilterUI();
 }
 
 function updateFilterUI() {
   const bar = document.getElementById("flood-filter-bar");
   if (!bar) return;
-  bar.querySelectorAll("button[data-filter]").forEach((btn) => {
-    const isActive = btn.getAttribute("data-filter") === activeFilter;
-    const meta = SEVERITY[btn.dataset.filter] || {
-      color: "#3b82f6",
-      border: "#2563eb",
-    };
+
+  const severityBgs = { 1: "#22c55e", 2: "#eab308", 3: "#ef4444" };
+  const severityBorders = { 1: "#16a34a", 2: "#ca8a04", 3: "#dc2626" };
+
+  bar.querySelectorAll(".lfb-btn").forEach((btn) => {
+    const filter = btn.getAttribute("data-filter");
+    const isActive = filter === activeFilter;
+
     if (isActive) {
-      btn.classList.add("active-filter");
-      btn.style.background = meta.color;
+      btn.classList.add("lfb-active");
+      const bg =
+        filter === "all" ? "#3b82f6" : severityBgs[filter] || "#3b82f6";
+      const bd =
+        filter === "all" ? "#2563eb" : severityBorders[filter] || "#2563eb";
+      btn.style.background = bg;
+      btn.style.borderColor = bd;
       btn.style.color = "#fff";
+      const dot = btn.querySelector(".lfb-dot");
+      if (dot) {
+        dot.style.background = "rgba(255,255,255,0.85)";
+        dot.style.borderColor = "rgba(255,255,255,0.4)";
+      }
     } else {
-      btn.classList.remove("active-filter");
+      btn.classList.remove("lfb-active");
       btn.style.background = "#fff";
-      btn.style.color = "#1e293b";
+      btn.style.borderColor = "transparent";
+      btn.style.color = "#475569";
+      const dot = btn.querySelector(".lfb-dot");
+      if (dot) {
+        dot.style.background = severityBgs[filter] || "#94a3b8";
+        dot.style.borderColor = "rgba(0,0,0,0.15)";
+      }
     }
   });
 }
@@ -426,7 +534,7 @@ function initFloodMap() {
   applyBoundaryLayer(floodMap);
   addCurrentLocationControl(floodMap);
   addLegend(floodMap);
-  buildFilterBar();
+  buildFilterBar(); /* calls updateFilterUI() internally */
   loadFloodSeverityData();
 
   floodMap.invalidateSize();
@@ -448,7 +556,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ----------------------------------------------------------------
-   Global API — call after approving/rejecting a report via AJAX
+   Global API
 ---------------------------------------------------------------- */
 window.floodSeverityMap = {
   refresh: loadFloodSeverityData,

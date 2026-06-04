@@ -53,25 +53,32 @@
   function makeSeverityIcon(severityId) {
     var meta = SEVERITY[severityId] || { color: "#94a3b8", border: "#64748b" };
     var svg =
-      '<svg xmlns="http://www.w3.org/2000/svg" width="30" height="38" viewBox="0 0 30 38">' +
-      '<defs><filter id="ds" x="-30%" y="-20%" width="160%" height="160%">' +
-      '<feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="rgba(0,0,0,0.35)"/>' +
+      '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42">' +
+      '<defs><filter id="ds' +
+      severityId +
+      '" x="-40%" y="-20%" width="180%" height="170%">' +
+      '<feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="rgba(0,0,0,0.4)"/>' +
       "</filter></defs>" +
-      '<path filter="url(#ds)" fill="' +
+      '<path filter="url(#ds' +
+      severityId +
+      ')" fill="' +
       meta.color +
       '" stroke="' +
       meta.border +
       '" stroke-width="1.5"' +
-      ' d="M15 1C8.373 1 3 6.373 3 13c0 9 12 24 12 24S27 22 27 13C27 6.373 21.627 1 15 1z"/>' +
-      '<circle cx="15" cy="13" r="5.5" fill="#fff" opacity="0.9"/>' +
+      ' d="M16 2C9.373 2 4 7.373 4 14c0 9.5 12 26 12 26S28 23.5 28 14C28 7.373 22.627 2 16 2z"/>' +
+      '<circle cx="16" cy="14" r="6" fill="rgba(255,255,255,0.95)"/>' +
+      '<circle cx="16" cy="14" r="3.5" fill="' +
+      meta.color +
+      '"/>' +
       "</svg>";
 
     return L.divIcon({
       html: svg,
       className: "",
-      iconSize: [30, 38],
-      iconAnchor: [15, 38],
-      popupAnchor: [0, -38],
+      iconSize: [32, 42],
+      iconAnchor: [16, 42],
+      popupAnchor: [0, -44],
     });
   }
 
@@ -81,11 +88,10 @@
       color: "#94a3b8",
       label: "Unknown",
     };
-    var dot =
-      '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;' +
-      "background:" +
-      meta.color +
-      ';margin-right:6px;vertical-align:middle;"></span>';
+    var lat = parseFloat(r.latitude);
+    var lng = parseFloat(r.longitude);
+    var gmapsUrl = "https://www.google.com/maps?q=" + lat + "," + lng;
+
     var date = r.created_at
       ? new Date(r.created_at).toLocaleDateString("en-PH", {
           year: "numeric",
@@ -94,40 +100,90 @@
         })
       : "—";
 
+    /* severity badge strip */
+    var severityIcons = { 1: "✓", 2: "⚠", 3: "✕" };
+    var icon = severityIcons[r.severity_id] || "•";
+
     return (
-      "<div style=\"font-family:'Segoe UI',sans-serif;min-width:220px;max-width:280px;\">" +
+      "<div style=\"font-family:'Segoe UI',system-ui,sans-serif;min-width:230px;max-width:290px;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.15);\">" +
+      /* header */
       '<div style="background:' +
       meta.color +
-      ";color:#fff;margin:-1px -1px 0;padding:8px 12px;" +
-      'border-radius:8px 8px 0 0;font-weight:700;font-size:0.82rem;letter-spacing:0.03em;">' +
-      dot +
-      escHtml(meta.label).toUpperCase() +
+      ';padding:10px 14px;display:flex;align-items:center;gap:8px;">' +
+      '<span style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.25);display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#fff;">' +
+      icon +
+      "</span>" +
+      "<div>" +
+      '<div style="color:rgba(255,255,255,0.75);font-size:0.65rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">Flood Severity</div>' +
+      '<div style="color:#fff;font-size:0.88rem;font-weight:700;line-height:1.2;">' +
+      escHtml(meta.label) +
       "</div>" +
-      '<div style="padding:10px 12px;">' +
-      '<div style="font-weight:700;font-size:0.9rem;color:#1e293b;margin-bottom:2px;">' +
+      "</div>" +
+      "</div>" +
+      /* body */
+      '<div style="padding:12px 14px;background:#fff;">' +
+      /* location */
+      '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:10px;">' +
+      '<span style="margin-top:2px;font-size:14px;flex-shrink:0;">📍</span>' +
+      "<div>" +
+      '<div style="font-weight:700;font-size:0.88rem;color:#0f172a;line-height:1.3;">' +
       escHtml(r.barangay_name) +
       ", " +
       escHtml(r.municipality) +
       "</div>" +
       (r.full_address
-        ? '<div style="font-size:0.75rem;color:#64748b;margin-bottom:6px;">' +
+        ? '<div style="font-size:0.73rem;color:#64748b;margin-top:1px;">' +
           escHtml(r.full_address) +
           "</div>"
         : "") +
-      '<hr style="border:none;border-top:1px solid #e2e8f0;margin:6px 0;">' +
+      "</div>" +
+      "</div>" +
+      /* divider */
+      '<div style="height:1px;background:#f1f5f9;margin:8px 0;"></div>' +
+      /* details */
       (r.water_level
-        ? '<div style="font-size:0.78rem;color:#475569;margin-bottom:4px;"><strong>Water level:</strong> ' +
+        ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+          '<span style="font-size:13px;">💧</span>' +
+          '<div style="font-size:0.78rem;color:#334155;"><span style="color:#94a3b8;">Water level</span> &nbsp;<strong style="color:#0f172a;">' +
           escHtml(r.water_level) +
+          "</strong></div>" +
           "</div>"
         : "") +
       (r.description
-        ? '<div style="font-size:0.78rem;color:#475569;margin-bottom:4px;"><strong>Details:</strong> ' +
+        ? '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;">' +
+          '<span style="font-size:13px;margin-top:1px;">📝</span>' +
+          '<div style="font-size:0.78rem;color:#334155;">' +
           escHtml(r.description) +
+          "</div>" +
           "</div>"
         : "") +
-      '<div style="font-size:0.72rem;color:#94a3b8;margin-top:6px;">Reported ' +
+      /* reporter + date */
+      '<div style="display:flex;align-items:center;gap:8px;margin-top:6px;">' +
+      '<span style="font-size:13px;">🕐</span>' +
+      '<div style="font-size:0.72rem;color:#94a3b8;">Reported ' +
       date +
+      (r.reported_by
+        ? ' &nbsp;·&nbsp; <strong style="color:#64748b;">' +
+          escHtml(r.reported_by) +
+          "</strong>"
+        : "") +
       "</div>" +
+      "</div>" +
+      /* divider */
+      '<div style="height:1px;background:#f1f5f9;margin:10px 0 8px;"></div>' +
+      /* Google Maps button */
+      '<a href="' +
+      gmapsUrl +
+      '" target="_blank" rel="noopener noreferrer" ' +
+      'style="display:flex;align-items:center;justify-content:center;gap:6px;' +
+      "padding:7px 12px;border-radius:8px;background:#f8fafc;border:1.5px solid #e2e8f0;" +
+      "text-decoration:none;color:#1e40af;font-size:0.76rem;font-weight:600;" +
+      'transition:background 0.15s;cursor:pointer;">' +
+      '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>' +
+      "</svg>" +
+      "Open in Google Maps" +
+      "</a>" +
       "</div></div>"
     );
   }
@@ -155,7 +211,7 @@
       })
         .addTo(floodMap)
         .bindPopup(buildPopup(r), {
-          maxWidth: 290,
+          maxWidth: 300,
           className: "flood-severity-popup",
         });
 
@@ -192,7 +248,7 @@
     map.setMaxBounds(BOCAUE_BOUNDS);
   }
 
-  /* ── Current location control (top-right) ──────────────────── */
+  /* ── Current location control ──────────────────────────────── */
   function addCurrentLocationControl(map) {
     var locationMarker = null;
     var control = L.control({ position: "topright" });
@@ -200,10 +256,14 @@
     control.onAdd = function () {
       var button = L.DomUtil.create("button", "leaflet-bar");
       button.type = "button";
-      button.textContent = "Use My Current Location";
+      button.innerHTML =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:middle;">' +
+        '<circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/>' +
+        "</svg>My Location";
       button.style.cssText =
-        "background:#fff;border:none;padding:8px 10px;font-size:12px;" +
-        "font-weight:600;cursor:pointer;min-width:168px;border-radius:6px;";
+        "background:#fff;border:none;padding:8px 12px;font-size:12px;" +
+        "font-weight:600;cursor:pointer;min-width:130px;border-radius:6px;" +
+        "color:#1e293b;display:flex;align-items:center;";
 
       L.DomEvent.disableClickPropagation(button);
       L.DomEvent.on(button, "click", function () {
@@ -243,35 +303,39 @@
     legend.onAdd = function () {
       var div = L.DomUtil.create("div");
       div.style.cssText =
-        "background:#fff;border-radius:10px;padding:12px 14px;" +
-        "box-shadow:0 2px 12px rgba(0,0,0,0.18);font-family:'Segoe UI',sans-serif;" +
-        "font-size:0.78rem;line-height:1.7;min-width:150px;";
+        "background:#fff;border-radius:10px;padding:10px 12px;" +
+        "box-shadow:0 2px 16px rgba(0,0,0,0.15);font-family:'Segoe UI',system-ui,sans-serif;" +
+        "font-size:0.76rem;min-width:140px;";
 
       div.innerHTML =
-        '<div style="font-weight:700;color:#1e293b;margin-bottom:6px;font-size:0.8rem;' +
-        'letter-spacing:0.04em;text-transform:uppercase;">Flood Severity</div>' +
+        '<div style="font-weight:700;color:#64748b;margin-bottom:8px;font-size:0.65rem;' +
+        'letter-spacing:0.1em;text-transform:uppercase;">Flood Severity</div>' +
         Object.entries(SEVERITY)
           .map(function (entry) {
             var id = entry[0],
               meta = entry[1];
             return (
-              '<div style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:2px 0;"' +
-              ' data-severity-filter="' +
+              '<div style="display:flex;align-items:center;gap:8px;padding:3px 6px;border-radius:6px;' +
+              'cursor:pointer;transition:background 0.15s;" data-severity-filter="' +
               id +
-              '">' +
-              '<span style="width:13px;height:13px;border-radius:50%;flex-shrink:0;background:' +
+              '" ' +
+              "onmouseenter=\"this.style.background='#f8fafc'\" onmouseleave=\"this.style.background='transparent'\">" +
+              '<span style="width:11px;height:11px;border-radius:50%;flex-shrink:0;background:' +
               meta.color +
               ";border:2px solid " +
               meta.border +
               ';display:inline-block;"></span>' +
-              '<span style="color:#334155;">' +
+              '<span style="color:#334155;font-weight:500;">' +
               meta.label +
-              "</span></div>"
+              "</span>" +
+              "</div>"
             );
           })
           .join("") +
-        '<div style="margin-top:8px;border-top:1px solid #e2e8f0;padding-top:6px;' +
-        'cursor:pointer;color:#3b82f6;font-weight:600;" data-severity-filter="all">Show All</div>';
+        '<div style="margin-top:8px;padding:3px 6px;border-radius:6px;cursor:pointer;' +
+        'color:#3b82f6;font-weight:600;font-size:0.73rem;transition:background 0.15s;" ' +
+        'data-severity-filter="all" onmouseenter="this.style.background=\'#eff6ff\'" ' +
+        "onmouseleave=\"this.style.background='transparent'\">⟳ Show All</div>";
 
       L.DomEvent.disableClickPropagation(div);
       div.querySelectorAll("[data-severity-filter]").forEach(function (el) {
@@ -292,8 +356,60 @@
     var bar = document.getElementById("rescuer-flood-filter-bar");
     if (!bar) return;
 
+    /* Inject scoped styles once */
+    if (!document.getElementById("rescuer-filter-styles")) {
+      var style = document.createElement("style");
+      style.id = "rescuer-filter-styles";
+      style.textContent = [
+        "#rescuer-flood-filter-bar {",
+        "  display:flex;align-items:center;gap:8px;flex-wrap:wrap;",
+        "  padding:10px 14px;background:#f8fafc;",
+        "  border:1px solid #e2e8f0;border-radius:12px;",
+        "}",
+        ".rfb-btn {",
+        "  display:inline-flex;align-items:center;gap:7px;",
+        "  padding:7px 16px;border-radius:8px;",
+        "  border:2px solid transparent;",
+        "  background:#fff;color:#475569;",
+        "  font-size:0.78rem;font-weight:600;",
+        "  cursor:pointer;transition:all 0.18s ease;",
+        "  box-shadow:0 1px 4px rgba(0,0,0,0.08);",
+        "  white-space:nowrap;",
+        "}",
+        ".rfb-btn:hover:not(.rfb-active) {",
+        "  transform:translateY(-1px);",
+        "  box-shadow:0 3px 10px rgba(0,0,0,0.12);",
+        "}",
+        ".rfb-btn.rfb-active {",
+        "  color:#fff;",
+        "  box-shadow:0 3px 10px rgba(0,0,0,0.18);",
+        "  transform:translateY(-1px);",
+        "}",
+        ".rfb-dot {",
+        "  width:9px;height:9px;border-radius:50%;",
+        "  border:2px solid rgba(255,255,255,0.5);",
+        "  flex-shrink:0;",
+        "}",
+        ".rfb-all-icon {",
+        "  font-size:15px;line-height:1;",
+        "}",
+        "#rescuer-flood-marker-count {",
+        "  margin-left:auto;font-size:0.73rem;",
+        "  color:#94a3b8;font-weight:500;",
+        "  white-space:nowrap;",
+        "}",
+      ].join("\n");
+      document.head.appendChild(style);
+    }
+
     var items = [
-      { id: "all", label: "All", color: "#3b82f6", border: "#2563eb" },
+      {
+        id: "all",
+        label: "All Reports",
+        color: "#3b82f6",
+        border: "#2563eb",
+        bg: "#3b82f6",
+      },
     ];
     Object.entries(SEVERITY).forEach(function (entry) {
       items.push({
@@ -301,78 +417,99 @@
         label: entry[1].label,
         color: entry[1].color,
         border: entry[1].border,
+        bg: entry[1].color,
       });
     });
+
+    var severityIcons = { 1: "✓", 2: "⚠", 3: "✕" };
 
     bar.innerHTML =
       items
         .map(function (item) {
-          return (
-            '<button data-filter="' +
-            item.id +
-            '" style="' +
-            "display:inline-flex;align-items:center;gap:6px;" +
-            "padding:6px 14px;border-radius:999px;" +
-            "border:2px solid " +
-            item.border +
-            ";" +
-            "background:#fff;color:#1e293b;" +
-            "font-size:0.78rem;font-weight:600;" +
-            'cursor:pointer;transition:all 0.15s;">' +
-            (item.id !== "all"
-              ? '<span style="width:10px;height:10px;border-radius:50%;background:' +
+          var dotHtml =
+            item.id === "all"
+              ? '<span class="rfb-all-icon">⊞</span>'
+              : '<span class="rfb-dot" style="background:' +
                 item.color +
-                ";border:2px solid " +
-                item.border +
-                ';display:inline-block;"></span>'
-              : "") +
+                ';border-color:rgba(0,0,0,0.15);"></span>';
+
+          return (
+            '<button class="rfb-btn" data-filter="' +
+            item.id +
+            '" ' +
+            'data-color="' +
+            item.color +
+            '" data-border="' +
+            item.border +
+            '" data-bg="' +
+            item.bg +
+            '">' +
+            dotHtml +
             item.label +
             "</button>"
           );
         })
-        .join("") +
-      '<span id="rescuer-flood-marker-count" style="margin-left:auto;font-size:0.75rem;' +
-      'color:#64748b;align-self:center;"></span>';
+        .join("") + '<span id="rescuer-flood-marker-count"></span>';
 
-    bar.querySelectorAll("button[data-filter]").forEach(function (btn) {
+    bar.querySelectorAll(".rfb-btn").forEach(function (btn) {
       btn.addEventListener("click", function () {
         activeFilter = this.getAttribute("data-filter");
         renderMarkers();
         updateFilterUI();
       });
-      btn.addEventListener("mouseenter", function () {
-        if (!this.classList.contains("active-filter")) {
-          var meta = SEVERITY[this.dataset.filter] || { color: "#3b82f6" };
-          this.style.background = meta.color;
-          this.style.color = "#fff";
-        }
-      });
-      btn.addEventListener("mouseleave", function () {
-        if (!this.classList.contains("active-filter")) {
-          this.style.background = "#fff";
-          this.style.color = "#1e293b";
-        }
-      });
     });
+
+    /* Set initial active state — "All" is default */
+    updateFilterUI();
   }
 
   function updateFilterUI() {
     var bar = document.getElementById("rescuer-flood-filter-bar");
     if (!bar) return;
-    bar.querySelectorAll("button[data-filter]").forEach(function (btn) {
-      var isActive = btn.getAttribute("data-filter") === activeFilter;
-      var meta = SEVERITY[btn.dataset.filter] || {
-        color: "#3b82f6",
-        border: "#2563eb",
-      };
+
+    var severityBgs = { 1: "#22c55e", 2: "#eab308", 3: "#ef4444" };
+    var severityBorders = { 1: "#16a34a", 2: "#ca8a04", 3: "#dc2626" };
+
+    bar.querySelectorAll(".rfb-btn").forEach(function (btn) {
+      var filter = btn.getAttribute("data-filter");
+      var isActive = filter === activeFilter;
+
       if (isActive) {
-        btn.classList.add("active-filter");
-        btn.style.background = meta.color;
+        btn.classList.add("rfb-active");
+        if (filter === "all") {
+          btn.style.background = "#3b82f6";
+          btn.style.borderColor = "#2563eb";
+          /* update dot inside */
+          var dot = btn.querySelector(".rfb-dot");
+          if (dot) {
+            dot.style.background = "#fff";
+            dot.style.borderColor = "rgba(255,255,255,0.4)";
+          }
+        } else {
+          var bg = severityBgs[filter] || "#3b82f6";
+          var bd = severityBorders[filter] || "#2563eb";
+          btn.style.background = bg;
+          btn.style.borderColor = bd;
+          var dot2 = btn.querySelector(".rfb-dot");
+          if (dot2) {
+            dot2.style.background = "rgba(255,255,255,0.85)";
+            dot2.style.borderColor = "rgba(255,255,255,0.4)";
+          }
+        }
         btn.style.color = "#fff";
       } else {
-        btn.classList.remove("active-filter");
+        btn.classList.remove("rfb-active");
         btn.style.background = "#fff";
-        btn.style.color = "#1e293b";
+        btn.style.color = "#475569";
+        btn.style.borderColor = "transparent";
+        if (filter !== "all") {
+          var dot3 = btn.querySelector(".rfb-dot");
+          var origColor = severityBgs[filter] || "#94a3b8";
+          if (dot3) {
+            dot3.style.background = origColor;
+            dot3.style.borderColor = "rgba(0,0,0,0.15)";
+          }
+        }
       }
     });
   }
@@ -407,7 +544,6 @@
       return;
     }
 
-    // Safe to use L here
     BOCAUE_BOUNDS = L.latLngBounds([14.747, 120.865], [14.845, 120.99]);
     BOCAUE_POLYGON = [
       [14.844, 120.888],
@@ -428,7 +564,6 @@
       3: { color: "#ef4444", label: "Impassable", border: "#dc2626" },
     };
 
-    // Clear placeholder and use it as the map container
     placeholder.innerHTML = "";
     placeholder.style.cssText = "width:100%;height:100%;min-height:400px;";
 
@@ -450,7 +585,7 @@
     applyBoundaryLayer(floodMap);
     addCurrentLocationControl(floodMap);
     addLegend(floodMap);
-    buildFilterBar();
+    buildFilterBar(); /* already calls updateFilterUI() internally */
     loadFloodSeverityData();
 
     setTimeout(function () {
@@ -470,7 +605,6 @@
     init();
   }
 
-  // Global refresh
   window.rescuerFloodMap = {
     refresh: loadFloodSeverityData,
     setFilter: function (id) {

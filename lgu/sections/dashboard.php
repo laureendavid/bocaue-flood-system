@@ -4,14 +4,19 @@
   </header>
 
   <!-- Stat Cards -->
+  <?php include '../includes/fetch_report_stats.php'; ?>
   <div class="dashboard-stats">
-    <article class="stat-card">
+    <article class="stat-card pending">
       <p class="stat-label">Total of Pending Reports</p>
-      <strong class="stat-value">—</strong>
+      <strong class="stat-value">
+        <?= htmlspecialchars($pending_count) ?>
+      </strong>
     </article>
-    <article class="stat-card">
+    <article class="stat-card approved">
       <p class="stat-label">Total of Approved Reports</p>
-      <strong class="stat-value">—</strong>
+      <strong class="stat-value">
+        <?= htmlspecialchars($approved_count) ?>
+      </strong>
     </article>
   </div>
 
@@ -54,11 +59,5 @@
       </div>
     </section>
 
-    <section aria-labelledby="map-heading" class="card map-card--dashboard">
-      <h3 id="map-heading" class="card-title card-soft-header">Flood Monitoring Map</h3>
-      <div class="map-inset-placeholder">
-        <p class="placeholder-text">Map will render here.</p>
-      </div>
-    </section>
   </div>
 </section>

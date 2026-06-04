@@ -1,9 +1,13 @@
 <?php
+session_start(); // make sure session is started so we can read user_id
 require_once '../config/db.php';
 
 $limit = 5;
 $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
 $offset = ($page - 1) * $limit;
+
+// Currently logged-in rescuer
+$currentUserId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
 
 $sql = "
     SELECT
@@ -11,11 +15,15 @@ $sql = "
         r.description,
         r.report_image,
         r.created_at,
+        r.rescue_people_count,
+        r.rescue_description,
+        r.assigned_rescuer_id,
         u.full_name,
         u.profile_picture,
         wl.level_name    AS water_level,
         fs.severity_name AS severity,
         rs.status_name   AS rescue_status,
+        rs.rescue_status_id,
         l.full_address,
         l.latitude,
         l.longitude,
@@ -64,19 +72,59 @@ if ($result && $result->num_rows > 0):
         /* ── Date ── */
         $date = date('F j, Y, g:i a', strtotime($report['created_at']));
 
-        /* ── Rescue badge class ── */
+        /* ─────────────────────────────────────────────────────────────────
+         * Rescue status logic
+         *   Flow: Rescue Needed (2) → Being Rescued (3) → Rescued (4)
+         *
+         * Assignment rules:
+         *   • status 2, no assigned rescuer  → ANY rescuer can click (assigns them)
+         *   • status 2, already assigned     → locked for everyone else
+         *   • status 3, assigned = me        → I can click to finish
+         *   • status 3, assigned = other     → locked for me
+         *   • status 4 / Not Required        → always static
+         * ───────────────────────────────────────────────────────────────── */
+        $rescueStatus = $report['rescue_status'] ?? 'Not Required';
+        $rescueLabel = htmlspecialchars($rescueStatus);
+        $assignedRescuerId = $report['assigned_rescuer_id'] ? (int) $report['assigned_rescuer_id'] : null;
+        $assignedRescuerName = htmlspecialchars($report['assigned_rescuer_name'] ?? '');
+
+        $isAssignedToMe = $assignedRescuerId && ($assignedRescuerId === $currentUserId);
+        $isAssignedToOther = $assignedRescuerId && ($assignedRescuerId !== $currentUserId);
+
+        $nextStatusId = null;
+        $modalType = null;
         $rescueBadgeClass = 'badge--neutral';
-        switch ($report['rescue_status']) {
+
+        switch ($rescueStatus) {
             case 'Rescue Needed':
                 $rescueBadgeClass = 'badge--danger';
+                if (!$isAssignedToOther) {
+                    // Not yet taken by someone else — allow this rescuer to claim it
+                    $nextStatusId = 3;
+                    $modalType = 'start';
+                }
                 break;
+
             case 'Being Rescued':
                 $rescueBadgeClass = 'badge--warning';
+                if ($isAssignedToMe) {
+                    // Only the assigned rescuer can finish it
+                    $nextStatusId = 4;
+                    $modalType = 'finish';
+                }
                 break;
+
             case 'Rescued':
                 $rescueBadgeClass = 'badge--success';
                 break;
+
+            case 'Not Required':
+            default:
+                $rescueBadgeClass = 'badge--neutral';
+                break;
         }
+
+        $isClickable = $nextStatusId !== null;
 
         /* ── Severity class ── */
         $severityClass = 'severity--neutral';
@@ -91,11 +139,6 @@ if ($result && $result->num_rows > 0):
                 $severityClass = 'severity--passable';
                 break;
         }
-
-        /* ── Assigned rescuer ── */
-        $assignedRescuerName = !empty($report['assigned_rescuer_name'])
-            ? htmlspecialchars($report['assigned_rescuer_name'])
-            : null;
         ?>
 
         <article class="post-card" data-report-id="<?= (int) $report['report_id'] ?>">
@@ -117,12 +160,8 @@ if ($result && $result->num_rows > 0):
                         <?= $initials ?>
                     </div>
                     <div class="post-card__user-info">
-                        <span class="post-card__name">
-                            <?= htmlspecialchars($report['full_name']) ?>
-                        </span>
-                        <span class="post-card__meta">
-                            <?= $date ?> • <?= $address ?>
-                        </span>
+                        <span class="post-card__name"><?= htmlspecialchars($report['full_name']) ?></span>
+                        <span class="post-card__meta"><?= $date ?> &bull; <?= $address ?></span>
                     </div>
                 </div>
             </div>
@@ -142,15 +181,30 @@ if ($result && $result->num_rows > 0):
                         <?= nl2br(htmlspecialchars($report['description'])) ?>
                     </p>
 
+                    <?php if (!empty($report['rescue_people_count']) || !empty($report['rescue_description'])): ?>
+                        <div class="post-card__rescue-info">
+                            <?php if (!empty($report['rescue_people_count'])): ?>
+                                <span class="rescue-info-item">
+                                    👥 <?= (int) $report['rescue_people_count'] ?> person(s) need rescue
+                                </span>
+                            <?php endif; ?>
+                            <?php if (!empty($report['rescue_description'])): ?>
+                                <p class="rescue-info-desc">
+                                    <?= nl2br(htmlspecialchars($report['rescue_description'])) ?>
+                                </p>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+
                     <div class="post-card__tags">
                         <?php if (!empty($report['water_level'])): ?>
                             <span class="post-tag post-tag--water">
-                                Water Level: <?= htmlspecialchars($report['water_level']) ?>
+                                💧 Water: <?= htmlspecialchars($report['water_level']) ?>
                             </span>
                         <?php endif; ?>
                         <?php if (!empty($report['severity'])): ?>
                             <span class="post-tag <?= $severityClass ?>">
-                                Severity: <?= htmlspecialchars($report['severity']) ?>
+                                ⚠️ Severity: <?= htmlspecialchars($report['severity']) ?>
                             </span>
                         <?php endif; ?>
                     </div>
@@ -161,32 +215,42 @@ if ($result && $result->num_rows > 0):
             <!-- FOOTER -->
             <div class="post-card__footer">
 
-                <?php if ($assignedRescuerName): ?>
-                    <!-- May naka-assign na rescuer: ipakita sa loob ng badge, same style sa rescuer view -->
-                    <span class="rescue-badge rescue-badge--locked <?= $rescueBadgeClass ?>">
-                        🔒 <?= htmlspecialchars($report['rescue_status'] ?? 'Being Rescued') ?>
+                <?php if ($isClickable): ?>
+                    <!-- Clickable: either unclaimed "Rescue Needed" or assigned-to-me "Being Rescued" -->
+                    <button type="button" class="rescue-badge rescue-badge--btn <?= $rescueBadgeClass ?>"
+                        data-report-id="<?= (int) $report['report_id'] ?>" data-next-status-id="<?= $nextStatusId ?>"
+                        data-modal-type="<?= $modalType ?>" data-reporter="<?= htmlspecialchars($report['full_name']) ?>"
+                        title="Click to update rescue status">
+                        <?= $rescueLabel ?>
+                        <?php if ($isAssignedToMe): ?>
+                            <small>(You)</small>
+                        <?php endif; ?>
+                    </button>
+
+                <?php elseif ($isAssignedToOther): ?>
+                    <!-- Locked: another rescuer already claimed this -->
+                    <span class="rescue-badge badge--warning rescue-badge--locked"
+                        title="Being rescued by <?= $assignedRescuerName ?>">
+                        🔒 Being Rescued
                         <small>by <?= $assignedRescuerName ?></small>
                     </span>
+
                 <?php else: ?>
-                    <!-- Walang rescuer pa o Rescued na / Not Required -->
+                    <!-- Static: Rescued or Not Required -->
                     <span class="rescue-badge <?= $rescueBadgeClass ?>">
-                        <?= htmlspecialchars($report['rescue_status'] ?? 'Not Required') ?>
+                        <?= $rescueLabel ?>
                     </span>
                 <?php endif; ?>
 
-                <!-- Map buttons -->
                 <?php if (!empty($report['latitude']) && !empty($report['longitude'])): ?>
-                    <div class="post-card__map-btns">
-                        <button type="button" class="btn-map" data-lat="<?= $report['latitude'] ?>"
-                            data-lng="<?= $report['longitude'] ?>" data-name="<?= htmlspecialchars($report['full_name']) ?>">
-                            View on Map 📍
-                        </button>
-                        <a class="btn-gmaps"
-                            href="https://www.google.com/maps?q=<?= $report['latitude'] ?>,<?= $report['longitude'] ?>"
-                            target="_blank" rel="noopener noreferrer">
-                            View in Google Maps 🗺️
-                        </a>
-                    </div>
+                    <button type="button" class="btn-map" data-lat="<?= $report['latitude'] ?>"
+                        data-lng="<?= $report['longitude'] ?>" data-name="<?= htmlspecialchars($report['full_name']) ?>">
+                        View on Map 📍
+                    </button>
+                    <a class="btn-gmaps" href="https://www.google.com/maps?q=<?= $report['latitude'] ?>,<?= $report['longitude'] ?>"
+                        target="_blank" rel="noopener noreferrer">
+                        View in Google Maps 🗺️
+                    </a>
                 <?php endif; ?>
 
             </div>

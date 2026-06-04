@@ -21,6 +21,21 @@ if (!in_array($new_role, $allowed)) {
     exit;
 }
 
+// Dynamically fetch role_id from roles table
+$role_lookup = mysqli_prepare($conn, "SELECT role_id FROM roles WHERE role_name = ?");
+mysqli_stmt_bind_param($role_lookup, 's', $new_role);
+mysqli_stmt_execute($role_lookup);
+$role_result = mysqli_stmt_get_result($role_lookup);
+$role_row = mysqli_fetch_assoc($role_result);
+mysqli_stmt_close($role_lookup);
+
+if (!$role_row) {
+    echo json_encode(['success' => false, 'message' => 'Role not found in database.']);
+    exit;
+}
+
+$role_id = (int) $role_row['role_id'];
+
 // Get current is_verified status
 $check = mysqli_prepare($conn, "SELECT is_verified FROM users WHERE user_id = ?");
 mysqli_stmt_bind_param($check, 'i', $user_id);
@@ -38,11 +53,11 @@ if (!$user) {
 $should_verify = ($new_role !== 'Resident' && $user['is_verified'] == 0);
 
 if ($should_verify) {
-    $stmt = mysqli_prepare($conn, "UPDATE users SET role = ?, is_verified = 1 WHERE user_id = ?");
-    mysqli_stmt_bind_param($stmt, 'si', $new_role, $user_id);
+    $stmt = mysqli_prepare($conn, "UPDATE users SET role_id = ?, is_verified = 1 WHERE user_id = ?");
+    mysqli_stmt_bind_param($stmt, 'ii', $role_id, $user_id);
 } else {
-    $stmt = mysqli_prepare($conn, "UPDATE users SET role = ? WHERE user_id = ?");
-    mysqli_stmt_bind_param($stmt, 'si', $new_role, $user_id);
+    $stmt = mysqli_prepare($conn, "UPDATE users SET role_id = ? WHERE user_id = ?");
+    mysqli_stmt_bind_param($stmt, 'ii', $role_id, $user_id);
 }
 
 if (mysqli_stmt_execute($stmt)) {

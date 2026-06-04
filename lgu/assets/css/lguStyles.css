@@ -18,7 +18,7 @@
   --badge-full-bg: #fee2e2;
   --badge-full-text: #991b1b;
   --row-alt: #f0f9ff;
-  --header-bg: #c8e6ea;
+  --header-bg: #dbeafe; /* ← PALITAN ITO, dating #c8e6ea */
   --sidebar-width: 220px;
 }
 
@@ -2051,4 +2051,81 @@ body.sidebar-mobile-open {
     font-size: 0.88rem;
     padding: 11px 14px;
   }
+}
+.dashboard-bottom-row {
+  display: grid;
+
+  grid-template-columns: 1fr; /* was: 1fr 1fr */
+
+  gap: 20px;
+
+  padding-bottom: 32px;
+}
+
+.stat-card {
+  position: relative;
+
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 4px;
+}
+
+/* Add these two classes to your PHP output on the stat cards */
+
+.stat-card.pending::before {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.stat-card.approved::before {
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+}
+
+.stat-card.pending .stat-value {
+  color: #d97706;
+}
+
+.stat-card.approved .stat-value {
+  color: #16a34a;
+}
+
+.btn-gmaps {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background-color: #4285f4;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.btn-gmaps:hover {
+  background-color: #2563eb;
+}
+
+.post-card__avatar--initials {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
 }
