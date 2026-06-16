@@ -6,7 +6,16 @@
   <div class="monitoring-grid">
     <div class="map-card">
       <h3>Flood Monitoring Map</h3>
+
+      <!-- ✅ IDAGDAG: Date + Severity filter bars -->
+      <div class="map-filter-stack">
+        <div id="flood-date-filter-bar"></div>
+        <div id="flood-date-active-info" class="date-active-info"></div>
+        <div id="flood-filter-bar"></div>
+      </div>
+
       <div id="flood-map" class="flood-map"></div>
+
       <div class="map-legend">
         <span class="legend-pill legend-impassable">Impassable</span>
         <span class="legend-pill legend-limited">Limited Access</span>
@@ -25,8 +34,7 @@
   <section class="evac-section" aria-labelledby="evac-monitor-heading">
     <div class="dashboard-section-head">
       <h3 id="evac-monitor-heading">Evacuation Centers</h3>
-      <p class="section-note">Click a center to view
-        its location on the map.</p>
+      <p class="section-note">Click a center to view its location on the map.</p>
     </div>
     <div class="evac-table-wrap evac-table-wrap--mt evac-table-scroll">
       <table aria-label="Evacuation center status">

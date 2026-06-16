@@ -4,16 +4,26 @@
   </header>
 
   <div class="card map-main-card">
+
+    <!-- ✅ IDAGDAG: Date + Severity filter bars -->
+    <div class="map-filter-stack">
+      <div id="rescuer-date-filter-bar"></div>
+      <div id="rescuer-date-active-info" class="date-active-info"></div>
+      <div id="rescuer-flood-filter-bar"></div>
+    </div>
+
     <div class="flood-map-container" role="region" aria-label="Flood monitoring map">
       <div id="flood-map-placeholder" class="map-placeholder">
         <span class="material-symbols-outlined map-placeholder-icon">map</span>
         <p>Map data unavailable</p>
       </div>
     </div>
+
     <div class="map-legend-row" aria-label="Map legend">
       <div class="legend-pill-item legend-pill-item--impassable">Impassable</div>
       <div class="legend-pill-item legend-pill-item--limited">Limited Access</div>
       <div class="legend-pill-item legend-pill-item--passable">Passable</div>
     </div>
+
   </div>
 </section>

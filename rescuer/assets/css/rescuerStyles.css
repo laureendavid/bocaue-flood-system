@@ -2567,3 +2567,27 @@ html.dark .announce-card {
 .rdb-stats--personal {
   grid-template-columns: repeat(2, 1fr);
 }
+
+/* Filter stack wrapper */
+.map-filter-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+/* Active date info pill */
+.date-active-info {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: #1e40af;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 5px 12px;
+}
+.date-active-info.show {
+  display: inline-flex;
+}

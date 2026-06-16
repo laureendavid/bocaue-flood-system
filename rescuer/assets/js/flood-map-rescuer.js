@@ -17,6 +17,9 @@
   var allReports = [];
   var markers = [];
   var activeFilter = "all";
+  var activeDatePreset = "all"; /* "all" | "today" | "7" | "30" | "custom" */
+  var activeDateFrom = null; /* "YYYY-MM-DD" or null */
+  var activeDateTo = null; /* "YYYY-MM-DD" or null */
 
   /* ── Helpers ───────────────────────────────────────────────── */
   function escHtml(str) {
@@ -49,6 +52,73 @@
     return inside;
   }
 
+  function fmtDate(d) {
+    if (!d) return "";
+    var parts = d.split("-");
+    var months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    return (
+      months[parseInt(parts[1]) - 1] +
+      " " +
+      parseInt(parts[2]) +
+      ", " +
+      parts[0]
+    );
+  }
+
+  /* ── Date filter helper ────────────────────────────────────── */
+  function filterByDate(report) {
+    if (activeDatePreset === "all" && !activeDateFrom && !activeDateTo)
+      return true;
+
+    var created = report.created_at ? new Date(report.created_at) : null;
+    if (!created || isNaN(created)) return false;
+
+    var createdDate = new Date(
+      created.getFullYear(),
+      created.getMonth(),
+      created.getDate(),
+    );
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (activeDatePreset === "today") {
+      return createdDate.getTime() === today.getTime();
+    }
+    if (activeDatePreset === "7") {
+      var cutoff7 = new Date(today);
+      cutoff7.setDate(cutoff7.getDate() - 6);
+      return createdDate >= cutoff7;
+    }
+    if (activeDatePreset === "30") {
+      var cutoff30 = new Date(today);
+      cutoff30.setDate(cutoff30.getDate() - 29);
+      return createdDate >= cutoff30;
+    }
+    /* custom range */
+    if (activeDateFrom) {
+      var from = new Date(activeDateFrom + "T00:00:00");
+      if (createdDate < from) return false;
+    }
+    if (activeDateTo) {
+      var to = new Date(activeDateTo + "T00:00:00");
+      if (createdDate > to) return false;
+    }
+    return true;
+  }
+
   /* ── Severity pin icon ─────────────────────────────────────── */
   function makeSeverityIcon(severityId) {
     var meta = SEVERITY[severityId] || { color: "#94a3b8", border: "#64748b" };
@@ -72,7 +142,6 @@
       meta.color +
       '"/>' +
       "</svg>";
-
     return L.divIcon({
       html: svg,
       className: "",
@@ -88,10 +157,9 @@
       color: "#94a3b8",
       label: "Unknown",
     };
-    var lat = parseFloat(r.latitude);
-    var lng = parseFloat(r.longitude);
+    var lat = parseFloat(r.latitude),
+      lng = parseFloat(r.longitude);
     var gmapsUrl = "https://www.google.com/maps?q=" + lat + "," + lng;
-
     var date = r.created_at
       ? new Date(r.created_at).toLocaleDateString("en-PH", {
           year: "numeric",
@@ -99,14 +167,11 @@
           day: "numeric",
         })
       : "—";
-
-    /* severity badge strip */
     var severityIcons = { 1: "✓", 2: "⚠", 3: "✕" };
     var icon = severityIcons[r.severity_id] || "•";
 
     return (
       "<div style=\"font-family:'Segoe UI',system-ui,sans-serif;min-width:230px;max-width:290px;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.15);\">" +
-      /* header */
       '<div style="background:' +
       meta.color +
       ';padding:10px 14px;display:flex;align-items:center;gap:8px;">' +
@@ -118,14 +183,10 @@
       '<div style="color:#fff;font-size:0.88rem;font-weight:700;line-height:1.2;">' +
       escHtml(meta.label) +
       "</div>" +
-      "</div>" +
-      "</div>" +
-      /* body */
+      "</div></div>" +
       '<div style="padding:12px 14px;background:#fff;">' +
-      /* location */
       '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:10px;">' +
-      '<span style="margin-top:2px;font-size:14px;flex-shrink:0;">📍</span>' +
-      "<div>" +
+      '<span style="margin-top:2px;font-size:14px;flex-shrink:0;">📍</span><div>' +
       '<div style="font-weight:700;font-size:0.88rem;color:#0f172a;line-height:1.3;">' +
       escHtml(r.barangay_name) +
       ", " +
@@ -136,30 +197,21 @@
           escHtml(r.full_address) +
           "</div>"
         : "") +
-      "</div>" +
-      "</div>" +
-      /* divider */
+      "</div></div>" +
       '<div style="height:1px;background:#f1f5f9;margin:8px 0;"></div>' +
-      /* details */
       (r.water_level
-        ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
-          '<span style="font-size:13px;">💧</span>' +
+        ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="font-size:13px;">💧</span>' +
           '<div style="font-size:0.78rem;color:#334155;"><span style="color:#94a3b8;">Water level</span> &nbsp;<strong style="color:#0f172a;">' +
           escHtml(r.water_level) +
-          "</strong></div>" +
-          "</div>"
+          "</strong></div></div>"
         : "") +
       (r.description
-        ? '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;">' +
-          '<span style="font-size:13px;margin-top:1px;">📝</span>' +
+        ? '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;"><span style="font-size:13px;margin-top:1px;">📝</span>' +
           '<div style="font-size:0.78rem;color:#334155;">' +
           escHtml(r.description) +
-          "</div>" +
-          "</div>"
+          "</div></div>"
         : "") +
-      /* reporter + date */
-      '<div style="display:flex;align-items:center;gap:8px;margin-top:6px;">' +
-      '<span style="font-size:13px;">🕐</span>' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-top:6px;"><span style="font-size:13px;">🕐</span>' +
       '<div style="font-size:0.72rem;color:#94a3b8;">Reported ' +
       date +
       (r.reported_by
@@ -167,24 +219,17 @@
           escHtml(r.reported_by) +
           "</strong>"
         : "") +
-      "</div>" +
-      "</div>" +
-      /* divider */
+      "</div></div>" +
       '<div style="height:1px;background:#f1f5f9;margin:10px 0 8px;"></div>' +
-      /* Google Maps button */
       '<a href="' +
       gmapsUrl +
       '" target="_blank" rel="noopener noreferrer" ' +
       'style="display:flex;align-items:center;justify-content:center;gap:6px;' +
       "padding:7px 12px;border-radius:8px;background:#f8fafc;border:1.5px solid #e2e8f0;" +
-      "text-decoration:none;color:#1e40af;font-size:0.76rem;font-weight:600;" +
-      'transition:background 0.15s;cursor:pointer;">' +
+      'text-decoration:none;color:#1e40af;font-size:0.76rem;font-weight:600;cursor:pointer;">' +
       '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
-      '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>' +
-      "</svg>" +
-      "Open in Google Maps" +
-      "</a>" +
-      "</div></div>"
+      '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>' +
+      "Open in Google Maps</a></div></div>"
     );
   }
 
@@ -197,15 +242,16 @@
 
     var filtered = allReports.filter(function (r) {
       return (
-        activeFilter === "all" || String(r.severity_id) === String(activeFilter)
+        (activeFilter === "all" ||
+          String(r.severity_id) === String(activeFilter)) &&
+        filterByDate(r)
       );
     });
 
     filtered.forEach(function (r) {
-      var lat = parseFloat(r.latitude);
-      var lng = parseFloat(r.longitude);
+      var lat = parseFloat(r.latitude),
+        lng = parseFloat(r.longitude);
       if (isNaN(lat) || isNaN(lng)) return;
-
       var marker = L.marker([lat, lng], {
         icon: makeSeverityIcon(parseInt(r.severity_id)),
       })
@@ -214,7 +260,6 @@
           maxWidth: 300,
           className: "flood-severity-popup",
         });
-
       markers.push(marker);
     });
 
@@ -252,19 +297,16 @@
   function addCurrentLocationControl(map) {
     var locationMarker = null;
     var control = L.control({ position: "topright" });
-
     control.onAdd = function () {
       var button = L.DomUtil.create("button", "leaflet-bar");
       button.type = "button";
       button.innerHTML =
         '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:middle;">' +
-        '<circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/>' +
-        "</svg>My Location";
+        '<circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>My Location';
       button.style.cssText =
         "background:#fff;border:none;padding:8px 12px;font-size:12px;" +
         "font-weight:600;cursor:pointer;min-width:130px;border-radius:6px;" +
         "color:#1e293b;display:flex;align-items:center;";
-
       L.DomEvent.disableClickPropagation(button);
       L.DomEvent.on(button, "click", function () {
         if (!navigator.geolocation) {
@@ -273,8 +315,8 @@
         }
         navigator.geolocation.getCurrentPosition(
           function (position) {
-            var lat = position.coords.latitude;
-            var lng = position.coords.longitude;
+            var lat = position.coords.latitude,
+              lng = position.coords.longitude;
             if (!pointInsideBocaue(lat, lng)) {
               alert("You are outside Bocaue, Bulacan coverage area.");
               return;
@@ -290,73 +332,182 @@
           { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
         );
       });
-
       return button;
     };
-
     control.addTo(map);
   }
 
-  /* ── Legend (bottom-left of map) ───────────────────────────── */
-  function addLegend(map) {
-    var legend = L.control({ position: "bottomleft" });
-    legend.onAdd = function () {
-      var div = L.DomUtil.create("div");
-      div.style.cssText =
-        "background:#fff;border-radius:10px;padding:10px 12px;" +
-        "box-shadow:0 2px 16px rgba(0,0,0,0.15);font-family:'Segoe UI',system-ui,sans-serif;" +
-        "font-size:0.76rem;min-width:140px;";
+  /* ── Date filter bar (#rescuer-date-filter-bar) ────────────── */
+  function buildDateFilterBar() {
+    var bar = document.getElementById("rescuer-date-filter-bar");
+    if (!bar) return;
 
-      div.innerHTML =
-        '<div style="font-weight:700;color:#64748b;margin-bottom:8px;font-size:0.65rem;' +
-        'letter-spacing:0.1em;text-transform:uppercase;">Flood Severity</div>' +
-        Object.entries(SEVERITY)
-          .map(function (entry) {
-            var id = entry[0],
-              meta = entry[1];
-            return (
-              '<div style="display:flex;align-items:center;gap:8px;padding:3px 6px;border-radius:6px;' +
-              'cursor:pointer;transition:background 0.15s;" data-severity-filter="' +
-              id +
-              '" ' +
-              "onmouseenter=\"this.style.background='#f8fafc'\" onmouseleave=\"this.style.background='transparent'\">" +
-              '<span style="width:11px;height:11px;border-radius:50%;flex-shrink:0;background:' +
-              meta.color +
-              ";border:2px solid " +
-              meta.border +
-              ';display:inline-block;"></span>' +
-              '<span style="color:#334155;font-weight:500;">' +
-              meta.label +
-              "</span>" +
-              "</div>"
-            );
-          })
-          .join("") +
-        '<div style="margin-top:8px;padding:3px 6px;border-radius:6px;cursor:pointer;' +
-        'color:#3b82f6;font-weight:600;font-size:0.73rem;transition:background 0.15s;" ' +
-        'data-severity-filter="all" onmouseenter="this.style.background=\'#eff6ff\'" ' +
-        "onmouseleave=\"this.style.background='transparent'\">⟳ Show All</div>";
+    if (!document.getElementById("rescuer-date-filter-styles")) {
+      var style = document.createElement("style");
+      style.id = "rescuer-date-filter-styles";
+      style.textContent = [
+        "#rescuer-date-filter-bar {",
+        "  display:flex;align-items:center;gap:8px;flex-wrap:wrap;",
+        "  padding:10px 14px;background:#f8fafc;",
+        "  border:1px solid #e2e8f0;border-radius:12px;",
+        "}",
+        ".rdfb-label {",
+        "  font-size:0.7rem;font-weight:600;color:#64748b;",
+        "  text-transform:uppercase;letter-spacing:0.08em;",
+        "  white-space:nowrap;margin-right:4px;",
+        "  display:flex;align-items:center;gap:4px;",
+        "}",
+        ".rdfb-preset {",
+        "  display:inline-flex;align-items:center;",
+        "  padding:6px 13px;border-radius:8px;",
+        "  border:1.5px solid #e2e8f0;background:#fff;color:#475569;",
+        "  font-size:0.76rem;font-weight:600;cursor:pointer;",
+        "  transition:all 0.15s ease;white-space:nowrap;",
+        "}",
+        ".rdfb-preset:hover:not(.rdfb-active){background:#f1f5f9;border-color:#94a3b8;}",
+        ".rdfb-preset.rdfb-active{background:#3b82f6;border-color:#2563eb;color:#fff;}",
+        ".rdfb-sep{color:#cbd5e1;font-size:1rem;margin:0 2px;}",
+        ".rdfb-date-wrap{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}",
+        ".rdfb-date-wrap label{font-size:0.72rem;color:#94a3b8;white-space:nowrap;}",
+        ".rdfb-date-wrap input[type='date']{",
+        "  padding:5px 9px;border-radius:8px;font-size:0.76rem;",
+        "  border:1.5px solid #e2e8f0;background:#fff;color:#1e293b;",
+        "  cursor:pointer;font-family:inherit;",
+        "}",
+        ".rdfb-date-wrap input[type='date']:focus{outline:none;border-color:#3b82f6;}",
+        ".rdfb-apply{",
+        "  padding:5px 13px;border-radius:8px;font-size:0.76rem;font-weight:600;",
+        "  border:1.5px solid #2563eb;background:#3b82f6;color:#fff;",
+        "  cursor:pointer;transition:background 0.15s;",
+        "}",
+        ".rdfb-apply:hover{background:#2563eb;}",
+        ".rdfb-clear{",
+        "  padding:5px 10px;border-radius:8px;font-size:0.72rem;font-weight:600;",
+        "  border:1.5px solid #e2e8f0;background:transparent;color:#64748b;",
+        "  cursor:pointer;transition:background 0.15s;",
+        "}",
+        ".rdfb-clear:hover{background:#f1f5f9;}",
+        "#rescuer-date-active-info{",
+        "  display:none;align-items:center;gap:6px;",
+        "  font-size:0.72rem;color:#1e40af;",
+        "  padding:5px 12px;background:#eff6ff;",
+        "  border:1px solid #bfdbfe;border-radius:8px;",
+        "}",
+        "#rescuer-date-active-info.show{display:inline-flex;}",
+      ].join("\n");
+      document.head.appendChild(style);
+    }
 
-      L.DomEvent.disableClickPropagation(div);
-      div.querySelectorAll("[data-severity-filter]").forEach(function (el) {
-        el.addEventListener("click", function () {
-          activeFilter = this.getAttribute("data-severity-filter");
-          renderMarkers();
-          updateFilterUI();
+    var calIcon =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" ' +
+      'stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+      '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>' +
+      '<line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>' +
+      '<line x1="3" y1="10" x2="21" y2="10"/></svg>';
+
+    bar.innerHTML =
+      '<span class="rdfb-label">' +
+      calIcon +
+      " Date</span>" +
+      '<button class="rdfb-preset rdfb-active" data-preset="all">All time</button>' +
+      '<button class="rdfb-preset" data-preset="today">Today</button>' +
+      '<button class="rdfb-preset" data-preset="7">Last 7 days</button>' +
+      '<button class="rdfb-preset" data-preset="30">Last 30 days</button>' +
+      '<span class="rdfb-sep">|</span>' +
+      '<div class="rdfb-date-wrap">' +
+      '<label for="rescuer-date-from">From</label>' +
+      '<input type="date" id="rescuer-date-from" />' +
+      '<label for="rescuer-date-to">to</label>' +
+      '<input type="date" id="rescuer-date-to" />' +
+      '<button class="rdfb-apply" id="rescuer-date-apply">Apply</button>' +
+      '<button class="rdfb-clear" id="rescuer-date-clear" style="display:none;">Clear</button>' +
+      "</div>";
+
+    bar.querySelectorAll(".rdfb-preset").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        activeDatePreset = this.getAttribute("data-preset");
+        activeDateFrom = null;
+        activeDateTo = null;
+        document.getElementById("rescuer-date-from").value = "";
+        document.getElementById("rescuer-date-to").value = "";
+        document.getElementById("rescuer-date-clear").style.display = "none";
+        bar.querySelectorAll(".rdfb-preset").forEach(function (b) {
+          b.classList.remove("rdfb-active");
         });
+        this.classList.add("rdfb-active");
+        updateDateActiveInfo();
+        renderMarkers();
+      });
+    });
+
+    document
+      .getElementById("rescuer-date-apply")
+      .addEventListener("click", function () {
+        var from = document.getElementById("rescuer-date-from").value;
+        var to = document.getElementById("rescuer-date-to").value;
+        if (!from && !to) return;
+        activeDatePreset = "custom";
+        activeDateFrom = from || null;
+        activeDateTo = to || null;
+        bar.querySelectorAll(".rdfb-preset").forEach(function (b) {
+          b.classList.remove("rdfb-active");
+        });
+        document.getElementById("rescuer-date-clear").style.display = "";
+        updateDateActiveInfo();
+        renderMarkers();
       });
 
-      return div;
-    };
-    legend.addTo(map);
+    document
+      .getElementById("rescuer-date-clear")
+      .addEventListener("click", function () {
+        activeDatePreset = "all";
+        activeDateFrom = null;
+        activeDateTo = null;
+        document.getElementById("rescuer-date-from").value = "";
+        document.getElementById("rescuer-date-to").value = "";
+        document.getElementById("rescuer-date-clear").style.display = "none";
+        bar.querySelectorAll(".rdfb-preset").forEach(function (b) {
+          b.classList.remove("rdfb-active");
+        });
+        bar.querySelector('[data-preset="all"]').classList.add("rdfb-active");
+        updateDateActiveInfo();
+        renderMarkers();
+      });
   }
 
-  /* ── Filter bar (#rescuer-flood-filter-bar) ────────────────── */
+  function updateDateActiveInfo() {
+    var el = document.getElementById("rescuer-date-active-info");
+    if (!el) return;
+    if (activeDatePreset === "all") {
+      el.classList.remove("show");
+      return;
+    }
+    var msg = "";
+    if (activeDatePreset === "today") msg = "Showing today's reports only";
+    else if (activeDatePreset === "7")
+      msg = "Showing reports from the last 7 days";
+    else if (activeDatePreset === "30")
+      msg = "Showing reports from the last 30 days";
+    else if (activeDateFrom && activeDateTo)
+      msg = fmtDate(activeDateFrom) + " – " + fmtDate(activeDateTo);
+    else if (activeDateFrom)
+      msg = "From " + fmtDate(activeDateFrom) + " onwards";
+    else if (activeDateTo) msg = "Up to " + fmtDate(activeDateTo);
+    var calIcon =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" ' +
+      'stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+      '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>' +
+      '<line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>' +
+      '<line x1="3" y1="10" x2="21" y2="10"/></svg>';
+    el.innerHTML = calIcon + " " + msg;
+    el.classList.add("show");
+  }
+
+  /* ── Severity filter bar (#rescuer-flood-filter-bar) ───────── */
   function buildFilterBar() {
     var bar = document.getElementById("rescuer-flood-filter-bar");
     if (!bar) return;
 
-    /* Inject scoped styles once */
     if (!document.getElementById("rescuer-filter-styles")) {
       var style = document.createElement("style");
       style.id = "rescuer-filter-styles";
@@ -369,47 +520,21 @@
         ".rfb-btn {",
         "  display:inline-flex;align-items:center;gap:7px;",
         "  padding:7px 16px;border-radius:8px;",
-        "  border:2px solid transparent;",
-        "  background:#fff;color:#475569;",
-        "  font-size:0.78rem;font-weight:600;",
-        "  cursor:pointer;transition:all 0.18s ease;",
-        "  box-shadow:0 1px 4px rgba(0,0,0,0.08);",
+        "  border:2px solid transparent;background:#fff;color:#475569;",
+        "  font-size:0.78rem;font-weight:600;cursor:pointer;",
+        "  transition:all 0.18s ease;box-shadow:0 1px 4px rgba(0,0,0,0.08);",
         "  white-space:nowrap;",
         "}",
-        ".rfb-btn:hover:not(.rfb-active) {",
-        "  transform:translateY(-1px);",
-        "  box-shadow:0 3px 10px rgba(0,0,0,0.12);",
-        "}",
-        ".rfb-btn.rfb-active {",
-        "  color:#fff;",
-        "  box-shadow:0 3px 10px rgba(0,0,0,0.18);",
-        "  transform:translateY(-1px);",
-        "}",
-        ".rfb-dot {",
-        "  width:9px;height:9px;border-radius:50%;",
-        "  border:2px solid rgba(255,255,255,0.5);",
-        "  flex-shrink:0;",
-        "}",
-        ".rfb-all-icon {",
-        "  font-size:15px;line-height:1;",
-        "}",
-        "#rescuer-flood-marker-count {",
-        "  margin-left:auto;font-size:0.73rem;",
-        "  color:#94a3b8;font-weight:500;",
-        "  white-space:nowrap;",
-        "}",
+        ".rfb-btn:hover:not(.rfb-active){transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,0.12);}",
+        ".rfb-btn.rfb-active{color:#fff;box-shadow:0 3px 10px rgba(0,0,0,0.18);transform:translateY(-1px);}",
+        ".rfb-dot{width:9px;height:9px;border-radius:50%;border:2px solid rgba(0,0,0,0.15);flex-shrink:0;}",
+        "#rescuer-flood-marker-count{margin-left:auto;font-size:0.73rem;color:#94a3b8;font-weight:500;white-space:nowrap;}",
       ].join("\n");
       document.head.appendChild(style);
     }
 
     var items = [
-      {
-        id: "all",
-        label: "All Reports",
-        color: "#3b82f6",
-        border: "#2563eb",
-        bg: "#3b82f6",
-      },
+      { id: "all", label: "All Reports", color: "#3b82f6", border: "#2563eb" },
     ];
     Object.entries(SEVERITY).forEach(function (entry) {
       items.push({
@@ -417,32 +542,21 @@
         label: entry[1].label,
         color: entry[1].color,
         border: entry[1].border,
-        bg: entry[1].color,
       });
     });
-
-    var severityIcons = { 1: "✓", 2: "⚠", 3: "✕" };
 
     bar.innerHTML =
       items
         .map(function (item) {
           var dotHtml =
             item.id === "all"
-              ? '<span class="rfb-all-icon">⊞</span>'
+              ? '<span style="font-size:15px;line-height:1;">⊞</span>'
               : '<span class="rfb-dot" style="background:' +
                 item.color +
-                ';border-color:rgba(0,0,0,0.15);"></span>';
-
+                ';"></span>';
           return (
             '<button class="rfb-btn" data-filter="' +
             item.id +
-            '" ' +
-            'data-color="' +
-            item.color +
-            '" data-border="' +
-            item.border +
-            '" data-bg="' +
-            item.bg +
             '">' +
             dotHtml +
             item.label +
@@ -459,56 +573,41 @@
       });
     });
 
-    /* Set initial active state — "All" is default */
     updateFilterUI();
   }
 
   function updateFilterUI() {
     var bar = document.getElementById("rescuer-flood-filter-bar");
     if (!bar) return;
-
     var severityBgs = { 1: "#22c55e", 2: "#eab308", 3: "#ef4444" };
     var severityBorders = { 1: "#16a34a", 2: "#ca8a04", 3: "#dc2626" };
 
     bar.querySelectorAll(".rfb-btn").forEach(function (btn) {
       var filter = btn.getAttribute("data-filter");
       var isActive = filter === activeFilter;
-
       if (isActive) {
         btn.classList.add("rfb-active");
-        if (filter === "all") {
-          btn.style.background = "#3b82f6";
-          btn.style.borderColor = "#2563eb";
-          /* update dot inside */
-          var dot = btn.querySelector(".rfb-dot");
-          if (dot) {
-            dot.style.background = "#fff";
-            dot.style.borderColor = "rgba(255,255,255,0.4)";
-          }
-        } else {
-          var bg = severityBgs[filter] || "#3b82f6";
-          var bd = severityBorders[filter] || "#2563eb";
-          btn.style.background = bg;
-          btn.style.borderColor = bd;
-          var dot2 = btn.querySelector(".rfb-dot");
-          if (dot2) {
-            dot2.style.background = "rgba(255,255,255,0.85)";
-            dot2.style.borderColor = "rgba(255,255,255,0.4)";
-          }
-        }
+        var bg =
+          filter === "all" ? "#3b82f6" : severityBgs[filter] || "#3b82f6";
+        var bd =
+          filter === "all" ? "#2563eb" : severityBorders[filter] || "#2563eb";
+        btn.style.background = bg;
+        btn.style.borderColor = bd;
         btn.style.color = "#fff";
+        var dot = btn.querySelector(".rfb-dot");
+        if (dot) {
+          dot.style.background = "rgba(255,255,255,0.85)";
+          dot.style.borderColor = "rgba(255,255,255,0.4)";
+        }
       } else {
         btn.classList.remove("rfb-active");
         btn.style.background = "#fff";
-        btn.style.color = "#475569";
         btn.style.borderColor = "transparent";
-        if (filter !== "all") {
-          var dot3 = btn.querySelector(".rfb-dot");
-          var origColor = severityBgs[filter] || "#94a3b8";
-          if (dot3) {
-            dot3.style.background = origColor;
-            dot3.style.borderColor = "rgba(0,0,0,0.15)";
-          }
+        btn.style.color = "#475569";
+        var dot2 = btn.querySelector(".rfb-dot");
+        if (dot2) {
+          dot2.style.background = severityBgs[filter] || "#94a3b8";
+          dot2.style.borderColor = "rgba(0,0,0,0.15)";
         }
       }
     });
@@ -584,8 +683,9 @@
 
     applyBoundaryLayer(floodMap);
     addCurrentLocationControl(floodMap);
-    addLegend(floodMap);
-    buildFilterBar(); /* already calls updateFilterUI() internally */
+    /* NOTE: addLegend() removed — legend is now in the filter bar above the map */
+    buildDateFilterBar();
+    buildFilterBar();
     loadFloodSeverityData();
 
     setTimeout(function () {
@@ -605,12 +705,20 @@
     init();
   }
 
+  /* ── Global API ────────────────────────────────────────────── */
   window.rescuerFloodMap = {
     refresh: loadFloodSeverityData,
     setFilter: function (id) {
       activeFilter = String(id);
       renderMarkers();
       updateFilterUI();
+    },
+    setDatePreset: function (preset) {
+      activeDatePreset = preset;
+      activeDateFrom = null;
+      activeDateTo = null;
+      renderMarkers();
+      updateDateActiveInfo();
     },
   };
 })();
