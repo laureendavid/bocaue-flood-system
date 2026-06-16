@@ -1,9 +1,6 @@
-/* ===== FLOOD MONITORING MAP ===== */
-/* Add this to your lguStyles.css */
-
 .flood-map {
   width: 100%;
-  height: 320px;
+  height: 420px; /* desktop height */
   border-radius: 8px;
   margin-bottom: 14px;
   border: 1px solid var(--border);
@@ -11,6 +8,20 @@
 
 @media (max-width: 640px) {
   .flood-map {
-    height: 220px;
+    height: 400px; /* was 220px — now much taller on mobile */
   }
+}
+
+#flood-date-filter-bar {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  scrollbar-width: none; /* Firefox */
+}
+
+#flood-date-filter-bar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.ldfb-date-wrap {
+  flex-shrink: 0;
 }

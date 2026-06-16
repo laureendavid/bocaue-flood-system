@@ -2591,3 +2591,50 @@ html.dark .announce-card {
 .date-active-info.show {
   display: inline-flex;
 }
+
+/* Override the overflow:hidden that blocks scrolling on mobile */
+#page-flood-monitoring-map.active {
+  overflow-y: auto;
+  padding-bottom: 24px;
+}
+
+/* Give the map container a fixed height instead of flex:1 */
+.flood-map-container {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--lgu-border);
+  margin-bottom: 16px;
+  height: 480px; /* desktop */
+}
+
+@media (max-width: 1024px) {
+  .flood-map-container {
+    height: 420px;
+  }
+}
+
+@media (max-width: 640px) {
+  .flood-map-container {
+    height: 370px; /* tall enough to be usable */
+  }
+
+  /* Also make filter bars scrollable horizontally on mobile */
+  #rescuer-date-filter-bar {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+  #rescuer-date-filter-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  #rescuer-flood-filter-bar {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+  #rescuer-flood-filter-bar::-webkit-scrollbar {
+    display: none;
+  }
+}

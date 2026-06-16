@@ -258,10 +258,7 @@ function buildPopup(r) {
       <div style="padding:12px 14px;background:#fff;">
         <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:10px;">
           <span style="margin-top:2px;font-size:14px;flex-shrink:0;">📍</span>
-          <div>
-            <div style="font-weight:700;font-size:0.88rem;color:#0f172a;line-height:1.3;">${escHtml(r.barangay_name)}, ${escHtml(r.municipality)}</div>
-            ${r.full_address ? `<div style="font-size:0.73rem;color:#64748b;margin-top:1px;">${escHtml(r.full_address)}</div>` : ""}
-          </div>
+          ${r.full_address ? `<div style="font-weight:700;font-size:0.88rem;color:#0f172a;line-height:1.3;">${escHtml(r.full_address)}</div>` : ""}
         </div>
         <div style="height:1px;background:#f1f5f9;margin:8px 0;"></div>
         ${
