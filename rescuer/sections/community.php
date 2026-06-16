@@ -390,10 +390,25 @@
       transform: scale(0.97);
     }
 
-    .badge--danger  { background: #fee2e2; color: #991b1b; }
-    .badge--warning { background: #fef3c7; color: #92400e; }
-    .badge--success { background: #dcfce7; color: #166534; }
-    .badge--neutral { background: #f1f5f9; color: #475569; }
+    .badge--danger {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .badge--warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge--success {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge--neutral {
+      background: #f1f5f9;
+      color: #475569;
+    }
 
     .btn-map {
       background: #3498db;
@@ -407,7 +422,9 @@
       transition: background 0.18s;
     }
 
-    .btn-map:hover { background: #2980b9; }
+    .btn-map:hover {
+      background: #2980b9;
+    }
 
     .btn-gmaps {
       background: #fff;
@@ -423,7 +440,9 @@
       align-items: center;
     }
 
-    .btn-gmaps:hover { background: #eff6ff; }
+    .btn-gmaps:hover {
+      background: #eff6ff;
+    }
 
     #feed-loading,
     #feed-end {
@@ -456,7 +475,11 @@
       flex-direction: column;
     }
 
-    #map { flex: 1; width: 100%; border-radius: 10px; }
+    #map {
+      flex: 1;
+      width: 100%;
+      border-radius: 10px;
+    }
 
     #close-map {
       position: absolute;
@@ -483,9 +506,15 @@
       color: white;
     }
 
-    #full-map { width: 100%; height: calc(100% - 50px); }
+    #full-map {
+      width: 100%;
+      height: calc(100% - 50px);
+    }
 
-    .close-full-map { cursor: pointer; font-size: 24px; }
+    .close-full-map {
+      cursor: pointer;
+      font-size: 24px;
+    }
 
     .btn-full-map {
       margin-top: 10px;
@@ -511,7 +540,9 @@
       padding: 16px;
     }
 
-    .confirm-backdrop.open { display: flex; }
+    .confirm-backdrop.open {
+      display: flex;
+    }
 
     .confirm-modal {
       background: #fff;
@@ -523,8 +554,15 @@
     }
 
     @keyframes modalIn {
-      from { opacity: 0; transform: translateY(12px) scale(0.97); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
+      from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.97);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
     }
 
     .confirm-modal__header {
@@ -534,25 +572,69 @@
       gap: 14px;
     }
 
-    .confirm-modal__header.type--start  { background: #fff1f2; border-bottom: 1px solid #fecdd3; }
-    .confirm-modal__header.type--finish { background: #f0fdf4; border-bottom: 1px solid #bbf7d0; }
-
-    .confirm-modal__icon {
-      width: 44px; height: 44px; border-radius: 12px;
-      flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22px;
+    .confirm-modal__header.type--start {
+      background: #fff1f2;
+      border-bottom: 1px solid #fecdd3;
     }
 
-    .type--start  .confirm-modal__icon { background: #fee2e2; }
-    .type--finish .confirm-modal__icon { background: #dcfce7; }
+    .confirm-modal__header.type--finish {
+      background: #f0fdf4;
+      border-bottom: 1px solid #bbf7d0;
+    }
 
-    .confirm-modal__header-text h3 { margin: 0 0 3px; font-size: 1rem; font-weight: 700; }
-    .type--start  .confirm-modal__header-text h3 { color: #991b1b; }
-    .type--finish .confirm-modal__header-text h3 { color: #166534; }
-    .confirm-modal__header-text p { margin: 0; font-size: 0.78rem; color: #64748b; }
+    .confirm-modal__icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
 
-    .confirm-modal__body { padding: 18px 22px; }
-    .confirm-modal__body p { font-size: 14px; color: #1e293b; line-height: 1.6; margin: 0; }
-    .confirm-modal__body strong { color: #0f1f40; }
+    .type--start .confirm-modal__icon {
+      background: #fee2e2;
+    }
+
+    .type--finish .confirm-modal__icon {
+      background: #dcfce7;
+    }
+
+    .confirm-modal__header-text h3 {
+      margin: 0 0 3px;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .type--start .confirm-modal__header-text h3 {
+      color: #991b1b;
+    }
+
+    .type--finish .confirm-modal__header-text h3 {
+      color: #166534;
+    }
+
+    .confirm-modal__header-text p {
+      margin: 0;
+      font-size: 0.78rem;
+      color: #64748b;
+    }
+
+    .confirm-modal__body {
+      padding: 18px 22px;
+    }
+
+    .confirm-modal__body p {
+      font-size: 14px;
+      color: #1e293b;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .confirm-modal__body strong {
+      color: #0f1f40;
+    }
 
     .confirm-modal__footer {
       padding: 12px 22px 18px;
@@ -563,45 +645,128 @@
     }
 
     .btn-modal-cancel {
-      padding: 9px 20px; border-radius: 9px;
-      border: 1.5px solid #e2e8f0; background: #fff; color: #475569;
-      font-size: 13px; font-weight: 600; cursor: pointer;
+      padding: 9px 20px;
+      border-radius: 9px;
+      border: 1.5px solid #e2e8f0;
+      background: #fff;
+      color: #475569;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
     }
-    .btn-modal-cancel:hover { background: #f8fafc; }
+
+    .btn-modal-cancel:hover {
+      background: #f8fafc;
+    }
 
     .btn-modal-confirm {
-      padding: 9px 22px; border-radius: 9px; border: none;
-      font-size: 13px; font-weight: 700; cursor: pointer; min-width: 140px;
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-      transition: filter 0.15s, transform 0.12s; color: #fff;
+      padding: 9px 22px;
+      border-radius: 9px;
+      border: none;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      min-width: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: filter 0.15s, transform 0.12s;
+      color: #fff;
     }
-    .btn-modal-confirm.type--start  { background: #dc2626; }
-    .btn-modal-confirm.type--finish { background: #16a34a; }
-    .btn-modal-confirm:hover { filter: brightness(1.08); }
-    .btn-modal-confirm:active { transform: scale(0.97); }
-    .btn-modal-confirm:disabled { opacity: 0.6; cursor: not-allowed; filter: none; }
+
+    .btn-modal-confirm.type--start {
+      background: #dc2626;
+    }
+
+    .btn-modal-confirm.type--finish {
+      background: #16a34a;
+    }
+
+    .btn-modal-confirm:hover {
+      filter: brightness(1.08);
+    }
+
+    .btn-modal-confirm:active {
+      transform: scale(0.97);
+    }
+
+    .btn-modal-confirm:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      filter: none;
+    }
 
     /* TOAST */
     .rescue-toast {
       position: fixed;
-      bottom: 24px; right: 24px;
-      background: #0f1f40; color: #fff;
-      padding: 12px 20px; border-radius: 10px;
-      font-size: 13px; font-weight: 500;
-      z-index: 10200; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-      display: flex; align-items: center; gap: 8px;
-      opacity: 0; transform: translateY(10px);
+      bottom: 24px;
+      right: 24px;
+      background: #0f1f40;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      z-index: 10200;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      transform: translateY(10px);
       transition: opacity 0.25s, transform 0.25s;
       pointer-events: none;
     }
-    .rescue-toast.show         { opacity: 1; transform: translateY(0); }
-    .rescue-toast.toast--success { border-left: 4px solid #22c55e; }
-    .rescue-toast.toast--error   { border-left: 4px solid #ef4444; }
+
+    .rescue-toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .rescue-toast.toast--success {
+      border-left: 4px solid #22c55e;
+    }
+
+    .rescue-toast.toast--error {
+      border-left: 4px solid #ef4444;
+    }
 
     @media (max-width: 768px) {
-      .community-grid { grid-template-columns: 1fr; }
-      .map-modal-content { width: 90%; height: 400px; }
-      .comm-filter-bar { gap: 6px; }
+      .community-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .map-modal-content {
+        width: 90%;
+        height: 400px;
+      }
+
+      .comm-filter-bar {
+        gap: 6px;
+      }
+
+      .post-card__body--with-image {
+        flex-direction: column;
+      }
+
+      .post-card__image-wrap {
+        width: 100%;
+        height: 200px;
+      }
+
+      .post-card__map-btns {
+        flex-direction: column;
+        width: 100%;
+        margin-left: 0;
+      }
+
+      .btn-map,
+      .btn-gmaps {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+      }
     }
   </style>
 
@@ -629,10 +794,10 @@
           <span class="comm-filter-label">
             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-              <line x1="16" y1="2" x2="16" y2="6"/>
-              <line x1="8" y1="2" x2="8" y2="6"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
             Date
           </span>
@@ -660,8 +825,9 @@
           <span class="comm-filter-label">
             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
             Status
           </span>
@@ -681,7 +847,8 @@
           <button class="comm-filter-btn" data-status="Not Required">
             <span class="status-dot" style="background:#94a3b8;"></span> Not Required
           </button>
-          <span id="comm-report-count" style="margin-left:auto;font-size:0.73rem;color:#94a3b8;font-weight:500;white-space:nowrap;"></span>
+          <span id="comm-report-count"
+            style="margin-left:auto;font-size:0.73rem;color:#94a3b8;font-weight:500;white-space:nowrap;"></span>
         </div>
 
       </div>
@@ -746,419 +913,419 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
-  (function () {
+    (function () {
 
-    /* ═══════════════════════════════════════════════
-       FILTER STATE
-    ═══════════════════════════════════════════════ */
-    var activeDatePreset = 'all';
-    var activeDateFrom   = null;
-    var activeDateTo     = null;
-    var activeStatus     = 'all';
+      /* ═══════════════════════════════════════════════
+         FILTER STATE
+      ═══════════════════════════════════════════════ */
+      var activeDatePreset = 'all';
+      var activeDateFrom = null;
+      var activeDateTo = null;
+      var activeStatus = 'all';
 
-    /* ═══════════════════════════════════════════════
-       DATE HELPERS
-    ═══════════════════════════════════════════════ */
-    function fmtDate(d) {
-      if (!d) return '';
-      var parts = d.split('-');
-      var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      return months[parseInt(parts[1]) - 1] + ' ' + parseInt(parts[2]) + ', ' + parts[0];
-    }
-
-    /* Check if a card passes the current date filter.
-       Reads data-created-at="YYYY-MM-DD" set by PHP on each article. */
-    function cardPassesDate(card) {
-      if (activeDatePreset === 'all' && !activeDateFrom && !activeDateTo) return true;
-      var raw = card.getAttribute('data-created-at');
-      if (!raw) return false;
-      var cardDate = new Date(raw + 'T00:00:00');
-      var today = new Date(); today.setHours(0,0,0,0);
-
-      if (activeDatePreset === 'today') {
-        return cardDate.getTime() === today.getTime();
+      /* ═══════════════════════════════════════════════
+         DATE HELPERS
+      ═══════════════════════════════════════════════ */
+      function fmtDate(d) {
+        if (!d) return '';
+        var parts = d.split('-');
+        var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return months[parseInt(parts[1]) - 1] + ' ' + parseInt(parts[2]) + ', ' + parts[0];
       }
-      if (activeDatePreset === '7') {
-        var c7 = new Date(today); c7.setDate(c7.getDate() - 6);
-        return cardDate >= c7;
+
+      /* Check if a card passes the current date filter.
+         Reads data-created-at="YYYY-MM-DD" set by PHP on each article. */
+      function cardPassesDate(card) {
+        if (activeDatePreset === 'all' && !activeDateFrom && !activeDateTo) return true;
+        var raw = card.getAttribute('data-created-at');
+        if (!raw) return false;
+        var cardDate = new Date(raw + 'T00:00:00');
+        var today = new Date(); today.setHours(0, 0, 0, 0);
+
+        if (activeDatePreset === 'today') {
+          return cardDate.getTime() === today.getTime();
+        }
+        if (activeDatePreset === '7') {
+          var c7 = new Date(today); c7.setDate(c7.getDate() - 6);
+          return cardDate >= c7;
+        }
+        if (activeDatePreset === '30') {
+          var c30 = new Date(today); c30.setDate(c30.getDate() - 29);
+          return cardDate >= c30;
+        }
+        if (activeDateFrom) {
+          var f = new Date(activeDateFrom + 'T00:00:00');
+          if (cardDate < f) return false;
+        }
+        if (activeDateTo) {
+          var t = new Date(activeDateTo + 'T00:00:00');
+          if (cardDate > t) return false;
+        }
+        return true;
       }
-      if (activeDatePreset === '30') {
-        var c30 = new Date(today); c30.setDate(c30.getDate() - 29);
-        return cardDate >= c30;
+
+      /* Check if a card passes the current status filter.
+         Reads data-rescue-status="..." set by PHP on each article. */
+      function cardPassesStatus(card) {
+        if (activeStatus === 'all') return true;
+        return card.getAttribute('data-rescue-status') === activeStatus;
       }
-      if (activeDateFrom) {
-        var f = new Date(activeDateFrom + 'T00:00:00');
-        if (cardDate < f) return false;
+
+      /* Apply both filters to all loaded cards */
+      function applyFilters() {
+        var cards = document.querySelectorAll('#feed-container .post-card');
+        var visible = 0;
+        cards.forEach(function (card) {
+          var show = cardPassesDate(card) && cardPassesStatus(card);
+          card.style.display = show ? '' : 'none';
+          if (show) visible++;
+        });
+
+        var noResults = document.getElementById('comm-no-results');
+        noResults.style.display = visible === 0 && !hasMore ? 'block' : 'none';
+
+        var countEl = document.getElementById('comm-report-count');
+        if (countEl) countEl.textContent = visible + ' report' + (visible !== 1 ? 's' : '');
       }
-      if (activeDateTo) {
-        var t = new Date(activeDateTo + 'T00:00:00');
-        if (cardDate > t) return false;
+
+      /* ═══════════════════════════════════════════════
+         DATE BAR LOGIC
+      ═══════════════════════════════════════════════ */
+      var dateBar = document.getElementById('comm-date-bar');
+      var dateInfo = document.getElementById('comm-date-info');
+
+      function updateDateInfo() {
+        if (activeDatePreset === 'all') { dateInfo.className = 'comm-active-info'; return; }
+        var msg = '';
+        if (activeDatePreset === 'today') msg = "Showing today's reports only";
+        else if (activeDatePreset === '7') msg = 'Showing reports from the last 7 days';
+        else if (activeDatePreset === '30') msg = 'Showing reports from the last 30 days';
+        else if (activeDateFrom && activeDateTo) msg = fmtDate(activeDateFrom) + ' – ' + fmtDate(activeDateTo);
+        else if (activeDateFrom) msg = 'From ' + fmtDate(activeDateFrom) + ' onwards';
+        else if (activeDateTo) msg = 'Up to ' + fmtDate(activeDateTo);
+        dateInfo.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ' + msg;
+        dateInfo.className = 'comm-active-info show';
       }
-      return true;
-    }
 
-    /* Check if a card passes the current status filter.
-       Reads data-rescue-status="..." set by PHP on each article. */
-    function cardPassesStatus(card) {
-      if (activeStatus === 'all') return true;
-      return card.getAttribute('data-rescue-status') === activeStatus;
-    }
+      function setDatePresetUI(preset) {
+        dateBar.querySelectorAll('[data-date-preset]').forEach(function (btn) {
+          var isActive = btn.getAttribute('data-date-preset') === preset;
+          btn.classList.toggle('active', isActive);
+          btn.style.background = isActive ? '#3b82f6' : '#fff';
+          btn.style.borderColor = isActive ? '#2563eb' : '#e2e8f0';
+          btn.style.color = isActive ? '#fff' : '#475569';
+        });
+      }
 
-    /* Apply both filters to all loaded cards */
-    function applyFilters() {
-      var cards   = document.querySelectorAll('#feed-container .post-card');
-      var visible = 0;
-      cards.forEach(function (card) {
-        var show = cardPassesDate(card) && cardPassesStatus(card);
-        card.style.display = show ? '' : 'none';
-        if (show) visible++;
-      });
-
-      var noResults = document.getElementById('comm-no-results');
-      noResults.style.display = visible === 0 && !hasMore ? 'block' : 'none';
-
-      var countEl = document.getElementById('comm-report-count');
-      if (countEl) countEl.textContent = visible + ' report' + (visible !== 1 ? 's' : '');
-    }
-
-    /* ═══════════════════════════════════════════════
-       DATE BAR LOGIC
-    ═══════════════════════════════════════════════ */
-    var dateBar  = document.getElementById('comm-date-bar');
-    var dateInfo = document.getElementById('comm-date-info');
-
-    function updateDateInfo() {
-      if (activeDatePreset === 'all') { dateInfo.className = 'comm-active-info'; return; }
-      var msg = '';
-      if (activeDatePreset === 'today')          msg = "Showing today's reports only";
-      else if (activeDatePreset === '7')         msg = 'Showing reports from the last 7 days';
-      else if (activeDatePreset === '30')        msg = 'Showing reports from the last 30 days';
-      else if (activeDateFrom && activeDateTo)   msg = fmtDate(activeDateFrom) + ' – ' + fmtDate(activeDateTo);
-      else if (activeDateFrom)                   msg = 'From ' + fmtDate(activeDateFrom) + ' onwards';
-      else if (activeDateTo)                     msg = 'Up to ' + fmtDate(activeDateTo);
-      dateInfo.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ' + msg;
-      dateInfo.className = 'comm-active-info show';
-    }
-
-    function setDatePresetUI(preset) {
       dateBar.querySelectorAll('[data-date-preset]').forEach(function (btn) {
-        var isActive = btn.getAttribute('data-date-preset') === preset;
-        btn.classList.toggle('active', isActive);
-        btn.style.background   = isActive ? '#3b82f6' : '#fff';
-        btn.style.borderColor  = isActive ? '#2563eb' : '#e2e8f0';
-        btn.style.color        = isActive ? '#fff'    : '#475569';
+        btn.addEventListener('click', function () {
+          activeDatePreset = this.getAttribute('data-date-preset');
+          activeDateFrom = null; activeDateTo = null;
+          document.getElementById('comm-date-from').value = '';
+          document.getElementById('comm-date-to').value = '';
+          document.getElementById('comm-date-clear').style.display = 'none';
+          setDatePresetUI(activeDatePreset);
+          updateDateInfo();
+          applyFilters();
+        });
       });
-    }
 
-    dateBar.querySelectorAll('[data-date-preset]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        activeDatePreset = this.getAttribute('data-date-preset');
-        activeDateFrom = null; activeDateTo = null;
-        document.getElementById('comm-date-from').value = '';
-        document.getElementById('comm-date-to').value   = '';
-        document.getElementById('comm-date-clear').style.display = 'none';
-        setDatePresetUI(activeDatePreset);
+      document.getElementById('comm-date-apply').addEventListener('click', function () {
+        var from = document.getElementById('comm-date-from').value;
+        var to = document.getElementById('comm-date-to').value;
+        if (!from && !to) return;
+        activeDatePreset = 'custom';
+        activeDateFrom = from || null;
+        activeDateTo = to || null;
+        setDatePresetUI(''); /* deactivate all presets */
+        document.getElementById('comm-date-clear').style.display = '';
         updateDateInfo();
         applyFilters();
       });
-    });
 
-    document.getElementById('comm-date-apply').addEventListener('click', function () {
-      var from = document.getElementById('comm-date-from').value;
-      var to   = document.getElementById('comm-date-to').value;
-      if (!from && !to) return;
-      activeDatePreset = 'custom';
-      activeDateFrom   = from || null;
-      activeDateTo     = to   || null;
-      setDatePresetUI(''); /* deactivate all presets */
-      document.getElementById('comm-date-clear').style.display = '';
-      updateDateInfo();
-      applyFilters();
-    });
-
-    document.getElementById('comm-date-clear').addEventListener('click', function () {
-      activeDatePreset = 'all'; activeDateFrom = null; activeDateTo = null;
-      document.getElementById('comm-date-from').value = '';
-      document.getElementById('comm-date-to').value   = '';
-      this.style.display = 'none';
-      setDatePresetUI('all');
-      updateDateInfo();
-      applyFilters();
-    });
-
-    /* ═══════════════════════════════════════════════
-       STATUS BAR LOGIC
-    ═══════════════════════════════════════════════ */
-    var statusColors = {
-      'all':           { bg: '#3b82f6', border: '#2563eb' },
-      'Rescue Needed': { bg: '#ef4444', border: '#dc2626' },
-      'Being Rescued': { bg: '#eab308', border: '#ca8a04' },
-      'Rescued':       { bg: '#22c55e', border: '#16a34a' },
-      'Not Required':  { bg: '#94a3b8', border: '#64748b' },
-    };
-
-    var statusBar = document.getElementById('comm-status-bar');
-
-    function setStatusUI(status) {
-      statusBar.querySelectorAll('[data-status]').forEach(function (btn) {
-        var isActive = btn.getAttribute('data-status') === status;
-        btn.classList.toggle('active', isActive);
-        var colors = statusColors[btn.getAttribute('data-status')] || statusColors['all'];
-        btn.style.background   = isActive ? colors.bg     : '#fff';
-        btn.style.borderColor  = isActive ? colors.border : '#e2e8f0';
-        btn.style.color        = isActive ? '#fff'        : '#475569';
-        /* restore dot color when inactive */
-        var dot = btn.querySelector('.status-dot');
-        if (dot) dot.style.background = isActive ? 'rgba(255,255,255,0.85)' : colors.bg;
-      });
-    }
-
-    statusBar.querySelectorAll('[data-status]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        activeStatus = this.getAttribute('data-status');
-        setStatusUI(activeStatus);
+      document.getElementById('comm-date-clear').addEventListener('click', function () {
+        activeDatePreset = 'all'; activeDateFrom = null; activeDateTo = null;
+        document.getElementById('comm-date-from').value = '';
+        document.getElementById('comm-date-to').value = '';
+        this.style.display = 'none';
+        setDatePresetUI('all');
+        updateDateInfo();
         applyFilters();
       });
-    });
 
-    /* ═══════════════════════════════════════════════
-       INFINITE SCROLL FEED
-    ═══════════════════════════════════════════════ */
-    var feedPage  = 1;
-    var loading   = false;
-    var hasMore   = true;
-    var feed      = document.getElementById('feed-container');
-    var loadingEl = document.getElementById('feed-loading');
-    var endEl     = document.getElementById('feed-end');
+      /* ═══════════════════════════════════════════════
+         STATUS BAR LOGIC
+      ═══════════════════════════════════════════════ */
+      var statusColors = {
+        'all': { bg: '#3b82f6', border: '#2563eb' },
+        'Rescue Needed': { bg: '#ef4444', border: '#dc2626' },
+        'Being Rescued': { bg: '#eab308', border: '#ca8a04' },
+        'Rescued': { bg: '#22c55e', border: '#16a34a' },
+        'Not Required': { bg: '#94a3b8', border: '#64748b' },
+      };
 
-    function loadFeed() {
-      if (loading || !hasMore) return;
-      loading = true;
+      var statusBar = document.getElementById('comm-status-bar');
 
-      /* Pass active status to PHP so server also filters
-         (avoids loading pages that are entirely filtered out) */
-      var url = '../includes/fetch_rescuerReports.php?page=' + feedPage;
-      if (activeStatus !== 'all') url += '&status=' + encodeURIComponent(activeStatus);
-
-      fetch(url)
-        .then(function (r) { return r.text(); })
-        .then(function (html) {
-          if (!html.trim()) {
-            hasMore = false;
-            loadingEl.style.display = 'none';
-            endEl.style.display = 'block';
-            applyFilters(); /* show "no results" if needed */
-            return;
-          }
-          feed.insertAdjacentHTML('beforeend', html);
-          feedPage++;
-          loading = false;
-          applyFilters(); /* hide cards that don't pass date filter */
+      function setStatusUI(status) {
+        statusBar.querySelectorAll('[data-status]').forEach(function (btn) {
+          var isActive = btn.getAttribute('data-status') === status;
+          btn.classList.toggle('active', isActive);
+          var colors = statusColors[btn.getAttribute('data-status')] || statusColors['all'];
+          btn.style.background = isActive ? colors.bg : '#fff';
+          btn.style.borderColor = isActive ? colors.border : '#e2e8f0';
+          btn.style.color = isActive ? '#fff' : '#475569';
+          /* restore dot color when inactive */
+          var dot = btn.querySelector('.status-dot');
+          if (dot) dot.style.background = isActive ? 'rgba(255,255,255,0.85)' : colors.bg;
         });
-    }
+      }
 
-    loadFeed();
-
-    new IntersectionObserver(
-      function (e) { if (e[0].isIntersecting) loadFeed(); },
-      { rootMargin: '200px' }
-    ).observe(loadingEl);
-
-    /* Re-load when status filter changes (reset pagination) */
-    statusBar.querySelectorAll('[data-status]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        /* Reset feed if status changes — server will filter */
-        feedPage  = 1;
-        hasMore   = true;
-        loading   = false;
-        feed.innerHTML = '';
-        loadingEl.style.display = 'block';
-        endEl.style.display     = 'none';
-        loadFeed();
-      });
-    });
-
-    /* ═══════════════════════════════════════════════
-       MAP
-    ═══════════════════════════════════════════════ */
-    var mapInstance = null, fullMapInstance = null;
-    var lastLat, lastLng, lastName;
-
-    document.addEventListener('click', function (e) {
-      var btn = e.target.closest('.btn-map');
-      if (!btn) return;
-      lastLat = parseFloat(btn.dataset.lat);
-      lastLng = parseFloat(btn.dataset.lng);
-      lastName = btn.dataset.name;
-      document.getElementById('map-modal').style.display = 'flex';
-      setTimeout(function () {
-        if (mapInstance) mapInstance.remove();
-        mapInstance = L.map('map').setView([lastLat, lastLng], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          { attribution: '&copy; OpenStreetMap' }).addTo(mapInstance);
-        L.marker([lastLat, lastLng]).addTo(mapInstance).bindPopup(lastName).openPopup();
-      }, 150);
-    });
-
-    document.getElementById('open-full-map').onclick = function () {
-      document.getElementById('map-modal').style.display = 'none';
-      document.getElementById('full-map-modal').style.display = 'block';
-      setTimeout(function () {
-        if (fullMapInstance) fullMapInstance.remove();
-        fullMapInstance = L.map('full-map').setView([lastLat, lastLng], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          { attribution: '&copy; OpenStreetMap' }).addTo(fullMapInstance);
-        L.marker([lastLat, lastLng]).addTo(fullMapInstance).bindPopup(lastName).openPopup();
-      }, 150);
-    };
-
-    document.getElementById('close-map').onclick = function () {
-      document.getElementById('map-modal').style.display = 'none';
-    };
-    document.getElementById('close-full-map').onclick = function () {
-      document.getElementById('full-map-modal').style.display = 'none';
-    };
-
-    /* ═══════════════════════════════════════════════
-       RESCUE CONFIRMATION MODAL
-    ═══════════════════════════════════════════════ */
-    var MODAL_CONTENT = {
-      start: {
-        icon: '🚨', title: 'Start Rescue Operation',
-        subtitle: 'Rescue Needed → Being Rescued',
-        bodyFn: function (reporter) {
-          return 'Are you sure you want to mark <strong>' + reporter + '</strong>\'s report as <strong>Being Rescued</strong>? This means a rescue team is now on the way.';
-        },
-        btnLabel: '🚑 Yes, Start Rescue',
-        btnClass: 'type--start', headerClass: 'type--start',
-      },
-      finish: {
-        icon: '✅', title: 'Complete Rescue',
-        subtitle: 'Being Rescued → Rescued',
-        bodyFn: function (reporter) {
-          return 'Confirm that <strong>' + reporter + '</strong> has been successfully <strong>Rescued</strong>. This action cannot be undone.';
-        },
-        btnLabel: '✅ Yes, Mark as Rescued',
-        btnClass: 'type--finish', headerClass: 'type--finish',
-      },
-    };
-
-    var backdrop   = document.getElementById('confirm-backdrop');
-    var header     = document.getElementById('confirm-modal-header');
-    var iconEl     = document.getElementById('confirm-modal-icon');
-    var titleEl    = document.getElementById('confirm-modal-title');
-    var subtitleEl = document.getElementById('confirm-modal-subtitle');
-    var bodyEl     = document.getElementById('confirm-modal-body');
-    var cancelBtn  = document.getElementById('confirm-cancel');
-    var okBtn      = document.getElementById('confirm-ok');
-    var toast      = document.getElementById('rescue-toast');
-
-    var activeReportId = null, activeNextId = null, activeBadgeBtn = null;
-
-    document.addEventListener('click', function (e) {
-      var badge = e.target.closest('.rescue-badge--btn');
-      if (!badge) return;
-      var modalType = badge.dataset.modalType;
-      var content   = MODAL_CONTENT[modalType];
-      if (!content) return;
-
-      activeReportId = badge.dataset.reportId;
-      activeNextId   = badge.dataset.nextStatusId;
-      activeBadgeBtn = badge;
-
-      header.className = 'confirm-modal__header ' + content.headerClass;
-      iconEl.textContent   = content.icon;
-      titleEl.textContent  = content.title;
-      subtitleEl.textContent = content.subtitle;
-      bodyEl.innerHTML     = content.bodyFn(badge.dataset.reporter);
-      okBtn.textContent    = content.btnLabel;
-      okBtn.className      = 'btn-modal-confirm ' + content.btnClass;
-      okBtn.disabled       = false;
-      backdrop.classList.add('open');
-    });
-
-    function closeModal() {
-      backdrop.classList.remove('open');
-      activeReportId = activeNextId = activeBadgeBtn = null;
-    }
-
-    cancelBtn.onclick = closeModal;
-    backdrop.addEventListener('click', function (e) { if (e.target === backdrop) closeModal(); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
-
-    okBtn.onclick = function () {
-      okBtn.disabled = true;
-      okBtn.textContent = 'Updating…';
-
-      var body = new FormData();
-      body.append('report_id', activeReportId);
-      body.append('new_status_id', activeNextId);
-
-      fetch('../api/update_rescue_status.php', { method: 'POST', body: body })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          if (!data.success) throw new Error(data.message || 'Failed');
-
-          var newStatus = data.status_name;
-          var classMap  = {
-            'Rescue Needed': 'badge--danger',
-            'Being Rescued': 'badge--warning',
-            'Rescued':       'badge--success',
-            'Not Required':  'badge--neutral',
-          };
-          var nextMap = { 'Being Rescued': { nextId: 4, modalType: 'finish' } };
-          var stillClickable = nextMap[newStatus] !== undefined;
-
-          if (stillClickable) {
-            var next = nextMap[newStatus];
-            activeBadgeBtn.classList.remove('badge--danger','badge--warning','badge--success','badge--neutral');
-            activeBadgeBtn.classList.add(classMap[newStatus]);
-            activeBadgeBtn.textContent = newStatus;
-            activeBadgeBtn.dataset.nextStatusId = next.nextId;
-            activeBadgeBtn.dataset.modalType    = next.modalType;
-          } else {
-            var span = document.createElement('span');
-            span.className   = 'rescue-badge ' + (classMap[newStatus] || 'badge--neutral');
-            span.textContent = newStatus;
-            activeBadgeBtn.replaceWith(span);
-          }
-
-          /* Update the card's data-rescue-status so filters still work */
-          var card = activeBadgeBtn
-            ? activeBadgeBtn.closest('.post-card')
-            : (span ? span.closest('.post-card') : null);
-          if (card) card.setAttribute('data-rescue-status', newStatus);
-
-          showToast('✅ Status updated to: ' + newStatus, 'success');
-          closeModal();
+      statusBar.querySelectorAll('[data-status]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          activeStatus = this.getAttribute('data-status');
+          setStatusUI(activeStatus);
           applyFilters();
-        })
-        .catch(function (err) {
-          showToast('❌ ' + err.message, 'error');
-          okBtn.disabled = false;
-          okBtn.textContent = MODAL_CONTENT[
-            activeBadgeBtn ? activeBadgeBtn.dataset.modalType : 'start'
-          ].btnLabel;
         });
-    };
+      });
 
-    /* ═══════════════════════════════════════════════
-       TOAST
-    ═══════════════════════════════════════════════ */
-    var toastTimer = null;
-    function showToast(msg, type) {
-      toast.textContent = msg;
-      toast.className = 'rescue-toast toast--' + (type || 'success') + ' show';
-      if (toastTimer) clearTimeout(toastTimer);
-      toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 3500);
-    }
+      /* ═══════════════════════════════════════════════
+         INFINITE SCROLL FEED
+      ═══════════════════════════════════════════════ */
+      var feedPage = 1;
+      var loading = false;
+      var hasMore = true;
+      var feed = document.getElementById('feed-container');
+      var loadingEl = document.getElementById('feed-loading');
+      var endEl = document.getElementById('feed-end');
 
-    /* ═══════════════════════════════════════════════
-       INITIAL UI STATE
-    ═══════════════════════════════════════════════ */
-    setStatusUI('all');
+      function loadFeed() {
+        if (loading || !hasMore) return;
+        loading = true;
 
-  })();
+        /* Pass active status to PHP so server also filters
+           (avoids loading pages that are entirely filtered out) */
+        var url = '../includes/fetch_rescuerReports.php?page=' + feedPage;
+        if (activeStatus !== 'all') url += '&status=' + encodeURIComponent(activeStatus);
+
+        fetch(url)
+          .then(function (r) { return r.text(); })
+          .then(function (html) {
+            if (!html.trim()) {
+              hasMore = false;
+              loadingEl.style.display = 'none';
+              endEl.style.display = 'block';
+              applyFilters(); /* show "no results" if needed */
+              return;
+            }
+            feed.insertAdjacentHTML('beforeend', html);
+            feedPage++;
+            loading = false;
+            applyFilters(); /* hide cards that don't pass date filter */
+          });
+      }
+
+      loadFeed();
+
+      new IntersectionObserver(
+        function (e) { if (e[0].isIntersecting) loadFeed(); },
+        { rootMargin: '200px' }
+      ).observe(loadingEl);
+
+      /* Re-load when status filter changes (reset pagination) */
+      statusBar.querySelectorAll('[data-status]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          /* Reset feed if status changes — server will filter */
+          feedPage = 1;
+          hasMore = true;
+          loading = false;
+          feed.innerHTML = '';
+          loadingEl.style.display = 'block';
+          endEl.style.display = 'none';
+          loadFeed();
+        });
+      });
+
+      /* ═══════════════════════════════════════════════
+         MAP
+      ═══════════════════════════════════════════════ */
+      var mapInstance = null, fullMapInstance = null;
+      var lastLat, lastLng, lastName;
+
+      document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.btn-map');
+        if (!btn) return;
+        lastLat = parseFloat(btn.dataset.lat);
+        lastLng = parseFloat(btn.dataset.lng);
+        lastName = btn.dataset.name;
+        document.getElementById('map-modal').style.display = 'flex';
+        setTimeout(function () {
+          if (mapInstance) mapInstance.remove();
+          mapInstance = L.map('map').setView([lastLat, lastLng], 15);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            { attribution: '&copy; OpenStreetMap' }).addTo(mapInstance);
+          L.marker([lastLat, lastLng]).addTo(mapInstance).bindPopup(lastName).openPopup();
+        }, 150);
+      });
+
+      document.getElementById('open-full-map').onclick = function () {
+        document.getElementById('map-modal').style.display = 'none';
+        document.getElementById('full-map-modal').style.display = 'block';
+        setTimeout(function () {
+          if (fullMapInstance) fullMapInstance.remove();
+          fullMapInstance = L.map('full-map').setView([lastLat, lastLng], 15);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            { attribution: '&copy; OpenStreetMap' }).addTo(fullMapInstance);
+          L.marker([lastLat, lastLng]).addTo(fullMapInstance).bindPopup(lastName).openPopup();
+        }, 150);
+      };
+
+      document.getElementById('close-map').onclick = function () {
+        document.getElementById('map-modal').style.display = 'none';
+      };
+      document.getElementById('close-full-map').onclick = function () {
+        document.getElementById('full-map-modal').style.display = 'none';
+      };
+
+      /* ═══════════════════════════════════════════════
+         RESCUE CONFIRMATION MODAL
+      ═══════════════════════════════════════════════ */
+      var MODAL_CONTENT = {
+        start: {
+          icon: '🚨', title: 'Start Rescue Operation',
+          subtitle: 'Rescue Needed → Being Rescued',
+          bodyFn: function (reporter) {
+            return 'Are you sure you want to mark <strong>' + reporter + '</strong>\'s report as <strong>Being Rescued</strong>? This means a rescue team is now on the way.';
+          },
+          btnLabel: '🚑 Yes, Start Rescue',
+          btnClass: 'type--start', headerClass: 'type--start',
+        },
+        finish: {
+          icon: '✅', title: 'Complete Rescue',
+          subtitle: 'Being Rescued → Rescued',
+          bodyFn: function (reporter) {
+            return 'Confirm that <strong>' + reporter + '</strong> has been successfully <strong>Rescued</strong>. This action cannot be undone.';
+          },
+          btnLabel: '✅ Yes, Mark as Rescued',
+          btnClass: 'type--finish', headerClass: 'type--finish',
+        },
+      };
+
+      var backdrop = document.getElementById('confirm-backdrop');
+      var header = document.getElementById('confirm-modal-header');
+      var iconEl = document.getElementById('confirm-modal-icon');
+      var titleEl = document.getElementById('confirm-modal-title');
+      var subtitleEl = document.getElementById('confirm-modal-subtitle');
+      var bodyEl = document.getElementById('confirm-modal-body');
+      var cancelBtn = document.getElementById('confirm-cancel');
+      var okBtn = document.getElementById('confirm-ok');
+      var toast = document.getElementById('rescue-toast');
+
+      var activeReportId = null, activeNextId = null, activeBadgeBtn = null;
+
+      document.addEventListener('click', function (e) {
+        var badge = e.target.closest('.rescue-badge--btn');
+        if (!badge) return;
+        var modalType = badge.dataset.modalType;
+        var content = MODAL_CONTENT[modalType];
+        if (!content) return;
+
+        activeReportId = badge.dataset.reportId;
+        activeNextId = badge.dataset.nextStatusId;
+        activeBadgeBtn = badge;
+
+        header.className = 'confirm-modal__header ' + content.headerClass;
+        iconEl.textContent = content.icon;
+        titleEl.textContent = content.title;
+        subtitleEl.textContent = content.subtitle;
+        bodyEl.innerHTML = content.bodyFn(badge.dataset.reporter);
+        okBtn.textContent = content.btnLabel;
+        okBtn.className = 'btn-modal-confirm ' + content.btnClass;
+        okBtn.disabled = false;
+        backdrop.classList.add('open');
+      });
+
+      function closeModal() {
+        backdrop.classList.remove('open');
+        activeReportId = activeNextId = activeBadgeBtn = null;
+      }
+
+      cancelBtn.onclick = closeModal;
+      backdrop.addEventListener('click', function (e) { if (e.target === backdrop) closeModal(); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+
+      okBtn.onclick = function () {
+        okBtn.disabled = true;
+        okBtn.textContent = 'Updating…';
+
+        var body = new FormData();
+        body.append('report_id', activeReportId);
+        body.append('new_status_id', activeNextId);
+
+        fetch('../api/update_rescue_status.php', { method: 'POST', body: body })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (!data.success) throw new Error(data.message || 'Failed');
+
+            var newStatus = data.status_name;
+            var classMap = {
+              'Rescue Needed': 'badge--danger',
+              'Being Rescued': 'badge--warning',
+              'Rescued': 'badge--success',
+              'Not Required': 'badge--neutral',
+            };
+            var nextMap = { 'Being Rescued': { nextId: 4, modalType: 'finish' } };
+            var stillClickable = nextMap[newStatus] !== undefined;
+
+            if (stillClickable) {
+              var next = nextMap[newStatus];
+              activeBadgeBtn.classList.remove('badge--danger', 'badge--warning', 'badge--success', 'badge--neutral');
+              activeBadgeBtn.classList.add(classMap[newStatus]);
+              activeBadgeBtn.textContent = newStatus;
+              activeBadgeBtn.dataset.nextStatusId = next.nextId;
+              activeBadgeBtn.dataset.modalType = next.modalType;
+            } else {
+              var span = document.createElement('span');
+              span.className = 'rescue-badge ' + (classMap[newStatus] || 'badge--neutral');
+              span.textContent = newStatus;
+              activeBadgeBtn.replaceWith(span);
+            }
+
+            /* Update the card's data-rescue-status so filters still work */
+            var card = activeBadgeBtn
+              ? activeBadgeBtn.closest('.post-card')
+              : (span ? span.closest('.post-card') : null);
+            if (card) card.setAttribute('data-rescue-status', newStatus);
+
+            showToast('✅ Status updated to: ' + newStatus, 'success');
+            closeModal();
+            applyFilters();
+          })
+          .catch(function (err) {
+            showToast('❌ ' + err.message, 'error');
+            okBtn.disabled = false;
+            okBtn.textContent = MODAL_CONTENT[
+              activeBadgeBtn ? activeBadgeBtn.dataset.modalType : 'start'
+            ].btnLabel;
+          });
+      };
+
+      /* ═══════════════════════════════════════════════
+         TOAST
+      ═══════════════════════════════════════════════ */
+      var toastTimer = null;
+      function showToast(msg, type) {
+        toast.textContent = msg;
+        toast.className = 'rescue-toast toast--' + (type || 'success') + ' show';
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 3500);
+      }
+
+      /* ═══════════════════════════════════════════════
+         INITIAL UI STATE
+      ═══════════════════════════════════════════════ */
+      setStatusUI('all');
+
+    })();
   </script>
 
 </section>

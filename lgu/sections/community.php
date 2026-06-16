@@ -499,7 +499,33 @@
       .comm-filter-bar {
         gap: 6px;
       }
+
+      /* ← DITO dapat ilagay ang mga fix, LOOB ng @media block */
+      .post-card__body--with-image {
+        flex-direction: column;
+      }
+
+      .post-card__image-wrap {
+        width: 100%;
+        height: 200px;
+      }
+
+      .post-card__map-btns {
+        flex-direction: column;
+        width: 100%;
+        margin-left: 0;
+      }
+
+      .btn-map,
+      .btn-gmaps {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+      }
+
     }
+
+    /* ← closing brace ng @media — lahat ng fix ay nasa loob nito */
   </style>
 
   <header class="page-header">
