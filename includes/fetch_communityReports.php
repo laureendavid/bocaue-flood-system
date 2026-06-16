@@ -5,6 +5,13 @@ $limit = 5;
 $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
 $offset = ($page - 1) * $limit;
 
+// Optional server-side status filter
+$statusFilter = '';
+if (!empty($_GET['status'])) {
+    $safeStatus = $conn->real_escape_string($_GET['status']);
+    $statusFilter = "AND rs.status_name = '$safeStatus'";
+}
+
 $sql = "
     SELECT
         r.report_id,
@@ -32,6 +39,7 @@ $sql = "
     LEFT JOIN rescue_status  rs ON r.rescue_status_id  = rs.rescue_status_id
     LEFT JOIN users          ru ON r.assigned_rescuer_id = ru.user_id
     WHERE r.status_id = 2
+    $statusFilter
     ORDER BY r.created_at DESC
     LIMIT $limit OFFSET $offset
 ";
@@ -43,30 +51,29 @@ if ($result && $result->num_rows > 0):
 
         $hasImage = !empty($report['report_image']);
 
-        /* ── Profile picture ── */
         $profilePic = !empty($report['profile_picture'])
             ? (filter_var($report['profile_picture'], FILTER_VALIDATE_URL)
                 ? $report['profile_picture']
                 : '/' . ltrim($report['profile_picture'], '/'))
             : '/assets/img/default-avatar.png';
 
-        /* ── Report image ── */
         $reportImage = trim($report['report_image'] ?? '');
         $imageSrc = filter_var($reportImage, FILTER_VALIDATE_URL)
             ? $reportImage
             : ($reportImage ? '/' . ltrim($reportImage, '/') : '');
 
-        /* ── Address ── */
         $address = !empty($report['full_address'])
             ? htmlspecialchars($report['full_address'])
             : htmlspecialchars($report['barangay_name'] . ', ' . $report['municipality'] . ', ' . $report['province']);
 
-        /* ── Date ── */
         $date = date('F j, Y, g:i a', strtotime($report['created_at']));
+        // For JS date filtering — YYYY-MM-DD only
+        $createdAtDate = date('Y-m-d', strtotime($report['created_at']));
 
-        /* ── Rescue badge class ── */
+        $rescueStatus = $report['rescue_status'] ?? 'Not Required';
+
         $rescueBadgeClass = 'badge--neutral';
-        switch ($report['rescue_status']) {
+        switch ($rescueStatus) {
             case 'Rescue Needed':
                 $rescueBadgeClass = 'badge--danger';
                 break;
@@ -78,7 +85,6 @@ if ($result && $result->num_rows > 0):
                 break;
         }
 
-        /* ── Severity class ── */
         $severityClass = 'severity--neutral';
         switch ($report['severity']) {
             case 'Impassable':
@@ -92,23 +98,20 @@ if ($result && $result->num_rows > 0):
                 break;
         }
 
-        /* ── Assigned rescuer ── */
         $assignedRescuerName = !empty($report['assigned_rescuer_name'])
             ? htmlspecialchars($report['assigned_rescuer_name'])
             : null;
         ?>
 
-        <article class="post-card" data-report-id="<?= (int) $report['report_id'] ?>">
+        <article class="post-card" data-report-id="<?= (int) $report['report_id'] ?>" data-created-at="<?= $createdAtDate ?>"
+            data-rescue-status="<?= htmlspecialchars($rescueStatus) ?>">
 
             <!-- HEADER -->
             <div class="post-card__header">
                 <div class="post-card__user">
                     <?php
                     $nameParts = explode(' ', trim($report['full_name']));
-                    $initials = strtoupper(
-                        substr($nameParts[0], 0, 1) .
-                        (isset($nameParts[1]) ? substr($nameParts[1], 0, 1) : '')
-                    );
+                    $initials = strtoupper(substr($nameParts[0], 0, 1) . (isset($nameParts[1]) ? substr($nameParts[1], 0, 1) : ''));
                     $avatarColors = ['#1d4ed8', '#1e5bb8', '#0b1f47', '#2563eb', '#1e40af', '#1d4ed8'];
                     $colorIndex = abs(crc32($report['full_name'])) % count($avatarColors);
                     $avatarBg = $avatarColors[$colorIndex];
@@ -117,12 +120,8 @@ if ($result && $result->num_rows > 0):
                         <?= $initials ?>
                     </div>
                     <div class="post-card__user-info">
-                        <span class="post-card__name">
-                            <?= htmlspecialchars($report['full_name']) ?>
-                        </span>
-                        <span class="post-card__meta">
-                            <?= $date ?> • <?= $address ?>
-                        </span>
+                        <span class="post-card__name"><?= htmlspecialchars($report['full_name']) ?></span>
+                        <span class="post-card__meta"><?= $date ?> &bull; <?= $address ?></span>
                     </div>
                 </div>
             </div>
@@ -137,7 +136,6 @@ if ($result && $result->num_rows > 0):
                 <?php endif; ?>
 
                 <div class="post-card__content">
-
                     <p class="post-card__description">
                         <?= nl2br(htmlspecialchars($report['description'])) ?>
                     </p>
@@ -145,16 +143,15 @@ if ($result && $result->num_rows > 0):
                     <div class="post-card__tags">
                         <?php if (!empty($report['water_level'])): ?>
                             <span class="post-tag post-tag--water">
-                                Water Level: <?= htmlspecialchars($report['water_level']) ?>
+                                💧 Water: <?= htmlspecialchars($report['water_level']) ?>
                             </span>
                         <?php endif; ?>
                         <?php if (!empty($report['severity'])): ?>
                             <span class="post-tag <?= $severityClass ?>">
-                                Severity: <?= htmlspecialchars($report['severity']) ?>
+                                ⚠️ Severity: <?= htmlspecialchars($report['severity']) ?>
                             </span>
                         <?php endif; ?>
                     </div>
-
                 </div>
             </div>
 
@@ -162,21 +159,18 @@ if ($result && $result->num_rows > 0):
             <div class="post-card__footer">
 
                 <?php if ($assignedRescuerName): ?>
-                    <!-- May naka-assign na rescuer: ipakita sa loob ng badge, same style sa rescuer view -->
                     <span class="rescue-badge rescue-badge--locked <?= $rescueBadgeClass ?>">
-                        🔒 <?= htmlspecialchars($report['rescue_status'] ?? 'Being Rescued') ?>
+                        🔒 <?= htmlspecialchars($rescueStatus) ?>
                         <small>by <?= $assignedRescuerName ?></small>
                     </span>
                 <?php else: ?>
-                    <!-- Walang rescuer pa o Rescued na / Not Required -->
                     <span class="rescue-badge <?= $rescueBadgeClass ?>">
-                        <?= htmlspecialchars($report['rescue_status'] ?? 'Not Required') ?>
+                        <?= htmlspecialchars($rescueStatus) ?>
                     </span>
                 <?php endif; ?>
 
-                <!-- Map buttons -->
-                <?php if (!empty($report['latitude']) && !empty($report['longitude'])): ?>
-                    <div class="post-card__map-btns">
+                <div class="post-card__map-btns">
+                    <?php if (!empty($report['latitude']) && !empty($report['longitude'])): ?>
                         <button type="button" class="btn-map" data-lat="<?= $report['latitude'] ?>"
                             data-lng="<?= $report['longitude'] ?>" data-name="<?= htmlspecialchars($report['full_name']) ?>">
                             View on Map 📍
@@ -186,8 +180,8 @@ if ($result && $result->num_rows > 0):
                             target="_blank" rel="noopener noreferrer">
                             View in Google Maps 🗺️
                         </a>
-                    </div>
-                <?php endif; ?>
+                    <?php endif; ?>
+                </div>
 
             </div>
 

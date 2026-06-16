@@ -14,6 +14,167 @@
       gap: 15px;
     }
 
+    /* =============================================
+       FILTER STACK
+    ============================================= */
+    .community-filter-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .comm-filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 10px 14px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+    }
+
+    .comm-filter-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+      margin-right: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .comm-filter-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 13px;
+      border-radius: 8px;
+      border: 1.5px solid #e2e8f0;
+      background: #fff;
+      color: #475569;
+      font-size: 0.76rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .comm-filter-btn:hover:not(.active) {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+    }
+
+    .comm-filter-btn.active {
+      color: #fff;
+    }
+
+    .comm-filter-sep {
+      color: #cbd5e1;
+      font-size: 1rem;
+      margin: 0 2px;
+      flex-shrink: 0;
+    }
+
+    .comm-date-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .comm-date-wrap label {
+      font-size: 0.72rem;
+      color: #94a3b8;
+      white-space: nowrap;
+    }
+
+    .comm-date-wrap input[type="date"] {
+      padding: 5px 9px;
+      border-radius: 8px;
+      font-size: 0.76rem;
+      border: 1.5px solid #e2e8f0;
+      background: #fff;
+      color: #1e293b;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .comm-date-wrap input[type="date"]:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    .comm-apply-btn {
+      padding: 5px 13px;
+      border-radius: 8px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      border: 1.5px solid #2563eb;
+      background: #3b82f6;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .comm-apply-btn:hover {
+      background: #2563eb;
+    }
+
+    .comm-clear-btn {
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      border: 1.5px solid #e2e8f0;
+      background: transparent;
+      color: #64748b;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .comm-clear-btn:hover {
+      background: #f1f5f9;
+    }
+
+    /* Status dot */
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Active info pill */
+    .comm-active-info {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      color: #1e40af;
+      padding: 5px 12px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+    }
+
+    .comm-active-info.show {
+      display: inline-flex;
+    }
+
+    /* No results */
+    #comm-no-results {
+      display: none;
+      text-align: center;
+      padding: 32px 16px;
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+
     /* POST CARD */
     .post-card {
       background: #fff;
@@ -48,6 +209,16 @@
       border: 2px solid #dbeafe;
     }
 
+    .post-card__avatar--initials {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
     .post-card__user-info {
       display: flex;
       flex-direction: column;
@@ -65,22 +236,44 @@
       color: #777;
     }
 
+    .post-card__body {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .post-card__body--with-image {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
     .post-card__image-wrap {
-      margin-bottom: 10px;
+      flex-shrink: 0;
+      width: 160px;
+      height: 110px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f3f4f6;
     }
 
     .post-card__image {
       width: 100%;
-      border-radius: 10px;
-      max-height: 260px;
+      height: 100%;
       object-fit: cover;
+      display: block;
+    }
+
+    .post-card__content {
+      flex: 1;
+      min-width: 0;
     }
 
     .post-card__description {
-      font-size: 14px;
-      line-height: 1.6;
-      color: #1e293b;
-      margin-bottom: 10px;
+      font-size: 0.875rem;
+      color: #374151;
+      line-height: 1.55;
+      margin: 0 0 10px 0;
     }
 
     .post-card__rescue-info {
@@ -111,36 +304,42 @@
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
+      margin-top: 4px;
     }
 
     .post-tag {
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      font-size: 12px;
-      padding: 3px 10px;
-      border-radius: 99px;
+      font-size: 0.78rem;
       font-weight: 500;
+      padding: 3px 9px;
+      border-radius: 20px;
+      border: 1px solid transparent;
     }
 
     .post-tag--water {
-      background: #dbeafe;
+      background: #eff6ff;
       color: #1d4ed8;
-    }
-
-    .severity--impassable {
-      background: #fee2e2;
-      color: #991b1b;
-    }
-
-    .severity--limited {
-      background: #fef3c7;
-      color: #92400e;
+      border-color: #bfdbfe;
     }
 
     .severity--passable {
-      background: #dcfce7;
-      color: #166534;
+      background: #f0fdf4;
+      color: #15803d;
+      border-color: #bbf7d0;
+    }
+
+    .severity--limited {
+      background: #fffbeb;
+      color: #b45309;
+      border-color: #fde68a;
+    }
+
+    .severity--impassable {
+      background: #fef2f2;
+      color: #b91c1c;
+      border-color: #fecaca;
     }
 
     .severity--neutral {
@@ -148,7 +347,6 @@
       color: #475569;
     }
 
-    /* FOOTER */
     .post-card__footer {
       margin-top: 14px;
       padding-top: 12px;
@@ -157,9 +355,16 @@
       justify-content: space-between;
       align-items: center;
       gap: 12px;
+      flex-wrap: wrap;
     }
 
-    /* RESCUE BADGES */
+    .post-card__map-btns {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-left: auto;
+    }
+
     .rescue-badge {
       display: inline-flex;
       align-items: center;
@@ -185,27 +390,11 @@
       transform: scale(0.97);
     }
 
-    .badge--danger {
-      background: #fee2e2;
-      color: #991b1b;
-    }
+    .badge--danger  { background: #fee2e2; color: #991b1b; }
+    .badge--warning { background: #fef3c7; color: #92400e; }
+    .badge--success { background: #dcfce7; color: #166534; }
+    .badge--neutral { background: #f1f5f9; color: #475569; }
 
-    .badge--warning {
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    .badge--success {
-      background: #dcfce7;
-      color: #166534;
-    }
-
-    .badge--neutral {
-      background: #f1f5f9;
-      color: #475569;
-    }
-
-    /* MAP BUTTON */
     .btn-map {
       background: #3498db;
       color: white;
@@ -216,14 +405,26 @@
       font-size: 13px;
       font-weight: 500;
       transition: background 0.18s;
-      margin-left: auto;
     }
 
-    .btn-map:hover {
-      background: #2980b9;
+    .btn-map:hover { background: #2980b9; }
+
+    .btn-gmaps {
+      background: #fff;
+      color: #1e40af;
+      border: 1.5px solid #bfdbfe;
+      padding: 5px 11px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background 0.15s;
+      display: inline-flex;
+      align-items: center;
     }
 
-    /* FEED */
+    .btn-gmaps:hover { background: #eff6ff; }
+
     #feed-loading,
     #feed-end {
       text-align: center;
@@ -255,11 +456,7 @@
       flex-direction: column;
     }
 
-    #map {
-      flex: 1;
-      width: 100%;
-      border-radius: 10px;
-    }
+    #map { flex: 1; width: 100%; border-radius: 10px; }
 
     #close-map {
       position: absolute;
@@ -286,15 +483,9 @@
       color: white;
     }
 
-    #full-map {
-      width: 100%;
-      height: calc(100% - 50px);
-    }
+    #full-map { width: 100%; height: calc(100% - 50px); }
 
-    .close-full-map {
-      cursor: pointer;
-      font-size: 24px;
-    }
+    .close-full-map { cursor: pointer; font-size: 24px; }
 
     .btn-full-map {
       margin-top: 10px;
@@ -308,9 +499,7 @@
       font-size: 13px;
     }
 
-    /* =============================================
-       CONFIRMATION MODAL  (shared shell)
-    ============================================= */
+    /* CONFIRM MODAL */
     .confirm-backdrop {
       display: none;
       position: fixed;
@@ -322,9 +511,7 @@
       padding: 16px;
     }
 
-    .confirm-backdrop.open {
-      display: flex;
-    }
+    .confirm-backdrop.open { display: flex; }
 
     .confirm-modal {
       background: #fff;
@@ -336,15 +523,8 @@
     }
 
     @keyframes modalIn {
-      from {
-        opacity: 0;
-        transform: translateY(12px) scale(0.97);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
+      from { opacity: 0; transform: translateY(12px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     .confirm-modal__header {
@@ -354,70 +534,25 @@
       gap: 14px;
     }
 
-    /* Colour variants set by JS */
-    .confirm-modal__header.type--start {
-      background: #fff1f2;
-      border-bottom: 1px solid #fecdd3;
-    }
-
-    .confirm-modal__header.type--finish {
-      background: #f0fdf4;
-      border-bottom: 1px solid #bbf7d0;
-    }
+    .confirm-modal__header.type--start  { background: #fff1f2; border-bottom: 1px solid #fecdd3; }
+    .confirm-modal__header.type--finish { background: #f0fdf4; border-bottom: 1px solid #bbf7d0; }
 
     .confirm-modal__icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
+      width: 44px; height: 44px; border-radius: 12px;
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22px;
     }
 
-    .type--start .confirm-modal__icon {
-      background: #fee2e2;
-    }
+    .type--start  .confirm-modal__icon { background: #fee2e2; }
+    .type--finish .confirm-modal__icon { background: #dcfce7; }
 
-    .type--finish .confirm-modal__icon {
-      background: #dcfce7;
-    }
+    .confirm-modal__header-text h3 { margin: 0 0 3px; font-size: 1rem; font-weight: 700; }
+    .type--start  .confirm-modal__header-text h3 { color: #991b1b; }
+    .type--finish .confirm-modal__header-text h3 { color: #166534; }
+    .confirm-modal__header-text p { margin: 0; font-size: 0.78rem; color: #64748b; }
 
-    .confirm-modal__header-text h3 {
-      margin: 0 0 3px;
-      font-size: 1rem;
-      font-weight: 700;
-    }
-
-    .type--start .confirm-modal__header-text h3 {
-      color: #991b1b;
-    }
-
-    .type--finish .confirm-modal__header-text h3 {
-      color: #166534;
-    }
-
-    .confirm-modal__header-text p {
-      margin: 0;
-      font-size: 0.78rem;
-      color: #64748b;
-    }
-
-    .confirm-modal__body {
-      padding: 18px 22px;
-    }
-
-    .confirm-modal__body p {
-      font-size: 14px;
-      color: #1e293b;
-      line-height: 1.6;
-      margin: 0;
-    }
-
-    .confirm-modal__body strong {
-      color: #0f1f40;
-    }
+    .confirm-modal__body { padding: 18px 22px; }
+    .confirm-modal__body p { font-size: 14px; color: #1e293b; line-height: 1.6; margin: 0; }
+    .confirm-modal__body strong { color: #0f1f40; }
 
     .confirm-modal__footer {
       padding: 12px 22px 18px;
@@ -428,102 +563,45 @@
     }
 
     .btn-modal-cancel {
-      padding: 9px 20px;
-      border-radius: 9px;
-      border: 1.5px solid #e2e8f0;
-      background: #fff;
-      color: #475569;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
+      padding: 9px 20px; border-radius: 9px;
+      border: 1.5px solid #e2e8f0; background: #fff; color: #475569;
+      font-size: 13px; font-weight: 600; cursor: pointer;
     }
-
-    .btn-modal-cancel:hover {
-      background: #f8fafc;
-    }
+    .btn-modal-cancel:hover { background: #f8fafc; }
 
     .btn-modal-confirm {
-      padding: 9px 22px;
-      border-radius: 9px;
-      border: none;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      min-width: 140px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: filter 0.15s, transform 0.12s;
-      color: #fff;
+      padding: 9px 22px; border-radius: 9px; border: none;
+      font-size: 13px; font-weight: 700; cursor: pointer; min-width: 140px;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: filter 0.15s, transform 0.12s; color: #fff;
     }
-
-    .btn-modal-confirm.type--start {
-      background: #dc2626;
-    }
-
-    .btn-modal-confirm.type--finish {
-      background: #16a34a;
-    }
-
-    .btn-modal-confirm:hover {
-      filter: brightness(1.08);
-    }
-
-    .btn-modal-confirm:active {
-      transform: scale(0.97);
-    }
-
-    .btn-modal-confirm:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      filter: none;
-    }
+    .btn-modal-confirm.type--start  { background: #dc2626; }
+    .btn-modal-confirm.type--finish { background: #16a34a; }
+    .btn-modal-confirm:hover { filter: brightness(1.08); }
+    .btn-modal-confirm:active { transform: scale(0.97); }
+    .btn-modal-confirm:disabled { opacity: 0.6; cursor: not-allowed; filter: none; }
 
     /* TOAST */
     .rescue-toast {
       position: fixed;
-      bottom: 24px;
-      right: 24px;
-      background: #0f1f40;
-      color: #fff;
-      padding: 12px 20px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 500;
-      z-index: 10200;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      opacity: 0;
-      transform: translateY(10px);
+      bottom: 24px; right: 24px;
+      background: #0f1f40; color: #fff;
+      padding: 12px 20px; border-radius: 10px;
+      font-size: 13px; font-weight: 500;
+      z-index: 10200; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      display: flex; align-items: center; gap: 8px;
+      opacity: 0; transform: translateY(10px);
       transition: opacity 0.25s, transform 0.25s;
       pointer-events: none;
     }
-
-    .rescue-toast.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .rescue-toast.toast--success {
-      border-left: 4px solid #22c55e;
-    }
-
-    .rescue-toast.toast--error {
-      border-left: 4px solid #ef4444;
-    }
+    .rescue-toast.show         { opacity: 1; transform: translateY(0); }
+    .rescue-toast.toast--success { border-left: 4px solid #22c55e; }
+    .rescue-toast.toast--error   { border-left: 4px solid #ef4444; }
 
     @media (max-width: 768px) {
-      .community-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .map-modal-content {
-        width: 90%;
-        height: 400px;
-      }
+      .community-grid { grid-template-columns: 1fr; }
+      .map-modal-content { width: 90%; height: 400px; }
+      .comm-filter-bar { gap: 6px; }
     }
   </style>
 
@@ -542,6 +620,77 @@
     <!-- RIGHT: Feed -->
     <div class="community-column">
       <h3 class="community-section-title">Community Posts</h3>
+
+      <!-- ── FILTER STACK ── -->
+      <div class="community-filter-stack">
+
+        <!-- Date filter bar -->
+        <div class="comm-filter-bar" id="comm-date-bar">
+          <span class="comm-filter-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            Date
+          </span>
+          <button class="comm-filter-btn active" data-date-preset="all"
+            style="background:#3b82f6;border-color:#2563eb;color:#fff;">All time</button>
+          <button class="comm-filter-btn" data-date-preset="today">Today</button>
+          <button class="comm-filter-btn" data-date-preset="7">Last 7 days</button>
+          <button class="comm-filter-btn" data-date-preset="30">Last 30 days</button>
+          <span class="comm-filter-sep">|</span>
+          <div class="comm-date-wrap">
+            <label for="comm-date-from">From</label>
+            <input type="date" id="comm-date-from" />
+            <label for="comm-date-to">to</label>
+            <input type="date" id="comm-date-to" />
+            <button class="comm-apply-btn" id="comm-date-apply">Apply</button>
+            <button class="comm-clear-btn" id="comm-date-clear" style="display:none;">Clear</button>
+          </div>
+        </div>
+
+        <!-- Active date pill -->
+        <div class="comm-active-info" id="comm-date-info"></div>
+
+        <!-- Status filter bar -->
+        <div class="comm-filter-bar" id="comm-status-bar">
+          <span class="comm-filter-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            Status
+          </span>
+          <button class="comm-filter-btn active" data-status="all"
+            style="background:#3b82f6;border-color:#2563eb;color:#fff;">
+            <span style="font-size:14px;line-height:1;">⊞</span> All
+          </button>
+          <button class="comm-filter-btn" data-status="Rescue Needed">
+            <span class="status-dot" style="background:#ef4444;"></span> Rescue Needed
+          </button>
+          <button class="comm-filter-btn" data-status="Being Rescued">
+            <span class="status-dot" style="background:#eab308;"></span> Being Rescued
+          </button>
+          <button class="comm-filter-btn" data-status="Rescued">
+            <span class="status-dot" style="background:#22c55e;"></span> Rescued
+          </button>
+          <button class="comm-filter-btn" data-status="Not Required">
+            <span class="status-dot" style="background:#94a3b8;"></span> Not Required
+          </button>
+          <span id="comm-report-count" style="margin-left:auto;font-size:0.73rem;color:#94a3b8;font-weight:500;white-space:nowrap;"></span>
+        </div>
+
+      </div>
+      <!-- ── END FILTER STACK ── -->
+
+      <div id="comm-no-results">
+        <p>No reports match the selected filters.</p>
+      </div>
+
       <div id="feed-container"></div>
       <div id="feed-loading">Loading...</div>
       <div id="feed-end" style="display:none;">No more posts</div>
@@ -568,14 +717,10 @@
     <div id="full-map"></div>
   </div>
 
-  <!-- =============================================
-       CONFIRMATION MODAL
-       One modal, content swapped by JS per type
-  ============================================= -->
+  <!-- CONFIRMATION MODAL -->
   <div id="confirm-backdrop" class="confirm-backdrop" role="dialog" aria-modal="true"
     aria-labelledby="confirm-modal-title">
     <div class="confirm-modal">
-
       <div class="confirm-modal__header" id="confirm-modal-header">
         <div class="confirm-modal__icon" id="confirm-modal-icon"></div>
         <div class="confirm-modal__header-text">
@@ -583,16 +728,13 @@
           <p id="confirm-modal-subtitle"></p>
         </div>
       </div>
-
       <div class="confirm-modal__body">
         <p id="confirm-modal-body"></p>
       </div>
-
       <div class="confirm-modal__footer">
         <button type="button" class="btn-modal-cancel" id="confirm-cancel">Cancel</button>
         <button type="button" class="btn-modal-confirm" id="confirm-ok"></button>
       </div>
-
     </div>
   </div>
 
@@ -604,221 +746,419 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
-    (function () {
+  (function () {
 
-      /* ─── FEED ─── */
-      let feedPage = 1, loading = false, hasMore = true;
-      const feed = document.getElementById('feed-container');
-      const loadingEl = document.getElementById('feed-loading');
-      const endEl = document.getElementById('feed-end');
+    /* ═══════════════════════════════════════════════
+       FILTER STATE
+    ═══════════════════════════════════════════════ */
+    var activeDatePreset = 'all';
+    var activeDateFrom   = null;
+    var activeDateTo     = null;
+    var activeStatus     = 'all';
 
-      function loadFeed() {
-        if (loading || !hasMore) return;
-        loading = true;
-        fetch(`../includes/fetch_rescuerReports.php?page=${feedPage}`)
-          .then(r => r.text())
-          .then(html => {
-            if (!html.trim()) {
-              hasMore = false;
-              loadingEl.style.display = 'none';
-              endEl.style.display = 'block';
-              return;
-            }
-            feed.insertAdjacentHTML('beforeend', html);
-            feedPage++;
-            loading = false;
-          });
+    /* ═══════════════════════════════════════════════
+       DATE HELPERS
+    ═══════════════════════════════════════════════ */
+    function fmtDate(d) {
+      if (!d) return '';
+      var parts = d.split('-');
+      var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return months[parseInt(parts[1]) - 1] + ' ' + parseInt(parts[2]) + ', ' + parts[0];
+    }
+
+    /* Check if a card passes the current date filter.
+       Reads data-created-at="YYYY-MM-DD" set by PHP on each article. */
+    function cardPassesDate(card) {
+      if (activeDatePreset === 'all' && !activeDateFrom && !activeDateTo) return true;
+      var raw = card.getAttribute('data-created-at');
+      if (!raw) return false;
+      var cardDate = new Date(raw + 'T00:00:00');
+      var today = new Date(); today.setHours(0,0,0,0);
+
+      if (activeDatePreset === 'today') {
+        return cardDate.getTime() === today.getTime();
       }
+      if (activeDatePreset === '7') {
+        var c7 = new Date(today); c7.setDate(c7.getDate() - 6);
+        return cardDate >= c7;
+      }
+      if (activeDatePreset === '30') {
+        var c30 = new Date(today); c30.setDate(c30.getDate() - 29);
+        return cardDate >= c30;
+      }
+      if (activeDateFrom) {
+        var f = new Date(activeDateFrom + 'T00:00:00');
+        if (cardDate < f) return false;
+      }
+      if (activeDateTo) {
+        var t = new Date(activeDateTo + 'T00:00:00');
+        if (cardDate > t) return false;
+      }
+      return true;
+    }
 
-      loadFeed();
-      new IntersectionObserver(
-        e => { if (e[0].isIntersecting) loadFeed(); },
-        { rootMargin: '200px' }
-      ).observe(loadingEl);
+    /* Check if a card passes the current status filter.
+       Reads data-rescue-status="..." set by PHP on each article. */
+    function cardPassesStatus(card) {
+      if (activeStatus === 'all') return true;
+      return card.getAttribute('data-rescue-status') === activeStatus;
+    }
 
-      /* ─── MAP ─── */
-      let mapInstance = null, fullMapInstance = null;
-      let lastLat, lastLng, lastName;
-
-      document.addEventListener('click', e => {
-        const btn = e.target.closest('.btn-map');
-        if (!btn) return;
-        lastLat = parseFloat(btn.dataset.lat);
-        lastLng = parseFloat(btn.dataset.lng);
-        lastName = btn.dataset.name;
-        document.getElementById('map-modal').style.display = 'flex';
-        setTimeout(() => {
-          if (mapInstance) mapInstance.remove();
-          mapInstance = L.map('map').setView([lastLat, lastLng], 15);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            { attribution: '&copy; OpenStreetMap' }).addTo(mapInstance);
-          L.marker([lastLat, lastLng]).addTo(mapInstance).bindPopup(lastName).openPopup();
-        }, 150);
+    /* Apply both filters to all loaded cards */
+    function applyFilters() {
+      var cards   = document.querySelectorAll('#feed-container .post-card');
+      var visible = 0;
+      cards.forEach(function (card) {
+        var show = cardPassesDate(card) && cardPassesStatus(card);
+        card.style.display = show ? '' : 'none';
+        if (show) visible++;
       });
 
-      document.getElementById('open-full-map').onclick = () => {
-        document.getElementById('map-modal').style.display = 'none';
-        document.getElementById('full-map-modal').style.display = 'block';
-        setTimeout(() => {
-          if (fullMapInstance) fullMapInstance.remove();
-          fullMapInstance = L.map('full-map').setView([lastLat, lastLng], 15);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            { attribution: '&copy; OpenStreetMap' }).addTo(fullMapInstance);
-          L.marker([lastLat, lastLng]).addTo(fullMapInstance).bindPopup(lastName).openPopup();
-        }, 150);
-      };
+      var noResults = document.getElementById('comm-no-results');
+      noResults.style.display = visible === 0 && !hasMore ? 'block' : 'none';
 
-      document.getElementById('close-map').onclick = () => { document.getElementById('map-modal').style.display = 'none'; };
-      document.getElementById('close-full-map').onclick = () => { document.getElementById('full-map-modal').style.display = 'none'; };
+      var countEl = document.getElementById('comm-report-count');
+      if (countEl) countEl.textContent = visible + ' report' + (visible !== 1 ? 's' : '');
+    }
 
-      /* ─── RESCUE CONFIRMATION MODAL ─── */
+    /* ═══════════════════════════════════════════════
+       DATE BAR LOGIC
+    ═══════════════════════════════════════════════ */
+    var dateBar  = document.getElementById('comm-date-bar');
+    var dateInfo = document.getElementById('comm-date-info');
 
-      /*
-       * Modal content per type:
-       *
-       *  type = 'start'  → "Rescue Needed" → next: "Being Rescued" (status_id 3)
-       *  type = 'finish' → "Being Rescued" → next: "Rescued"       (status_id 4)
-       */
-      const MODAL_CONTENT = {
-        start: {
-          icon: '🚨',
-          title: 'Start Rescue Operation',
-          subtitle: 'Rescue Needed → Being Rescued',
-          bodyFn: reporter => `Are you sure you want to mark <strong>${reporter}</strong>'s report as <strong>Being Rescued</strong>? This means a rescue team is now on the way.`,
-          btnLabel: '🚑 Yes, Start Rescue',
-          btnClass: 'type--start',
-          headerClass: 'type--start',
+    function updateDateInfo() {
+      if (activeDatePreset === 'all') { dateInfo.className = 'comm-active-info'; return; }
+      var msg = '';
+      if (activeDatePreset === 'today')          msg = "Showing today's reports only";
+      else if (activeDatePreset === '7')         msg = 'Showing reports from the last 7 days';
+      else if (activeDatePreset === '30')        msg = 'Showing reports from the last 30 days';
+      else if (activeDateFrom && activeDateTo)   msg = fmtDate(activeDateFrom) + ' – ' + fmtDate(activeDateTo);
+      else if (activeDateFrom)                   msg = 'From ' + fmtDate(activeDateFrom) + ' onwards';
+      else if (activeDateTo)                     msg = 'Up to ' + fmtDate(activeDateTo);
+      dateInfo.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ' + msg;
+      dateInfo.className = 'comm-active-info show';
+    }
+
+    function setDatePresetUI(preset) {
+      dateBar.querySelectorAll('[data-date-preset]').forEach(function (btn) {
+        var isActive = btn.getAttribute('data-date-preset') === preset;
+        btn.classList.toggle('active', isActive);
+        btn.style.background   = isActive ? '#3b82f6' : '#fff';
+        btn.style.borderColor  = isActive ? '#2563eb' : '#e2e8f0';
+        btn.style.color        = isActive ? '#fff'    : '#475569';
+      });
+    }
+
+    dateBar.querySelectorAll('[data-date-preset]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        activeDatePreset = this.getAttribute('data-date-preset');
+        activeDateFrom = null; activeDateTo = null;
+        document.getElementById('comm-date-from').value = '';
+        document.getElementById('comm-date-to').value   = '';
+        document.getElementById('comm-date-clear').style.display = 'none';
+        setDatePresetUI(activeDatePreset);
+        updateDateInfo();
+        applyFilters();
+      });
+    });
+
+    document.getElementById('comm-date-apply').addEventListener('click', function () {
+      var from = document.getElementById('comm-date-from').value;
+      var to   = document.getElementById('comm-date-to').value;
+      if (!from && !to) return;
+      activeDatePreset = 'custom';
+      activeDateFrom   = from || null;
+      activeDateTo     = to   || null;
+      setDatePresetUI(''); /* deactivate all presets */
+      document.getElementById('comm-date-clear').style.display = '';
+      updateDateInfo();
+      applyFilters();
+    });
+
+    document.getElementById('comm-date-clear').addEventListener('click', function () {
+      activeDatePreset = 'all'; activeDateFrom = null; activeDateTo = null;
+      document.getElementById('comm-date-from').value = '';
+      document.getElementById('comm-date-to').value   = '';
+      this.style.display = 'none';
+      setDatePresetUI('all');
+      updateDateInfo();
+      applyFilters();
+    });
+
+    /* ═══════════════════════════════════════════════
+       STATUS BAR LOGIC
+    ═══════════════════════════════════════════════ */
+    var statusColors = {
+      'all':           { bg: '#3b82f6', border: '#2563eb' },
+      'Rescue Needed': { bg: '#ef4444', border: '#dc2626' },
+      'Being Rescued': { bg: '#eab308', border: '#ca8a04' },
+      'Rescued':       { bg: '#22c55e', border: '#16a34a' },
+      'Not Required':  { bg: '#94a3b8', border: '#64748b' },
+    };
+
+    var statusBar = document.getElementById('comm-status-bar');
+
+    function setStatusUI(status) {
+      statusBar.querySelectorAll('[data-status]').forEach(function (btn) {
+        var isActive = btn.getAttribute('data-status') === status;
+        btn.classList.toggle('active', isActive);
+        var colors = statusColors[btn.getAttribute('data-status')] || statusColors['all'];
+        btn.style.background   = isActive ? colors.bg     : '#fff';
+        btn.style.borderColor  = isActive ? colors.border : '#e2e8f0';
+        btn.style.color        = isActive ? '#fff'        : '#475569';
+        /* restore dot color when inactive */
+        var dot = btn.querySelector('.status-dot');
+        if (dot) dot.style.background = isActive ? 'rgba(255,255,255,0.85)' : colors.bg;
+      });
+    }
+
+    statusBar.querySelectorAll('[data-status]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        activeStatus = this.getAttribute('data-status');
+        setStatusUI(activeStatus);
+        applyFilters();
+      });
+    });
+
+    /* ═══════════════════════════════════════════════
+       INFINITE SCROLL FEED
+    ═══════════════════════════════════════════════ */
+    var feedPage  = 1;
+    var loading   = false;
+    var hasMore   = true;
+    var feed      = document.getElementById('feed-container');
+    var loadingEl = document.getElementById('feed-loading');
+    var endEl     = document.getElementById('feed-end');
+
+    function loadFeed() {
+      if (loading || !hasMore) return;
+      loading = true;
+
+      /* Pass active status to PHP so server also filters
+         (avoids loading pages that are entirely filtered out) */
+      var url = '../includes/fetch_rescuerReports.php?page=' + feedPage;
+      if (activeStatus !== 'all') url += '&status=' + encodeURIComponent(activeStatus);
+
+      fetch(url)
+        .then(function (r) { return r.text(); })
+        .then(function (html) {
+          if (!html.trim()) {
+            hasMore = false;
+            loadingEl.style.display = 'none';
+            endEl.style.display = 'block';
+            applyFilters(); /* show "no results" if needed */
+            return;
+          }
+          feed.insertAdjacentHTML('beforeend', html);
+          feedPage++;
+          loading = false;
+          applyFilters(); /* hide cards that don't pass date filter */
+        });
+    }
+
+    loadFeed();
+
+    new IntersectionObserver(
+      function (e) { if (e[0].isIntersecting) loadFeed(); },
+      { rootMargin: '200px' }
+    ).observe(loadingEl);
+
+    /* Re-load when status filter changes (reset pagination) */
+    statusBar.querySelectorAll('[data-status]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        /* Reset feed if status changes — server will filter */
+        feedPage  = 1;
+        hasMore   = true;
+        loading   = false;
+        feed.innerHTML = '';
+        loadingEl.style.display = 'block';
+        endEl.style.display     = 'none';
+        loadFeed();
+      });
+    });
+
+    /* ═══════════════════════════════════════════════
+       MAP
+    ═══════════════════════════════════════════════ */
+    var mapInstance = null, fullMapInstance = null;
+    var lastLat, lastLng, lastName;
+
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest('.btn-map');
+      if (!btn) return;
+      lastLat = parseFloat(btn.dataset.lat);
+      lastLng = parseFloat(btn.dataset.lng);
+      lastName = btn.dataset.name;
+      document.getElementById('map-modal').style.display = 'flex';
+      setTimeout(function () {
+        if (mapInstance) mapInstance.remove();
+        mapInstance = L.map('map').setView([lastLat, lastLng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          { attribution: '&copy; OpenStreetMap' }).addTo(mapInstance);
+        L.marker([lastLat, lastLng]).addTo(mapInstance).bindPopup(lastName).openPopup();
+      }, 150);
+    });
+
+    document.getElementById('open-full-map').onclick = function () {
+      document.getElementById('map-modal').style.display = 'none';
+      document.getElementById('full-map-modal').style.display = 'block';
+      setTimeout(function () {
+        if (fullMapInstance) fullMapInstance.remove();
+        fullMapInstance = L.map('full-map').setView([lastLat, lastLng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          { attribution: '&copy; OpenStreetMap' }).addTo(fullMapInstance);
+        L.marker([lastLat, lastLng]).addTo(fullMapInstance).bindPopup(lastName).openPopup();
+      }, 150);
+    };
+
+    document.getElementById('close-map').onclick = function () {
+      document.getElementById('map-modal').style.display = 'none';
+    };
+    document.getElementById('close-full-map').onclick = function () {
+      document.getElementById('full-map-modal').style.display = 'none';
+    };
+
+    /* ═══════════════════════════════════════════════
+       RESCUE CONFIRMATION MODAL
+    ═══════════════════════════════════════════════ */
+    var MODAL_CONTENT = {
+      start: {
+        icon: '🚨', title: 'Start Rescue Operation',
+        subtitle: 'Rescue Needed → Being Rescued',
+        bodyFn: function (reporter) {
+          return 'Are you sure you want to mark <strong>' + reporter + '</strong>\'s report as <strong>Being Rescued</strong>? This means a rescue team is now on the way.';
         },
-        finish: {
-          icon: '✅',
-          title: 'Complete Rescue',
-          subtitle: 'Being Rescued → Rescued',
-          bodyFn: reporter => `Confirm that <strong>${reporter}</strong> has been successfully <strong>Rescued</strong>. This action cannot be undone.`,
-          btnLabel: '✅ Yes, Mark as Rescued',
-          btnClass: 'type--finish',
-          headerClass: 'type--finish',
-        }
-      };
+        btnLabel: '🚑 Yes, Start Rescue',
+        btnClass: 'type--start', headerClass: 'type--start',
+      },
+      finish: {
+        icon: '✅', title: 'Complete Rescue',
+        subtitle: 'Being Rescued → Rescued',
+        bodyFn: function (reporter) {
+          return 'Confirm that <strong>' + reporter + '</strong> has been successfully <strong>Rescued</strong>. This action cannot be undone.';
+        },
+        btnLabel: '✅ Yes, Mark as Rescued',
+        btnClass: 'type--finish', headerClass: 'type--finish',
+      },
+    };
 
-      const backdrop = document.getElementById('confirm-backdrop');
-      const header = document.getElementById('confirm-modal-header');
-      const iconEl = document.getElementById('confirm-modal-icon');
-      const titleEl = document.getElementById('confirm-modal-title');
-      const subtitleEl = document.getElementById('confirm-modal-subtitle');
-      const bodyEl = document.getElementById('confirm-modal-body');
-      const cancelBtn = document.getElementById('confirm-cancel');
-      const okBtn = document.getElementById('confirm-ok');
-      const toast = document.getElementById('rescue-toast');
+    var backdrop   = document.getElementById('confirm-backdrop');
+    var header     = document.getElementById('confirm-modal-header');
+    var iconEl     = document.getElementById('confirm-modal-icon');
+    var titleEl    = document.getElementById('confirm-modal-title');
+    var subtitleEl = document.getElementById('confirm-modal-subtitle');
+    var bodyEl     = document.getElementById('confirm-modal-body');
+    var cancelBtn  = document.getElementById('confirm-cancel');
+    var okBtn      = document.getElementById('confirm-ok');
+    var toast      = document.getElementById('rescue-toast');
 
-      let activeReportId = null;
-      let activeNextId = null;
-      let activeBadgeBtn = null;
+    var activeReportId = null, activeNextId = null, activeBadgeBtn = null;
 
-      /* Open modal when a clickable badge is clicked */
-      document.addEventListener('click', e => {
-        const badge = e.target.closest('.rescue-badge--btn');
-        if (!badge) return;
+    document.addEventListener('click', function (e) {
+      var badge = e.target.closest('.rescue-badge--btn');
+      if (!badge) return;
+      var modalType = badge.dataset.modalType;
+      var content   = MODAL_CONTENT[modalType];
+      if (!content) return;
 
-        const modalType = badge.dataset.modalType;
-        const content = MODAL_CONTENT[modalType];
-        if (!content) return;
+      activeReportId = badge.dataset.reportId;
+      activeNextId   = badge.dataset.nextStatusId;
+      activeBadgeBtn = badge;
 
-        activeReportId = badge.dataset.reportId;
-        activeNextId = badge.dataset.nextStatusId;
-        activeBadgeBtn = badge;
+      header.className = 'confirm-modal__header ' + content.headerClass;
+      iconEl.textContent   = content.icon;
+      titleEl.textContent  = content.title;
+      subtitleEl.textContent = content.subtitle;
+      bodyEl.innerHTML     = content.bodyFn(badge.dataset.reporter);
+      okBtn.textContent    = content.btnLabel;
+      okBtn.className      = 'btn-modal-confirm ' + content.btnClass;
+      okBtn.disabled       = false;
+      backdrop.classList.add('open');
+    });
 
-        /* Populate modal */
-        header.className = `confirm-modal__header ${content.headerClass}`;
-        iconEl.textContent = content.icon;
-        titleEl.textContent = content.title;
-        subtitleEl.textContent = content.subtitle;
-        bodyEl.innerHTML = content.bodyFn(badge.dataset.reporter);
-        okBtn.textContent = content.btnLabel;
-        okBtn.className = `btn-modal-confirm ${content.btnClass}`;
-        okBtn.disabled = false;
+    function closeModal() {
+      backdrop.classList.remove('open');
+      activeReportId = activeNextId = activeBadgeBtn = null;
+    }
 
-        backdrop.classList.add('open');
-      });
+    cancelBtn.onclick = closeModal;
+    backdrop.addEventListener('click', function (e) { if (e.target === backdrop) closeModal(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
 
-      function closeModal() {
-        backdrop.classList.remove('open');
-        activeReportId = activeNextId = activeBadgeBtn = null;
-      }
+    okBtn.onclick = function () {
+      okBtn.disabled = true;
+      okBtn.textContent = 'Updating…';
 
-      cancelBtn.onclick = closeModal;
-      backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
-      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+      var body = new FormData();
+      body.append('report_id', activeReportId);
+      body.append('new_status_id', activeNextId);
 
-      /* Confirm → POST → update badge in DOM */
-      okBtn.onclick = function () {
-        okBtn.disabled = true;
-        okBtn.textContent = 'Updating…';
+      fetch('../api/update_rescue_status.php', { method: 'POST', body: body })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (!data.success) throw new Error(data.message || 'Failed');
 
-        const body = new FormData();
-        body.append('report_id', activeReportId);
-        body.append('new_status_id', activeNextId);
+          var newStatus = data.status_name;
+          var classMap  = {
+            'Rescue Needed': 'badge--danger',
+            'Being Rescued': 'badge--warning',
+            'Rescued':       'badge--success',
+            'Not Required':  'badge--neutral',
+          };
+          var nextMap = { 'Being Rescued': { nextId: 4, modalType: 'finish' } };
+          var stillClickable = nextMap[newStatus] !== undefined;
 
-        fetch('../api/update_rescue_status.php', { method: 'POST', body })
-          .then(r => r.json())
-          .then(data => {
-            if (!data.success) throw new Error(data.message || 'Failed');
+          if (stillClickable) {
+            var next = nextMap[newStatus];
+            activeBadgeBtn.classList.remove('badge--danger','badge--warning','badge--success','badge--neutral');
+            activeBadgeBtn.classList.add(classMap[newStatus]);
+            activeBadgeBtn.textContent = newStatus;
+            activeBadgeBtn.dataset.nextStatusId = next.nextId;
+            activeBadgeBtn.dataset.modalType    = next.modalType;
+          } else {
+            var span = document.createElement('span');
+            span.className   = 'rescue-badge ' + (classMap[newStatus] || 'badge--neutral');
+            span.textContent = newStatus;
+            activeBadgeBtn.replaceWith(span);
+          }
 
-            const newStatus = data.status_name;   // e.g. "Being Rescued" or "Rescued"
-            const newId = parseInt(data.status_id);
+          /* Update the card's data-rescue-status so filters still work */
+          var card = activeBadgeBtn
+            ? activeBadgeBtn.closest('.post-card')
+            : (span ? span.closest('.post-card') : null);
+          if (card) card.setAttribute('data-rescue-status', newStatus);
 
-            /* Badge class map */
-            const classMap = {
-              'Rescue Needed': 'badge--danger',
-              'Being Rescued': 'badge--warning',
-              'Rescued': 'badge--success',
-              'Not Required': 'badge--neutral',
-            };
+          showToast('✅ Status updated to: ' + newStatus, 'success');
+          closeModal();
+          applyFilters();
+        })
+        .catch(function (err) {
+          showToast('❌ ' + err.message, 'error');
+          okBtn.disabled = false;
+          okBtn.textContent = MODAL_CONTENT[
+            activeBadgeBtn ? activeBadgeBtn.dataset.modalType : 'start'
+          ].btnLabel;
+        });
+    };
 
-            /* Next step map — what the badge should advance to next */
-            const nextMap = {
-              'Being Rescued': { nextId: 4, modalType: 'finish' },
-            };
+    /* ═══════════════════════════════════════════════
+       TOAST
+    ═══════════════════════════════════════════════ */
+    var toastTimer = null;
+    function showToast(msg, type) {
+      toast.textContent = msg;
+      toast.className = 'rescue-toast toast--' + (type || 'success') + ' show';
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 3500);
+    }
 
-            const stillClickable = nextMap[newStatus] !== undefined;
+    /* ═══════════════════════════════════════════════
+       INITIAL UI STATE
+    ═══════════════════════════════════════════════ */
+    setStatusUI('all');
 
-            if (stillClickable) {
-              /* Keep as button, update data attrs + text + class */
-              const next = nextMap[newStatus];
-              activeBadgeBtn.classList.remove('badge--danger', 'badge--warning', 'badge--success', 'badge--neutral');
-              activeBadgeBtn.classList.add(classMap[newStatus]);
-              activeBadgeBtn.textContent = newStatus;
-              activeBadgeBtn.dataset.nextStatusId = next.nextId;
-              activeBadgeBtn.dataset.modalType = next.modalType;
-            } else {
-              /* Convert button → static span */
-              const span = document.createElement('span');
-              span.className = `rescue-badge ${classMap[newStatus] || 'badge--neutral'}`;
-              span.textContent = newStatus;
-              activeBadgeBtn.replaceWith(span);
-            }
-
-            showToast('✅ Status updated to: ' + newStatus, 'success');
-            closeModal();
-          })
-          .catch(err => {
-            showToast('❌ ' + err.message, 'error');
-            okBtn.disabled = false;
-            okBtn.textContent = MODAL_CONTENT[
-              activeBadgeBtn ? activeBadgeBtn.dataset.modalType : 'start'
-            ].btnLabel;
-          });
-      };
-
-      /* ─── TOAST ─── */
-      let toastTimer = null;
-      function showToast(msg, type = 'success') {
-        toast.textContent = msg;
-        toast.className = `rescue-toast toast--${type} show`;
-        if (toastTimer) clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
-      }
-
-    })();
+  })();
   </script>
 
 </section>

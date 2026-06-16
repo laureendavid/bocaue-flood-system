@@ -1,13 +1,19 @@
 <?php
-session_start(); // make sure session is started so we can read user_id
+session_start();
 require_once '../config/db.php';
 
 $limit = 5;
 $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
 $offset = ($page - 1) * $limit;
 
-// Currently logged-in rescuer
 $currentUserId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
+
+// Optional server-side status filter (passed by JS when status != 'all')
+$statusFilter = '';
+if (!empty($_GET['status'])) {
+    $safeStatus = $conn->real_escape_string($_GET['status']);
+    $statusFilter = "AND rs.status_name = '$safeStatus'";
+}
 
 $sql = "
     SELECT
@@ -40,6 +46,7 @@ $sql = "
     LEFT JOIN rescue_status  rs ON r.rescue_status_id  = rs.rescue_status_id
     LEFT JOIN users          ru ON r.assigned_rescuer_id = ru.user_id
     WHERE r.status_id = 2
+    $statusFilter
     ORDER BY r.created_at DESC
     LIMIT $limit OFFSET $offset
 ";
@@ -51,38 +58,25 @@ if ($result && $result->num_rows > 0):
 
         $hasImage = !empty($report['report_image']);
 
-        /* ── Profile picture ── */
         $profilePic = !empty($report['profile_picture'])
             ? (filter_var($report['profile_picture'], FILTER_VALIDATE_URL)
                 ? $report['profile_picture']
                 : '/' . ltrim($report['profile_picture'], '/'))
             : '/assets/img/default-avatar.png';
 
-        /* ── Report image ── */
         $reportImage = trim($report['report_image'] ?? '');
         $imageSrc = filter_var($reportImage, FILTER_VALIDATE_URL)
             ? $reportImage
             : ($reportImage ? '/' . ltrim($reportImage, '/') : '');
 
-        /* ── Address ── */
         $address = !empty($report['full_address'])
             ? htmlspecialchars($report['full_address'])
             : htmlspecialchars($report['barangay_name'] . ', ' . $report['municipality'] . ', ' . $report['province']);
 
-        /* ── Date ── */
         $date = date('F j, Y, g:i a', strtotime($report['created_at']));
+        // For JS date filtering — YYYY-MM-DD only
+        $createdAtDate = date('Y-m-d', strtotime($report['created_at']));
 
-        /* ─────────────────────────────────────────────────────────────────
-         * Rescue status logic
-         *   Flow: Rescue Needed (2) → Being Rescued (3) → Rescued (4)
-         *
-         * Assignment rules:
-         *   • status 2, no assigned rescuer  → ANY rescuer can click (assigns them)
-         *   • status 2, already assigned     → locked for everyone else
-         *   • status 3, assigned = me        → I can click to finish
-         *   • status 3, assigned = other     → locked for me
-         *   • status 4 / Not Required        → always static
-         * ───────────────────────────────────────────────────────────────── */
         $rescueStatus = $report['rescue_status'] ?? 'Not Required';
         $rescueLabel = htmlspecialchars($rescueStatus);
         $assignedRescuerId = $report['assigned_rescuer_id'] ? (int) $report['assigned_rescuer_id'] : null;
@@ -99,25 +93,20 @@ if ($result && $result->num_rows > 0):
             case 'Rescue Needed':
                 $rescueBadgeClass = 'badge--danger';
                 if (!$isAssignedToOther) {
-                    // Not yet taken by someone else — allow this rescuer to claim it
                     $nextStatusId = 3;
                     $modalType = 'start';
                 }
                 break;
-
             case 'Being Rescued':
                 $rescueBadgeClass = 'badge--warning';
                 if ($isAssignedToMe) {
-                    // Only the assigned rescuer can finish it
                     $nextStatusId = 4;
                     $modalType = 'finish';
                 }
                 break;
-
             case 'Rescued':
                 $rescueBadgeClass = 'badge--success';
                 break;
-
             case 'Not Required':
             default:
                 $rescueBadgeClass = 'badge--neutral';
@@ -126,7 +115,6 @@ if ($result && $result->num_rows > 0):
 
         $isClickable = $nextStatusId !== null;
 
-        /* ── Severity class ── */
         $severityClass = 'severity--neutral';
         switch ($report['severity']) {
             case 'Impassable':
@@ -141,17 +129,15 @@ if ($result && $result->num_rows > 0):
         }
         ?>
 
-        <article class="post-card" data-report-id="<?= (int) $report['report_id'] ?>">
+        <article class="post-card" data-report-id="<?= (int) $report['report_id'] ?>" data-created-at="<?= $createdAtDate ?>"
+            data-rescue-status="<?= htmlspecialchars($rescueStatus) ?>">
 
             <!-- HEADER -->
             <div class="post-card__header">
                 <div class="post-card__user">
                     <?php
                     $nameParts = explode(' ', trim($report['full_name']));
-                    $initials = strtoupper(
-                        substr($nameParts[0], 0, 1) .
-                        (isset($nameParts[1]) ? substr($nameParts[1], 0, 1) : '')
-                    );
+                    $initials = strtoupper(substr($nameParts[0], 0, 1) . (isset($nameParts[1]) ? substr($nameParts[1], 0, 1) : ''));
                     $avatarColors = ['#1d4ed8', '#1e5bb8', '#0b1f47', '#2563eb', '#1e40af', '#1d4ed8'];
                     $colorIndex = abs(crc32($report['full_name'])) % count($avatarColors);
                     $avatarBg = $avatarColors[$colorIndex];
@@ -176,7 +162,6 @@ if ($result && $result->num_rows > 0):
                 <?php endif; ?>
 
                 <div class="post-card__content">
-
                     <p class="post-card__description">
                         <?= nl2br(htmlspecialchars($report['description'])) ?>
                     </p>
@@ -208,7 +193,6 @@ if ($result && $result->num_rows > 0):
                             </span>
                         <?php endif; ?>
                     </div>
-
                 </div>
             </div>
 
@@ -216,42 +200,39 @@ if ($result && $result->num_rows > 0):
             <div class="post-card__footer">
 
                 <?php if ($isClickable): ?>
-                    <!-- Clickable: either unclaimed "Rescue Needed" or assigned-to-me "Being Rescued" -->
                     <button type="button" class="rescue-badge rescue-badge--btn <?= $rescueBadgeClass ?>"
                         data-report-id="<?= (int) $report['report_id'] ?>" data-next-status-id="<?= $nextStatusId ?>"
                         data-modal-type="<?= $modalType ?>" data-reporter="<?= htmlspecialchars($report['full_name']) ?>"
                         title="Click to update rescue status">
                         <?= $rescueLabel ?>
-                        <?php if ($isAssignedToMe): ?>
-                            <small>(You)</small>
-                        <?php endif; ?>
+                        <?php if ($isAssignedToMe): ?><small>(You)</small><?php endif; ?>
                     </button>
 
                 <?php elseif ($isAssignedToOther): ?>
-                    <!-- Locked: another rescuer already claimed this -->
                     <span class="rescue-badge badge--warning rescue-badge--locked"
                         title="Being rescued by <?= $assignedRescuerName ?>">
-                        🔒 Being Rescued
-                        <small>by <?= $assignedRescuerName ?></small>
+                        🔒 Being Rescued <small>by <?= $assignedRescuerName ?></small>
                     </span>
 
                 <?php else: ?>
-                    <!-- Static: Rescued or Not Required -->
                     <span class="rescue-badge <?= $rescueBadgeClass ?>">
                         <?= $rescueLabel ?>
                     </span>
                 <?php endif; ?>
 
-                <?php if (!empty($report['latitude']) && !empty($report['longitude'])): ?>
-                    <button type="button" class="btn-map" data-lat="<?= $report['latitude'] ?>"
-                        data-lng="<?= $report['longitude'] ?>" data-name="<?= htmlspecialchars($report['full_name']) ?>">
-                        View on Map 📍
-                    </button>
-                    <a class="btn-gmaps" href="https://www.google.com/maps?q=<?= $report['latitude'] ?>,<?= $report['longitude'] ?>"
-                        target="_blank" rel="noopener noreferrer">
-                        View in Google Maps 🗺️
-                    </a>
-                <?php endif; ?>
+                <div class="post-card__map-btns">
+                    <?php if (!empty($report['latitude']) && !empty($report['longitude'])): ?>
+                        <button type="button" class="btn-map" data-lat="<?= $report['latitude'] ?>"
+                            data-lng="<?= $report['longitude'] ?>" data-name="<?= htmlspecialchars($report['full_name']) ?>">
+                            View on Map 📍
+                        </button>
+                        <a class="btn-gmaps"
+                            href="https://www.google.com/maps?q=<?= $report['latitude'] ?>,<?= $report['longitude'] ?>"
+                            target="_blank" rel="noopener noreferrer">
+                            View in Google Maps 🗺️
+                        </a>
+                    <?php endif; ?>
+                </div>
 
             </div>
 
