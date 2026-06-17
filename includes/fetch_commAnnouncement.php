@@ -1,6 +1,9 @@
 <?php
 require_once '../config/db.php';
 
+// Use limit if set (e.g. from dashboard), otherwise fetch all
+$limit_clause = isset($announcement_limit) ? "LIMIT " . (int) $announcement_limit : "";
+
 $sql = "SELECT a.title, a.message, a.created_at,
                u.full_name AS issued_by,
                COALESCE(b.barangay_name, 'All Barangays') AS target_area
@@ -8,7 +11,8 @@ $sql = "SELECT a.title, a.message, a.created_at,
         LEFT JOIN users u ON u.user_id = a.created_by
         LEFT JOIN barangays b ON a.barangay_id = b.barangay_id
         WHERE (a.expiry_date IS NULL OR a.expiry_date >= CURDATE())
-        ORDER BY a.created_at DESC";
+        ORDER BY a.created_at DESC
+        $limit_clause";
 
 $result = $conn->query($sql);
 

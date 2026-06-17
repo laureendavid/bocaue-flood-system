@@ -110,7 +110,18 @@ $lguBasePath = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '
         <!-- Profile Avatar + Dropdown -->
         <div class="profile-wrapper" id="profile-wrapper">
           <button class="profile-avatar" id="profile-btn" aria-label="Profile menu">
-            <span class="material-symbols-outlined">person</span>
+            <?php
+            $navName = $_SESSION['full_name'] ?? 'User';
+            $navParts = explode(' ', trim($navName));
+            $navInitials = strtoupper(substr($navParts[0], 0, 1) . (isset($navParts[1]) ? substr($navParts[1], 0, 1) : ''));
+            $navColors = ['#1d4ed8', '#1e5bb8', '#0b1f47', '#2563eb', '#1e40af', '#1d4ed8'];
+            $navColorIndex = abs(crc32($navName)) % count($navColors);
+            $navBg = $navColors[$navColorIndex];
+            ?>
+            <span
+              style="background:<?= $navBg ?>; width:100%; height:100%; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:700; color:#fff;">
+              <?= htmlspecialchars($navInitials) ?>
+            </span>
           </button>
           <div class="profile-dropdown" id="profile-dropdown">
             <a href="account-settings.php" class="dropdown-item">

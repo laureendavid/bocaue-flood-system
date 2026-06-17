@@ -1682,5 +1682,36 @@
 
     })();
   </script>
+  <!-- Back to Top Button -->
+  <button id="back-to-top-community" onclick="document.querySelector('.page.active').scrollTop = 0" style="
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #0b1f47;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+  transition: opacity 0.2s, transform 0.2s;
+" title="Back to top">
+    <span class="material-symbols-outlined" style="font-size:20px;">arrow_upward</span>
+  </button>
 
+  <script>
+    (function () {
+      var btn = document.getElementById('back-to-top-community');
+      var page = document.querySelector('.page.active');
+
+      page.addEventListener('scroll', function () {
+        btn.style.display = page.scrollTop > 300 ? 'flex' : 'none';
+      });
+    })();
+  </script>
 </section>

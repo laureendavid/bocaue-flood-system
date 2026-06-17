@@ -52,10 +52,11 @@
   <div class="dashboard-bottom-row">
     <section aria-labelledby="announcements-heading" class="card">
       <header class="card-header">
-        <h3 id="announcements-heading" class="card-title">Announcements</h3>
+        <h3 id="announcements-heading" class="card-title">Recent Announcements</h3>
       </header>
-      <div aria-label="Announcements list">
-        <?php include '../includes/fetch_commAnnouncement.php'; ?>
+      <div class="card-scroll" aria-label="Announcements list" style="max-height: 400px; overflow-y: auto;">
+        <?php $announcement_limit = 3;
+        include '../includes/fetch_commAnnouncement.php'; ?>
       </div>
     </section>
 
