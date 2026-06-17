@@ -10,9 +10,17 @@ $currentUserId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
 
 // Optional server-side status filter
 $statusFilter = '';
+$myRescuesFilter = false;
 if (!empty($_GET['status'])) {
-    $safeStatus = $conn->real_escape_string($_GET['status']);
-    $statusFilter = "AND rs.status_name = '$safeStatus'";
+    if ($_GET['status'] === 'my-rescues') {
+        $myRescuesFilter = true;
+        $statusFilter = "AND r.assigned_rescuer_id = $currentUserId
+                 AND $currentUserId > 0
+                 AND rs.status_name IN ('Being Rescued', 'Rescued')";
+    } else {
+        $safeStatus = $conn->real_escape_string($_GET['status']);
+        $statusFilter = "AND rs.status_name = '$safeStatus'";
+    }
 }
 
 // Barangay filter — match barangay_name against full_address
@@ -142,7 +150,8 @@ if ($result && $result->num_rows > 0):
         ?>
 
         <article class="post-card" data-report-id="<?= (int) $report['report_id'] ?>" data-created-at="<?= $createdAtDate ?>"
-            data-rescue-status="<?= htmlspecialchars($rescueStatus) ?>" data-barangay-id="<?= (int) $report['barangay_id'] ?>">
+            data-rescue-status="<?= htmlspecialchars($rescueStatus) ?>" data-barangay-id="<?= (int) $report['barangay_id'] ?>"
+            data-assigned-to-me="<?= $isAssignedToMe ? '1' : '0' ?>">
 
             <!-- HEADER -->
             <div class="post-card__header">

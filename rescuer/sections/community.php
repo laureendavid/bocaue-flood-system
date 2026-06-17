@@ -1165,6 +1165,17 @@
           <button class="comm-filter-btn" data-status="Not Required">
             <span class="status-dot" style="background:#94a3b8;"></span> Not Required
           </button>
+          <span class="comm-filter-sep">|</span>
+          <button class="comm-filter-btn" data-status="my-inprogress" id="comm-my-inprogress-btn"
+            style="border-color:#fde68a;color:#b45309;">
+            <span class="status-dot" style="background:#eab308;"></span>
+            Your Rescue In Progress
+          </button>
+          <button class="comm-filter-btn" data-status="my-rescued" id="comm-my-rescued-btn"
+            style="border-color:#bbf7d0;color:#166534;">
+            <span class="status-dot" style="background:#22c55e;"></span>
+            Your Rescues
+          </button>
           <span id="comm-report-count"
             style="margin-left:auto;font-size:0.73rem;color:#94a3b8;font-weight:500;white-space:nowrap;"></span>
         </div>
@@ -1289,7 +1300,11 @@
 
       function cardPassesStatus(card) {
         if (activeStatus === 'all') return true;
-        return card.getAttribute('data-rescue-status') === activeStatus;
+        var rescueStatus = card.getAttribute('data-rescue-status');
+        var assignedToMe = card.getAttribute('data-assigned-to-me') === '1';
+        if (activeStatus === 'my-inprogress') return rescueStatus === 'Being Rescued' && assignedToMe;
+        if (activeStatus === 'my-rescued') return rescueStatus === 'Rescued' && assignedToMe;
+        return rescueStatus === activeStatus;
       }
 
       function applyFilters() {
@@ -1380,6 +1395,8 @@
         'Being Rescued': { bg: '#eab308', border: '#ca8a04' },
         'Rescued': { bg: '#22c55e', border: '#16a34a' },
         'Not Required': { bg: '#94a3b8', border: '#64748b' },
+        'my-inprogress': { bg: '#eab308', border: '#ca8a04' },
+        'my-rescued': { bg: '#22c55e', border: '#16a34a' },
       };
 
       var statusBar = document.getElementById('comm-status-bar');
@@ -1401,11 +1418,15 @@
         btn.addEventListener('click', function () {
           activeStatus = this.getAttribute('data-status');
           setStatusUI(activeStatus);
-          feedPage = 1; hasMore = true; loading = false;
-          feed.innerHTML = '';
-          loadingEl.style.display = 'block';
-          endEl.style.display = 'none';
-          loadFeed();
+          if (activeStatus === 'my-inprogress' || activeStatus === 'my-rescued') {
+            applyFilters();
+          } else {
+            feedPage = 1; hasMore = true; loading = false;
+            feed.innerHTML = '';
+            loadingEl.style.display = 'block';
+            endEl.style.display = 'none';
+            loadFeed();
+          }
         });
       });
 
@@ -1450,7 +1471,9 @@
         loading = true;
 
         var url = '../includes/fetch_rescuerReports.php?page=' + feedPage;
-        if (activeStatus !== 'all') url += '&status=' + encodeURIComponent(activeStatus);
+        var backendStatus = activeStatus;
+        if (activeStatus === 'my-inprogress' || activeStatus === 'my-rescued') backendStatus = 'all';
+        if (backendStatus !== 'all') url += '&status=' + encodeURIComponent(backendStatus);
         if (activeBarangayId) url += '&barangay_id=' + encodeURIComponent(activeBarangayId);
 
         fetch(url)
