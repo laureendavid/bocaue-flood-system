@@ -12,12 +12,27 @@ if (!empty($_GET['status'])) {
     $statusFilter = "AND rs.status_name = '$safeStatus'";
 }
 
+// Barangay filter — match barangay_name against full_address
+$barangayFilter = '';
+if (!empty($_GET['barangay_id'])) {
+    $safeBarangayId = (int) $_GET['barangay_id'];
+
+    // Get the barangay name first
+    $bResult = $conn->query("SELECT barangay_name FROM barangays WHERE barangay_id = $safeBarangayId");
+    if ($bResult && $bRow = $bResult->fetch_assoc()) {
+        $safeName = $conn->real_escape_string($bRow['barangay_name']);
+        $barangayFilter = "AND l.full_address LIKE '%$safeName%'";
+    }
+}
+
 $sql = "
     SELECT
         r.report_id,
         r.description,
         r.report_image,
         r.created_at,
+        r.rescue_people_count,
+        r.rescue_description,
         u.full_name,
         u.profile_picture,
         wl.level_name    AS water_level,
@@ -26,6 +41,7 @@ $sql = "
         l.full_address,
         l.latitude,
         l.longitude,
+        b.barangay_id,
         b.barangay_name,
         b.municipality,
         b.province,
@@ -40,6 +56,7 @@ $sql = "
     LEFT JOIN users          ru ON r.assigned_rescuer_id = ru.user_id
     WHERE r.status_id = 2
     $statusFilter
+    $barangayFilter
     ORDER BY r.created_at DESC
     LIMIT $limit OFFSET $offset
 ";
@@ -51,12 +68,6 @@ if ($result && $result->num_rows > 0):
 
         $hasImage = !empty($report['report_image']);
 
-        $profilePic = !empty($report['profile_picture'])
-            ? (filter_var($report['profile_picture'], FILTER_VALIDATE_URL)
-                ? $report['profile_picture']
-                : '/' . ltrim($report['profile_picture'], '/'))
-            : '/assets/img/default-avatar.png';
-
         $reportImage = trim($report['report_image'] ?? '');
         $imageSrc = filter_var($reportImage, FILTER_VALIDATE_URL)
             ? $reportImage
@@ -67,7 +78,6 @@ if ($result && $result->num_rows > 0):
             : htmlspecialchars($report['barangay_name'] . ', ' . $report['municipality'] . ', ' . $report['province']);
 
         $date = date('F j, Y, g:i a', strtotime($report['created_at']));
-        // For JS date filtering — YYYY-MM-DD only
         $createdAtDate = date('Y-m-d', strtotime($report['created_at']));
 
         $rescueStatus = $report['rescue_status'] ?? 'Not Required';
@@ -104,7 +114,7 @@ if ($result && $result->num_rows > 0):
         ?>
 
         <article class="post-card" data-report-id="<?= (int) $report['report_id'] ?>" data-created-at="<?= $createdAtDate ?>"
-            data-rescue-status="<?= htmlspecialchars($rescueStatus) ?>">
+            data-rescue-status="<?= htmlspecialchars($rescueStatus) ?>" data-barangay-id="<?= (int) $report['barangay_id'] ?>">
 
             <!-- HEADER -->
             <div class="post-card__header">
@@ -139,6 +149,21 @@ if ($result && $result->num_rows > 0):
                     <p class="post-card__description">
                         <?= nl2br(htmlspecialchars($report['description'])) ?>
                     </p>
+
+                    <?php if (!empty($report['rescue_people_count']) || !empty($report['rescue_description'])): ?>
+                        <div class="post-card__rescue-info">
+                            <?php if (!empty($report['rescue_people_count'])): ?>
+                                <span class="rescue-info-item">
+                                    👥 <?= (int) $report['rescue_people_count'] ?> person(s) need rescue
+                                </span>
+                            <?php endif; ?>
+                            <?php if (!empty($report['rescue_description'])): ?>
+                                <p class="rescue-info-desc">
+                                    <?= nl2br(htmlspecialchars($report['rescue_description'])) ?>
+                                </p>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
 
                     <div class="post-card__tags">
                         <?php if (!empty($report['water_level'])): ?>

@@ -32,7 +32,8 @@ function syncSidebarByViewport() {
     applySidebarDesktopState();
   } else {
     document.body.classList.remove("sidebar-collapsed");
-    const shouldOpen = localStorage.getItem(STORAGE_KEYS.sidebarOpenMobile) === "1";
+    const shouldOpen =
+      localStorage.getItem(STORAGE_KEYS.sidebarOpenMobile) === "1";
     setSidebarMobileState(shouldOpen);
   }
 }
@@ -88,9 +89,13 @@ function initSidebarBehavior() {
 
   if (desktopToggleBtn) {
     desktopToggleBtn.addEventListener("click", () => {
-      const nextCollapsed = !document.body.classList.contains("sidebar-collapsed");
+      const nextCollapsed =
+        !document.body.classList.contains("sidebar-collapsed");
       document.body.classList.toggle("sidebar-collapsed", nextCollapsed);
-      localStorage.setItem(STORAGE_KEYS.sidebarCollapsed, nextCollapsed ? "1" : "0");
+      localStorage.setItem(
+        STORAGE_KEYS.sidebarCollapsed,
+        nextCollapsed ? "1" : "0",
+      );
     });
   }
 
@@ -131,7 +136,9 @@ function initReportVerificationActions() {
   const reportSearch = document.getElementById("report-search");
   const statusFilter = document.getElementById("status-filter");
   const actionModal = document.getElementById("report-action-modal");
-  const actionModalMessage = document.getElementById("report-action-modal-message");
+  const actionModalMessage = document.getElementById(
+    "report-action-modal-message",
+  );
   const actionModalCancel = document.getElementById("report-action-cancel");
   const actionModalConfirm = document.getElementById("report-action-confirm");
   const lightbox = document.getElementById("report-image-lightbox");
@@ -152,20 +159,23 @@ function initReportVerificationActions() {
   };
 
   function normalizeStatus(status) {
-    return String(status || "").trim().toLowerCase();
+    return String(status || "")
+      .trim()
+      .toLowerCase();
   }
 
   function statusMatches(selectedStatus, rowStatus) {
     if (selectedStatus === "all") {
       return true;
     }
-
     const aliases = statusAlias[selectedStatus] || [selectedStatus];
     return aliases.includes(rowStatus);
   }
 
   function filterReportRows() {
-    const rows = Array.from(reportTableBody.querySelectorAll("tr[data-report-id]"));
+    const rows = Array.from(
+      reportTableBody.querySelectorAll("tr[data-report-id]"),
+    );
     const searchTerm = (reportSearch?.value || "").trim().toLowerCase();
     const selectedStatus = normalizeStatus(statusFilter?.value || "all");
     let visibleCount = 0;
@@ -173,11 +183,11 @@ function initReportVerificationActions() {
     rows.forEach((row) => {
       const rowStatus = normalizeStatus(row.dataset.status);
       const rowSearch = normalizeStatus(row.dataset.search);
-      const visible = statusMatches(selectedStatus, rowStatus) && (searchTerm === "" || rowSearch.includes(searchTerm));
+      const visible =
+        statusMatches(selectedStatus, rowStatus) &&
+        (searchTerm === "" || rowSearch.includes(searchTerm));
       row.style.display = visible ? "" : "none";
-      if (visible) {
-        visibleCount += 1;
-      }
+      if (visible) visibleCount++;
     });
 
     const existingEmpty = reportTableBody.querySelector(".empty-row");
@@ -195,54 +205,49 @@ function initReportVerificationActions() {
   }
 
   function closeActionModal() {
-    if (!actionModal) {
-      return;
-    }
+    if (!actionModal) return;
     actionModal.classList.remove("open");
     actionModal.setAttribute("aria-hidden", "true");
     pendingActionButton = null;
   }
 
   function openActionModal(button) {
-    if (!actionModal || !actionModalMessage) {
-      return false;
-    }
-
+    if (!actionModal || !actionModalMessage) return false;
     pendingActionButton = button;
     const action = String(button.dataset.action || "").toLowerCase();
-    actionModalMessage.textContent = action === "approved"
-      ? "Approve this report and notify the resident?"
-      : "Reject this report and notify the resident?";
+    actionModalMessage.textContent =
+      action === "approved"
+        ? "Approve this report and notify the resident?"
+        : "Reject this report and notify the resident?";
     actionModal.classList.add("open");
     actionModal.setAttribute("aria-hidden", "false");
     return true;
   }
 
   function closeLightbox() {
-    if (!lightbox || !lightboxPreview) {
-      return;
-    }
+    if (!lightbox || !lightboxPreview) return;
     lightbox.classList.remove("open");
     lightbox.setAttribute("aria-hidden", "true");
     lightboxPreview.src = "";
   }
 
   function openLightbox(imageSrc, altText) {
-    if (!lightbox || !lightboxPreview) {
-      return;
-    }
+    if (!lightbox || !lightboxPreview) return;
     lightboxPreview.src = imageSrc;
     lightboxPreview.alt = altText || "Report image preview";
     lightbox.classList.add("open");
     lightbox.setAttribute("aria-hidden", "false");
   }
 
+  // ── UPDATED: Optimistic UI + revert on error ──
   async function updateReportStatus(button) {
     const reportId = button.dataset.reportId;
     const action = button.dataset.action;
-    if (!reportId || !action) {
-      return;
-    }
+    if (!reportId || !action) return;
+
+    // Optimistic UI — i-update agad ang row bago pa mag-respond ang server
+    const row = button.closest("tr[data-report-id]");
+    if (row) applyStatusToRow(row, action);
 
     button.disabled = true;
     button.classList.add("is-loading");
@@ -254,89 +259,86 @@ function initReportVerificationActions() {
 
       const response = await fetch("../includes/update_report_status.php", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: body.toString(),
       });
 
       const data = await response.json();
-      if (!response.ok || !data.success) {
+      if (!response.ok || !data.success)
         throw new Error(data.message || "Failed to update report.");
-      }
 
-      const row = button.closest("tr[data-report-id]");
-      if (!row) {
-        return;
-      }
-
-      row.dataset.status = data.status;
-      const badge = row.querySelector(".js-report-status");
-      if (badge) {
-        const nextStatus = String(data.status || "Pending");
-        const normalized = normalizeStatus(nextStatus);
-        badge.textContent = nextStatus;
-        badge.classList.remove("badge-pending", "badge-verified", "badge-approved", "badge-rejected");
-        if (normalized === "approved" || normalized === "verified") {
-          badge.classList.add("badge-approved");
-        } else if (normalized === "rejected") {
-          badge.classList.add("badge-rejected");
-        } else {
-          badge.classList.add("badge-pending");
-        }
-      }
-
-      row.querySelectorAll(".btn-report-action").forEach((btn) => {
-        btn.disabled = true;
-        btn.classList.remove("is-loading");
-      });
-
+      // Confirm sa server response
+      if (row) applyStatusToRow(row, data.status || action);
       filterReportRows();
     } catch (error) {
+      // I-revert kung may error
+      if (row) applyStatusToRow(row, "Pending");
       button.disabled = false;
       button.classList.remove("is-loading");
       alert(error.message || "Something went wrong while updating status.");
     }
   }
 
+  // ── NEW: helper para i-update ang badge + buttons ng isang row ──
+  function applyStatusToRow(row, status) {
+    const normalized = normalizeStatus(status);
+    row.dataset.status = status;
+
+    const badge = row.querySelector(".js-report-status");
+    if (badge) {
+      badge.textContent = status;
+      badge.classList.remove(
+        "badge-pending",
+        "badge-verified",
+        "badge-approved",
+        "badge-rejected",
+      );
+      if (normalized === "approved" || normalized === "verified") {
+        badge.classList.add("badge-approved");
+      } else if (normalized === "rejected") {
+        badge.classList.add("badge-rejected");
+      } else {
+        badge.classList.add("badge-pending");
+      }
+    }
+
+    row.querySelectorAll(".btn-report-action").forEach((btn) => {
+      btn.disabled = normalized !== "pending";
+      btn.classList.remove("is-loading");
+    });
+  }
+
   reportTableBody.addEventListener("click", (event) => {
     const imageTrigger = event.target.closest(".report-image-trigger");
     if (imageTrigger) {
-      openLightbox(imageTrigger.dataset.imageSrc || "", imageTrigger.dataset.imageAlt || "Report image preview");
+      openLightbox(
+        imageTrigger.dataset.imageSrc || "",
+        imageTrigger.dataset.imageAlt || "Report image preview",
+      );
       return;
     }
 
     const actionBtn = event.target.closest(".btn-report-action");
-    if (!actionBtn || actionBtn.disabled) {
-      return;
-    }
+    if (!actionBtn || actionBtn.disabled) return;
 
     const modalOpened = openActionModal(actionBtn);
     if (!modalOpened) {
       const confirmed = window.confirm("Are you sure you want to continue?");
-      if (confirmed) {
-        updateReportStatus(actionBtn);
-      }
+      if (confirmed) updateReportStatus(actionBtn);
     }
   });
 
-  if (reportSearch) {
-    reportSearch.addEventListener("input", filterReportRows);
-  }
-  if (statusFilter) {
-    statusFilter.addEventListener("change", filterReportRows);
-  }
+  if (reportSearch) reportSearch.addEventListener("input", filterReportRows);
+  if (statusFilter) statusFilter.addEventListener("change", filterReportRows);
 
-  if (actionModalCancel) {
+  if (actionModalCancel)
     actionModalCancel.addEventListener("click", closeActionModal);
-  }
   if (actionModalConfirm) {
     actionModalConfirm.addEventListener("click", () => {
       if (!pendingActionButton) {
         closeActionModal();
         return;
       }
-
       const targetButton = pendingActionButton;
       closeActionModal();
       updateReportStatus(targetButton);
@@ -344,32 +346,47 @@ function initReportVerificationActions() {
   }
   if (actionModal) {
     actionModal.addEventListener("click", (event) => {
-      if (event.target === actionModal) {
-        closeActionModal();
-      }
+      if (event.target === actionModal) closeActionModal();
     });
   }
 
-  if (lightboxClose) {
-    lightboxClose.addEventListener("click", closeLightbox);
-  }
+  if (lightboxClose) lightboxClose.addEventListener("click", closeLightbox);
   if (lightbox) {
     lightbox.addEventListener("click", (event) => {
-      if (event.target === lightbox) {
-        closeLightbox();
-      }
+      if (event.target === lightbox) closeLightbox();
     });
   }
 
   document.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape") {
-      return;
-    }
+    if (event.key !== "Escape") return;
     closeActionModal();
     closeLightbox();
   });
 
   filterReportRows();
+
+  // ── NEW: Polling — auto-refresh ng table tuwing 30 seconds ──
+  async function refreshReportTable() {
+    try {
+      const res = await fetch("../includes/fetch_reports.php");
+      const html = await res.text();
+      reportTableBody.innerHTML = html;
+      filterReportRows();
+    } catch (err) {
+      console.warn("Auto-refresh failed:", err);
+    }
+  }
+
+  let pollTimer = setInterval(refreshReportTable, 30_000);
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      clearInterval(pollTimer);
+    } else {
+      refreshReportTable();
+      pollTimer = setInterval(refreshReportTable, 30_000);
+    }
+  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -387,7 +404,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 window.addEventListener("pageshow", (event) => {
   const navEntries = performance.getEntriesByType("navigation");
-  if (event.persisted || (navEntries.length && navEntries[0].type === "back_forward")) {
+  if (
+    event.persisted ||
+    (navEntries.length && navEntries[0].type === "back_forward")
+  ) {
     window.location.href = "../main/login.php";
   }
 });

@@ -8,11 +8,22 @@ $offset = ($page - 1) * $limit;
 
 $currentUserId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
 
-// Optional server-side status filter (passed by JS when status != 'all')
+// Optional server-side status filter
 $statusFilter = '';
 if (!empty($_GET['status'])) {
     $safeStatus = $conn->real_escape_string($_GET['status']);
     $statusFilter = "AND rs.status_name = '$safeStatus'";
+}
+
+// Barangay filter — match barangay_name against full_address
+$barangayFilter = '';
+if (!empty($_GET['barangay_id'])) {
+    $safeBarangayId = (int) $_GET['barangay_id'];
+    $bResult = $conn->query("SELECT barangay_name FROM barangays WHERE barangay_id = $safeBarangayId");
+    if ($bResult && $bRow = $bResult->fetch_assoc()) {
+        $safeName = $conn->real_escape_string($bRow['barangay_name']);
+        $barangayFilter = "AND l.full_address LIKE '%$safeName%'";
+    }
 }
 
 $sql = "
@@ -33,6 +44,7 @@ $sql = "
         l.full_address,
         l.latitude,
         l.longitude,
+        b.barangay_id,
         b.barangay_name,
         b.municipality,
         b.province,
@@ -47,6 +59,7 @@ $sql = "
     LEFT JOIN users          ru ON r.assigned_rescuer_id = ru.user_id
     WHERE r.status_id = 2
     $statusFilter
+    $barangayFilter
     ORDER BY r.created_at DESC
     LIMIT $limit OFFSET $offset
 ";
@@ -74,7 +87,6 @@ if ($result && $result->num_rows > 0):
             : htmlspecialchars($report['barangay_name'] . ', ' . $report['municipality'] . ', ' . $report['province']);
 
         $date = date('F j, Y, g:i a', strtotime($report['created_at']));
-        // For JS date filtering — YYYY-MM-DD only
         $createdAtDate = date('Y-m-d', strtotime($report['created_at']));
 
         $rescueStatus = $report['rescue_status'] ?? 'Not Required';
@@ -130,7 +142,7 @@ if ($result && $result->num_rows > 0):
         ?>
 
         <article class="post-card" data-report-id="<?= (int) $report['report_id'] ?>" data-created-at="<?= $createdAtDate ?>"
-            data-rescue-status="<?= htmlspecialchars($rescueStatus) ?>">
+            data-rescue-status="<?= htmlspecialchars($rescueStatus) ?>" data-barangay-id="<?= (int) $report['barangay_id'] ?>">
 
             <!-- HEADER -->
             <div class="post-card__header">

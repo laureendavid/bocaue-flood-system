@@ -80,6 +80,10 @@
       flex-shrink: 0;
     }
 
+    .comm-date-toggle {
+      display: none;
+    }
+
     .comm-date-wrap {
       display: flex;
       align-items: center;
@@ -486,6 +490,253 @@
       font-size: 13px;
     }
 
+    .comm-barangay-select {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1.5px solid #e2e8f0;
+      background: #fff;
+      color: #1e293b;
+      font-size: 0.76rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      min-width: 180px;
+      max-width: 260px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .comm-barangay-select:focus {
+      border-color: #3b82f6;
+    }
+
+    .comm-barangay-select.active {
+      border-color: #2563eb;
+      background: #eff6ff;
+      color: #1e40af;
+      font-weight: 600;
+    }
+
+    /* =============================================
+   FILTER STACK — mobile-optimized
+============================================= */
+    .community-filter-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .comm-filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      background: #f8fafc;
+      border: 0.5px solid #d1d9e6;
+      border-radius: 10px;
+
+      /* scrollable horizontally sa mobile */
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      /* Firefox */
+      white-space: nowrap;
+      flex-wrap: nowrap;
+      /* override sa nowrap para scroll, hindi wrap */
+    }
+
+    .comm-filter-bar::-webkit-scrollbar {
+      display: none;
+      /* Chrome/Safari */
+    }
+
+    .comm-filter-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      white-space: nowrap;
+      margin-right: 2px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      flex-shrink: 0;
+    }
+
+    .comm-filter-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 9px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      color: #475569;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .comm-filter-btn:hover:not(.active) {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+    }
+
+    .comm-filter-btn.active {
+      color: #fff;
+    }
+
+    .comm-filter-sep {
+      color: #cbd5e1;
+      font-size: 0.9rem;
+      margin: 0 1px;
+      flex-shrink: 0;
+    }
+
+    .comm-date-wrap {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .comm-date-wrap label {
+      font-size: 0.65rem;
+      color: #94a3b8;
+      white-space: nowrap;
+    }
+
+    .comm-date-wrap input[type="date"] {
+      padding: 3px 6px;
+      border-radius: 6px;
+      font-size: 0.65rem;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      color: #1e293b;
+      cursor: pointer;
+      font-family: inherit;
+      width: 100px;
+    }
+
+    .comm-date-wrap input[type="date"]:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    .comm-apply-btn {
+      padding: 3px 9px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      border: 1px solid #2563eb;
+      background: #3b82f6;
+      color: #fff;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .comm-apply-btn:hover {
+      background: #2563eb;
+    }
+
+    .comm-clear-btn {
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      border: 1px solid #e2e8f0;
+      background: transparent;
+      color: #64748b;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .comm-clear-btn:hover {
+      background: #f1f5f9;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .comm-active-info {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.7rem;
+      color: #1e40af;
+      padding: 4px 10px;
+      background: #eff6ff;
+      border: 0.5px solid #bfdbfe;
+      border-radius: 8px;
+    }
+
+    .comm-active-info.show {
+      display: inline-flex;
+    }
+
+    .comm-barangay-select {
+      padding: 4px 7px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      color: #1e293b;
+      font-size: 0.7rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      min-width: 130px;
+      flex-shrink: 0;
+      outline: none;
+    }
+
+    .comm-barangay-select:focus {
+      border-color: #3b82f6;
+    }
+
+    .comm-barangay-select.active {
+      border-color: #2563eb;
+      background: #eff6ff;
+      color: #1e40af;
+      font-weight: 600;
+    }
+
+    /* warning note sa barangay bar — wrap allowed dito */
+    #comm-barangay-bar span:last-child {
+      font-size: 0.62rem;
+      color: #94a3b8;
+      font-style: italic;
+      line-height: 1.4;
+      max-width: 180px;
+      white-space: normal;
+      /* this one lang pinapayagan mag-wrap */
+      flex-shrink: 0;
+    }
+
+    #comm-report-count {
+      margin-left: auto;
+      font-size: 0.68rem;
+      color: #94a3b8;
+      font-weight: 500;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    #comm-no-results {
+      display: none;
+      text-align: center;
+      padding: 24px 16px;
+      color: #94a3b8;
+      font-size: 0.85rem;
+    }
+
     @media (max-width: 768px) {
       .community-grid {
         grid-template-columns: 1fr;
@@ -496,11 +747,81 @@
         height: 400px;
       }
 
+      /* FILTER BARS — wrap na lang, hindi scroll */
       .comm-filter-bar {
-        gap: 6px;
+        overflow-x: visible;
+        flex-wrap: wrap;
+        white-space: normal;
+        gap: 5px;
+        padding: 8px 10px;
       }
 
-      /* ← DITO dapat ilagay ang mga fix, LOOB ng @media block */
+      /* Label — full row sarili niya */
+      .comm-filter-label {
+        width: 100%;
+        margin-bottom: 2px;
+      }
+
+      /* Buttons — mas maliit para maraming kasya */
+      .comm-filter-btn {
+        padding: 4px 8px;
+        font-size: 0.68rem;
+      }
+
+      .comm-filter-sep {
+        display: none;
+      }
+
+      .comm-date-wrap {
+        display: none;
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 4px;
+        padding-top: 6px;
+        border-top: 1px dashed #e2e8f0;
+      }
+
+      .comm-date-wrap.open {
+        display: flex;
+      }
+
+      .comm-date-wrap input[type="date"] {
+        flex: 1;
+        min-width: 120px;
+        width: auto;
+        font-size: 0.68rem;
+        box-sizing: border-box;
+      }
+
+      .comm-date-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 8px;
+        border-radius: 6px;
+        border: 1px dashed #cbd5e1;
+        background: #fff;
+        color: #64748b;
+        font-size: 0.68rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      /* Barangay select — full width */
+      .comm-barangay-select {
+        min-width: 0;
+        width: 100%;
+        max-width: 100%;
+      }
+
+      /* Warning note — full width din */
+      #comm-barangay-bar span:last-child {
+        width: 100%;
+        max-width: 100%;
+      }
+
+      /* Post card fixes */
       .post-card__body--with-image {
         flex-direction: column;
       }
@@ -522,7 +843,6 @@
         justify-content: center;
         text-align: center;
       }
-
     }
 
     /* ← closing brace ng @media — lahat ng fix ay nasa loob nito */
@@ -565,7 +885,8 @@
           <button class="comm-filter-btn" data-date-preset="7">Last 7 days</button>
           <button class="comm-filter-btn" data-date-preset="30">Last 30 days</button>
           <span class="comm-filter-sep">|</span>
-          <div class="comm-date-wrap">
+          <button class="comm-date-toggle" id="comm-date-toggle-btn">📅 Custom range</button>
+          <div class="comm-date-wrap" id="comm-date-wrap-el">
             <label for="comm-date-from">From</label>
             <input type="date" id="comm-date-from" />
             <label for="comm-date-to">to</label>
@@ -608,7 +929,29 @@
           <span id="comm-report-count"
             style="margin-left:auto;font-size:0.73rem;color:#94a3b8;font-weight:500;white-space:nowrap;"></span>
         </div>
-
+        <!-- Barangay filter bar -->
+        <div class="comm-filter-bar" id="comm-barangay-bar">
+          <span class="comm-filter-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+            Barangay
+          </span>
+          <select id="comm-barangay-select" class="comm-barangay-select">
+            <option value="">All Barangays</option>
+          </select>
+          <span style="
+    font-size: 0.68rem;
+    color: #94a3b8;
+    font-style: italic;
+    line-height: 1.4;
+    max-width: 220px;
+  ">
+            ⚠️ Results may include nearby areas that mention this barangay in their address.
+          </span>
+        </div>
       </div>
       <!-- ── END FILTER STACK ── -->
 
@@ -619,10 +962,12 @@
       <div id="feed-container"></div>
       <div id="feed-loading">Loading...</div>
       <div id="feed-end" style="display:none;">No more posts</div>
+
     </div>
+    <!-- closes .community-column -->
 
   </div>
-
+  <!-- closes .community-grid -->
   <!-- MAP MODAL -->
   <div id="map-modal" class="map-modal">
     <div class="map-modal-content">
@@ -823,12 +1168,39 @@
       var loadingEl = document.getElementById('feed-loading');
       var endEl = document.getElementById('feed-end');
 
+      /* ═══ BARANGAY FILTER STATE ═══ */
+      var activeBarangayId = '';
+      var barangaySelect = document.getElementById('comm-barangay-select');
+
+      fetch('../includes/fetch_barangays.php')
+        .then(function (r) { return r.json(); })
+        .then(function (barangays) {
+          barangays.forEach(function (b) {
+            var opt = document.createElement('option');
+            opt.value = b.barangay_id;
+            opt.textContent = b.barangay_name;
+            barangaySelect.appendChild(opt);
+          });
+        });
+
+      barangaySelect.addEventListener('change', function () {
+        activeBarangayId = this.value;
+        barangaySelect.classList.toggle('active', !!activeBarangayId);
+        feedPage = 1; hasMore = true; loading = false;
+        feed.innerHTML = '';
+        loadingEl.style.display = 'block';
+        endEl.style.display = 'none';
+        loadFeed();
+      });
+
+      /* ═══ UPDATED loadFeed() — replaces the original ═══ */
       function loadFeed() {
         if (loading || !hasMore) return;
         loading = true;
 
         var url = '../includes/fetch_communityReports.php?page=' + feedPage;
         if (activeStatus !== 'all') url += '&status=' + encodeURIComponent(activeStatus);
+        if (activeBarangayId) url += '&barangay_id=' + encodeURIComponent(activeBarangayId);
 
         fetch(url)
           .then(function (r) { return r.text(); })
@@ -895,6 +1267,16 @@
         document.getElementById('full-map-modal').style.display = 'none';
       };
 
+      var dateToggleBtn = document.getElementById('comm-date-toggle-btn');
+      var dateWrapEl = document.getElementById('comm-date-wrap-el');
+      if (dateToggleBtn) {
+        dateToggleBtn.addEventListener('click', function () {
+          dateWrapEl.classList.toggle('open');
+          dateToggleBtn.textContent = dateWrapEl.classList.contains('open')
+            ? '✕ Close'
+            : '📅 Custom range';
+        });
+      }
       /* ═══════════════════════════════════════════════
          INITIAL UI STATE
       ═══════════════════════════════════════════════ */
