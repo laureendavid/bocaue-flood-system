@@ -346,54 +346,82 @@ function buildDateFilterBar() {
     const style = document.createElement("style");
     style.id = "lgu-date-filter-styles";
     style.textContent = `
-      #flood-date-filter-bar {
-        display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-        padding: 10px 14px; background: #f8fafc;
-        border: 1px solid #e2e8f0; border-radius: 12px;
-      }
-      .ldfb-label {
-        font-size: 0.7rem; font-weight: 600; color: #64748b;
-        text-transform: uppercase; letter-spacing: 0.08em;
-        white-space: nowrap; margin-right: 4px; display: flex; align-items: center; gap: 4px;
-      }
-      .ldfb-preset {
-        display: inline-flex; align-items: center; padding: 6px 13px;
-        border-radius: 8px; border: 1.5px solid #e2e8f0;
-        background: #fff; color: #475569;
-        font-size: 0.76rem; font-weight: 600; cursor: pointer;
-        transition: all 0.15s ease; white-space: nowrap;
-      }
-      .ldfb-preset:hover:not(.ldfb-active) { background: #f1f5f9; border-color: #94a3b8; }
-      .ldfb-preset.ldfb-active { background: #3b82f6; border-color: #2563eb; color: #fff; }
-      .ldfb-sep { color: #cbd5e1; font-size: 1rem; margin: 0 2px; }
-      .ldfb-date-wrap { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-      .ldfb-date-wrap label { font-size: 0.72rem; color: #94a3b8; white-space: nowrap; }
-      .ldfb-date-wrap input[type="date"] {
-        padding: 5px 9px; border-radius: 8px; font-size: 0.76rem;
-        border: 1.5px solid #e2e8f0; background: #fff; color: #1e293b; cursor: pointer;
-        font-family: inherit;
-      }
-      .ldfb-date-wrap input[type="date"]:focus { outline: none; border-color: #3b82f6; }
-      .ldfb-apply {
-        padding: 5px 13px; border-radius: 8px; font-size: 0.76rem; font-weight: 600;
-        border: 1.5px solid #2563eb; background: #3b82f6; color: #fff; cursor: pointer;
-        transition: background 0.15s;
-      }
-      .ldfb-apply:hover { background: #2563eb; }
-      .ldfb-clear {
-        padding: 5px 10px; border-radius: 8px; font-size: 0.72rem; font-weight: 600;
-        border: 1.5px solid #e2e8f0; background: transparent; color: #64748b; cursor: pointer;
-        transition: background 0.15s;
-      }
-      .ldfb-clear:hover { background: #f1f5f9; }
-      #flood-date-active-info {
-        display: none; align-items: center; gap: 6px;
-        font-size: 0.72rem; color: #1e40af;
-        padding: 5px 12px; background: #eff6ff;
-        border: 1px solid #bfdbfe; border-radius: 8px;
-      }
-      #flood-date-active-info.show { display: inline-flex; }
-    `;
+  #flood-date-filter-bar {
+    display: flex; align-items: center; gap: 6px; flex-wrap: nowrap;
+    padding: 7px 10px; background: #f8fafc;
+    border: 0.5px solid #d1d9e6; border-radius: 10px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; white-space: nowrap;
+  }
+  #flood-date-filter-bar::-webkit-scrollbar { display: none; }
+  .ldfb-label {
+    font-size: 0.65rem; font-weight: 600; color: #64748b;
+    text-transform: uppercase; letter-spacing: 0.07em;
+    white-space: nowrap; margin-right: 2px;
+    display: flex; align-items: center; gap: 3px; flex-shrink: 0;
+  }
+  .ldfb-preset {
+    display: inline-flex; align-items: center; padding: 4px 9px;
+    border-radius: 6px; border: 1px solid #e2e8f0;
+    background: #fff; color: #475569;
+    font-size: 0.7rem; font-weight: 600; cursor: pointer;
+    transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;
+  }
+  .ldfb-preset:hover:not(.ldfb-active) { background: #f1f5f9; border-color: #94a3b8; }
+  .ldfb-preset.ldfb-active { background: #3b82f6; border-color: #2563eb; color: #fff; }
+  .ldfb-sep { color: #cbd5e1; font-size: 0.9rem; margin: 0 1px; flex-shrink: 0; }
+  .ldfb-date-wrap { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .ldfb-date-wrap label { font-size: 0.65rem; color: #94a3b8; white-space: nowrap; }
+  .ldfb-date-wrap input[type="date"] {
+    padding: 3px 6px; border-radius: 6px; font-size: 0.65rem;
+    border: 1px solid #e2e8f0; background: #fff; color: #1e293b;
+    cursor: pointer; font-family: inherit; width: 100px;
+  }
+  .ldfb-date-wrap input[type="date"]:focus { outline: none; border-color: #3b82f6; }
+  .ldfb-apply {
+    padding: 3px 9px; border-radius: 6px; font-size: 0.7rem; font-weight: 600;
+    border: 1px solid #2563eb; background: #3b82f6; color: #fff; cursor: pointer; flex-shrink: 0;
+  }
+  .ldfb-apply:hover { background: #2563eb; }
+  .ldfb-clear {
+    padding: 3px 8px; border-radius: 6px; font-size: 0.68rem; font-weight: 600;
+    border: 1px solid #e2e8f0; background: transparent; color: #64748b; cursor: pointer; flex-shrink: 0;
+  }
+  .ldfb-clear:hover { background: #f1f5f9; }
+  #flood-date-active-info {
+    display: none; align-items: center; gap: 6px;
+    font-size: 0.7rem; color: #1e40af;
+    padding: 4px 10px; background: #eff6ff;
+    border: 0.5px solid #bfdbfe; border-radius: 8px;
+  }
+  #flood-date-active-info.show { display: inline-flex; }
+  .ldfb-date-toggle { display: none; }
+  @media (max-width: 768px) {
+    #flood-date-filter-bar {
+      overflow-x: visible;
+      flex-wrap: wrap;
+      white-space: normal;
+    }
+    .ldfb-label { width: 100%; margin-bottom: 2px; }
+    .ldfb-sep { display: none; }
+    .ldfb-date-toggle {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 8px; border-radius: 6px;
+      border: 1px dashed #cbd5e1; background: #fff; color: #64748b;
+      font-size: 0.68rem; font-weight: 600; cursor: pointer;
+    }
+    .ldfb-date-wrap {
+      display: none; width: 100%; flex-wrap: wrap; gap: 4px;
+      margin-top: 4px; padding-top: 6px; border-top: 1px dashed #e2e8f0;
+    }
+    .ldfb-date-wrap.open { display: flex; }
+    .ldfb-date-wrap input[type="date"] {
+      flex: 1; min-width: 120px; width: auto;
+      font-size: 0.68rem; box-sizing: border-box;
+    }
+  }
+`;
+
     document.head.appendChild(style);
   }
 
@@ -411,7 +439,8 @@ function buildDateFilterBar() {
     <button class="ldfb-preset" data-preset="7">Last 7 days</button>
     <button class="ldfb-preset" data-preset="30">Last 30 days</button>
     <span class="ldfb-sep">|</span>
-    <div class="ldfb-date-wrap">
+    <button class="ldfb-date-toggle" id="flood-date-toggle">📅 Custom range</button>
+    <div class="ldfb-date-wrap" id="flood-date-wrap">
       <label for="flood-date-from">From</label>
       <input type="date" id="flood-date-from" />
       <label for="flood-date-to">to</label>
@@ -467,6 +496,17 @@ function buildDateFilterBar() {
     updateDateActiveInfo();
     renderMarkers();
   });
+
+  const dateToggleBtn = document.getElementById("flood-date-toggle");
+  const dateWrapEl = document.getElementById("flood-date-wrap");
+  if (dateToggleBtn) {
+    dateToggleBtn.addEventListener("click", () => {
+      dateWrapEl.classList.toggle("open");
+      dateToggleBtn.textContent = dateWrapEl.classList.contains("open")
+        ? "✕ Close"
+        : "📅 Custom range";
+    });
+  }
 }
 
 function updateDateActiveInfo() {
@@ -505,24 +545,26 @@ function buildFilterBar() {
     const style = document.createElement("style");
     style.id = "lgu-filter-styles";
     style.textContent = `
-      #flood-filter-bar {
-        display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-        padding: 10px 14px; background: #f8fafc;
-        border: 1px solid #e2e8f0; border-radius: 12px;
-      }
-      .lfb-btn {
-        display: inline-flex; align-items: center; gap: 7px;
-        padding: 7px 16px; border-radius: 8px;
-        border: 2px solid transparent; background: #fff; color: #475569;
-        font-size: 0.78rem; font-weight: 600; cursor: pointer;
-        transition: all 0.18s ease; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-        white-space: nowrap;
-      }
-      .lfb-btn:hover:not(.lfb-active) { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.12); }
-      .lfb-btn.lfb-active { color: #fff; box-shadow: 0 3px 10px rgba(0,0,0,0.18); transform: translateY(-1px); }
-      .lfb-dot { width: 9px; height: 9px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.15); flex-shrink: 0; }
-      #flood-marker-count { margin-left: auto; font-size: 0.73rem; color: #94a3b8; font-weight: 500; white-space: nowrap; }
-    `;
+  #flood-filter-bar {
+    display: flex; align-items: center; gap: 6px; flex-wrap: nowrap;
+    padding: 7px 10px; background: #f8fafc;
+    border: 0.5px solid #d1d9e6; border-radius: 10px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; white-space: nowrap;
+  }
+  #flood-filter-bar::-webkit-scrollbar { display: none; }
+  .lfb-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 9px; border-radius: 6px;
+    border: 1px solid #e2e8f0; background: #fff; color: #475569;
+    font-size: 0.7rem; font-weight: 600; cursor: pointer;
+    transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;
+  }
+  .lfb-btn:hover:not(.lfb-active) { background: #f1f5f9; border-color: #94a3b8; }
+  .lfb-btn.lfb-active { color: #fff; }
+  .lfb-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  #flood-marker-count { margin-left: auto; font-size: 0.68rem; color: #94a3b8; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
+`;
     document.head.appendChild(style);
   }
 

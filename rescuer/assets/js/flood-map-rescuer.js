@@ -389,6 +389,33 @@
         "  border:1px solid #bfdbfe;border-radius:8px;",
         "}",
         "#rescuer-date-active-info.show{display:inline-flex;}",
+        ".rdfb-date-toggle{display:none;}",
+        "@media (max-width: 768px) {",
+        "  #rescuer-date-filter-bar{flex-wrap:wrap;}",
+        "  .rdfb-sep{display:none;}",
+        "  .rdfb-date-toggle{",
+        "    display:inline-flex;align-items:center;gap:4px;",
+        "    padding:5px 10px;border-radius:8px;",
+        "    border:1px dashed #cbd5e1;background:#fff;color:#64748b;",
+        "    font-size:0.72rem;font-weight:600;cursor:pointer;",
+        "  }",
+        "  .rdfb-date-wrap{",
+        "    display:none;width:100%;flex-wrap:wrap;gap:6px;",
+        "    margin-top:6px;padding-top:8px;border-top:1px dashed #e2e8f0;",
+        "  }",
+        "  .rdfb-date-wrap.open{display:flex;}",
+        "  .rdfb-date-wrap input[type='date']{",
+        "    flex:1;min-width:120px;",
+        "  }",
+        "  #rescuer-date-filter-bar{gap:6px;padding:8px 10px;}",
+        "  .rdfb-label{width:100%;margin-bottom:2px;font-size:0.62rem;}",
+        "  .rdfb-preset{padding:5px 11px;font-size:0.72rem;}",
+        "  .rdfb-apply{padding:5px 11px;font-size:0.72rem;}",
+        "  .rdfb-clear{padding:5px 9px;font-size:0.68rem;}",
+        "  .rdfb-date-toggle{padding:5px 9px;font-size:0.68rem;}",
+        "  .rdfb-date-wrap label{font-size:0.68rem;}",
+        "  .rdfb-date-wrap input[type='date']{font-size:0.72rem;padding:4px 7px;}",
+        "}",
       ].join("\n");
       document.head.appendChild(style);
     }
@@ -409,7 +436,8 @@
       '<button class="rdfb-preset" data-preset="7">Last 7 days</button>' +
       '<button class="rdfb-preset" data-preset="30">Last 30 days</button>' +
       '<span class="rdfb-sep">|</span>' +
-      '<div class="rdfb-date-wrap">' +
+      '<button class="rdfb-date-toggle" id="rescuer-date-toggle">📅 Custom range</button>' +
+      '<div class="rdfb-date-wrap" id="rescuer-date-wrap">' +
       '<label for="rescuer-date-from">From</label>' +
       '<input type="date" id="rescuer-date-from" />' +
       '<label for="rescuer-date-to">to</label>' +
@@ -468,6 +496,17 @@
         updateDateActiveInfo();
         renderMarkers();
       });
+
+    var dateToggleBtn = document.getElementById("rescuer-date-toggle");
+    var dateWrapEl = document.getElementById("rescuer-date-wrap");
+    if (dateToggleBtn) {
+      dateToggleBtn.addEventListener("click", function () {
+        dateWrapEl.classList.toggle("open");
+        dateToggleBtn.textContent = dateWrapEl.classList.contains("open")
+          ? "✕ Close"
+          : "📅 Custom range";
+      });
+    }
   }
 
   function updateDateActiveInfo() {
@@ -524,6 +563,12 @@
         ".rfb-btn.rfb-active{color:#fff;box-shadow:0 3px 10px rgba(0,0,0,0.18);transform:translateY(-1px);}",
         ".rfb-dot{width:9px;height:9px;border-radius:50%;border:2px solid rgba(0,0,0,0.15);flex-shrink:0;}",
         "#rescuer-flood-marker-count{margin-left:auto;font-size:0.73rem;color:#94a3b8;font-weight:500;white-space:nowrap;}",
+        "@media (max-width: 768px) {",
+        "  #rescuer-flood-filter-bar{padding:8px 10px;gap:6px;}",
+        "  .rfb-btn{padding:5px 11px;font-size:0.72rem;gap:5px;}",
+        "  .rfb-dot{width:7px;height:7px;}",
+        "  #rescuer-flood-marker-count{font-size:0.68rem;}",
+        "}",
       ].join("\n");
       document.head.appendChild(style);
     }
