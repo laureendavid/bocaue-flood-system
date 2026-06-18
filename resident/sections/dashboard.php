@@ -5,7 +5,7 @@
    $conn is available from main.php via require_once config/db.php
    ============================================================= */
 
-// ── Safety centers ────────────────────────────────────────────
+require_once __DIR__ . '/../../config/uploads.php';
 $safetyCenters = [];
 $scStmt = $conn->prepare("
     SELECT
@@ -139,7 +139,7 @@ if ($announcementIdColumn) {
                 'source_id' => (string) $row['source_id'],
                 'created_at' => $row['created_at'],
                 'posted_by' => $row['posted_by'] ?: 'LGU Bocaue',
-                'avatar' => !empty($row['avatar']) ? $row['avatar'] : $placeholderAvatar,
+                'avatar' => bfis_resolve_media_url($row['avatar'] ?? '', $placeholderAvatar),
                 'content' => $row['content'] ?: 'No content available.',
                 'location' => trim((string) ($row['location'] ?? 'Bocaue, Bulacan')) ?: 'Bocaue, Bulacan',
                 'image' => '',
@@ -187,10 +187,10 @@ if ($reportIdColumn) {
                 'source_id' => (string) $row['source_id'],
                 'created_at' => $row['created_at'],
                 'posted_by' => $row['posted_by'] ?: 'Resident',
-                'avatar' => !empty($row['avatar']) ? $row['avatar'] : $placeholderAvatar,
+                'avatar' => bfis_resolve_media_url($row['avatar'] ?? '', $placeholderAvatar),
                 'content' => $row['content'] ?: 'No content available.',
                 'location' => trim((string) ($row['location'] ?? 'Bocaue, Bulacan')) ?: 'Bocaue, Bulacan',
-                'image' => trim((string) ($row['image'] ?? '')),
+                'image' => bfis_resolve_media_url(trim((string) ($row['image'] ?? '')), ''),
                 'rescue' => normalizeRescueStatus($row['rescue_status'] ?? null),
                 'icon' => 'flood',
             ];

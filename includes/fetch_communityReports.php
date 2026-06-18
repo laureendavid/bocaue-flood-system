@@ -1,5 +1,6 @@
 <?php
 require_once '../config/db.php';
+require_once __DIR__ . '/../config/uploads.php';
 
 $limit = 5;
 $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
@@ -69,9 +70,7 @@ if ($result && $result->num_rows > 0):
         $hasImage = !empty($report['report_image']);
 
         $reportImage = trim($report['report_image'] ?? '');
-        $imageSrc = filter_var($reportImage, FILTER_VALIDATE_URL)
-            ? $reportImage
-            : ($reportImage ? '/' . ltrim($reportImage, '/') : '');
+        $imageSrc = bfis_resolve_media_url($reportImage, '');
 
         $address = !empty($report['full_address'])
             ? htmlspecialchars($report['full_address'])

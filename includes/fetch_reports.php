@@ -1,5 +1,6 @@
 <?php
 require_once '../config/db.php';
+require_once __DIR__ . '/../config/uploads.php';
 
 $sql = "
     SELECT
@@ -192,17 +193,9 @@ foreach ($rows as $row):
 
     $rescueDescription = trim((string) ($row['rescue_description'] ?? ''));
 
-    // ── IMAGE HANDLING (CLOUDINARY SAFE) ──
+    // ── IMAGE HANDLING (Cloudinary + legacy local paths) ──
     $reportImage = trim((string) ($row['report_image'] ?? ''));
-    $imageSrc = '';
-
-    if ($reportImage !== '') {
-        if (filter_var($reportImage, FILTER_VALIDATE_URL)) {
-            $imageSrc = $reportImage;
-        } else {
-            $imageSrc = '/' . ltrim($reportImage, '/');
-        }
-    }
+    $imageSrc = bfis_resolve_media_url($reportImage, '');
 
     // ── DUPLICATE FLAG ──
     $reportId = (int) $row['report_id'];

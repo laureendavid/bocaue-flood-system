@@ -1,6 +1,8 @@
 <?php
 session_start();
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../config/uploads.php';
+require_once __DIR__ . '/../includes/cloudinary_upload.php';
 
 $error = '';
 
@@ -25,51 +27,6 @@ $barangays = [
   'turo' => ['id' => 18, 'label' => 'Turo'],
   'wakas' => ['id' => 19, 'label' => 'Wakas'],
 ];
-
-define('UPLOAD_DIR', __DIR__ . '/../uploads/');
-define('UPLOAD_URL', '/uploads/');
-
-if (!is_dir(UPLOAD_DIR)) {
-  mkdir(UPLOAD_DIR, 0755, true);
-}
-
-function handleUpload(string $fieldName, array $allowedMime, int $maxBytes): array
-{
-  if (empty($_FILES[$fieldName]['name'])) {
-    return ['path' => null];
-  }
-
-  $file = $_FILES[$fieldName];
-
-  if ($file['error'] === UPLOAD_ERR_NO_FILE) {
-    return ['path' => null];
-  }
-
-  if ($file['error'] !== UPLOAD_ERR_OK) {
-    return ['error' => 'Upload failed. Please try again.'];
-  }
-
-  if ($file['size'] > $maxBytes) {
-    return ['error' => 'Uploaded file exceeds allowed size.'];
-  }
-
-  $finfo = new finfo(FILEINFO_MIME_TYPE);
-  $mimeType = $finfo->file($file['tmp_name']);
-
-  if (!in_array($mimeType, $allowedMime, true)) {
-    return ['error' => 'Invalid file type uploaded.'];
-  }
-
-  $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-  $safeName = uniqid('reg_', true) . '.' . $ext;
-  $destPath = UPLOAD_DIR . $safeName;
-
-  if (!move_uploaded_file($file['tmp_name'], $destPath)) {
-    return ['error' => 'Could not save uploaded file.'];
-  }
-
-  return ['path' => UPLOAD_URL . $safeName];
-}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $firstName = strtoupper(trim($_POST['first_name'] ?? ''));
@@ -107,23 +64,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $profilePicturePath = $_SESSION['reg_profile_picture'] ?? null;
     $validIdPath = $_SESSION['reg_valid_id_image'] ?? null;
 
-    $photoResult = handleUpload('photo_upload', ['image/jpeg', 'image/png'], 5 * 1024 * 1024);
+    $photoResult = bfis_cloudinary_upload_request(
+      'photo_upload',
+      BFIS_CLOUDINARY_FOLDER_PROFILES,
+      ['image/jpeg', 'image/png'],
+      5 * 1024 * 1024
+    );
     if (isset($photoResult['error'])) {
       $error = $photoResult['error'];
-    } elseif ($photoResult['path'] !== null) {
-      $profilePicturePath = $photoResult['path'];
+    } elseif (!empty($photoResult['url'])) {
+      $profilePicturePath = $photoResult['url'];
     }
 
     if ($error === '') {
-      $idResult = handleUpload(
+      $idResult = bfis_cloudinary_upload_request(
         'valid_id_image',
+        BFIS_CLOUDINARY_FOLDER_VALID_IDS,
         ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
-        10 * 1024 * 1024
+        10 * 1024 * 1024,
+        'raw'
       );
       if (isset($idResult['error'])) {
         $error = $idResult['error'];
-      } elseif ($idResult['path'] !== null) {
-        $validIdPath = $idResult['path'];
+      } elseif (!empty($idResult['url'])) {
+        $validIdPath = $idResult['url'];
       }
     }
 
@@ -178,6 +142,7 @@ $sticky = [
   'lng' => htmlspecialchars($_POST['lng'] ?? ($_SESSION['reg_lng'] ?? '')),
   'profile_picture' => $_SESSION['reg_profile_picture'] ?? $existingProfilePicture,
 ];
+$stickyProfilePhotoUrl = bfis_resolve_media_url($sticky['profile_picture'] ?? '', '');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -664,6 +629,12 @@ $sticky = [
           previewAvatar(this.files[0]);
         }
       });
+
+      <?php if ($stickyProfilePhotoUrl !== ''): ?>
+      if (avatarPreview) {
+        avatarPreview.innerHTML = '<img src="<?= htmlspecialchars($stickyProfilePhotoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Profile preview">';
+      }
+      <?php endif; ?>
 
       var bocaueBoundary = [
         [14.8450, 120.8670],

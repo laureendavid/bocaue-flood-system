@@ -6,8 +6,11 @@ if (empty($_SESSION['pending_password_user_id']) || empty($_SESSION['pending_pas
     exit;
 }
 
+$fromForgot = !empty($_SESSION['password_reset_from_forgot']);
+$resetEmail = trim($_SESSION['pending_password_email'] ?? '');
+
 $errorMessages = [
-    'invalid' => 'Please provide a valid new password.',
+    'invalid' => 'Password must be at least 12 characters and include letters and numbers.',
     'mismatch' => 'Passwords do not match.',
     'server' => 'Unable to update password right now.',
 ];
@@ -24,8 +27,14 @@ $error = $errorMessages[$_GET['error'] ?? ''] ?? '';
 <body>
   <div class="login-page">
     <main class="login-panel">
-      <h2 class="panel-title">Set New Password</h2>
-      <p class="panel-subtitle">Create a password to continue to your dashboard.</p>
+      <h2 class="panel-title"><?php echo $fromForgot ? 'Reset Password' : 'Set New Password'; ?></h2>
+      <p class="panel-subtitle">
+        <?php if ($fromForgot && $resetEmail !== ''): ?>
+          Create a new password for <strong><?php echo htmlspecialchars($resetEmail); ?></strong>.
+        <?php else: ?>
+          Create a password to continue to your dashboard.
+        <?php endif; ?>
+      </p>
       <?php if ($error !== ''): ?>
         <div class="alert alert-danger fade-up"><?php echo htmlspecialchars($error); ?></div>
       <?php endif; ?>
@@ -40,6 +49,9 @@ $error = $errorMessages[$_GET['error'] ?? ''] ?? '';
         </div>
         <button type="submit" class="btn btn-primary">Save Password</button>
       </form>
+      <p class="legal-note" style="margin-top: 1.25rem;">
+        <a href="login.php" class="forgot-link">Back to Login</a>
+      </p>
     </main>
   </div>
 </body>

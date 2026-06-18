@@ -14,6 +14,7 @@ $allowedPages = [
   'report-flood',
   'safety-centers',
   'hotlines',
+  'account-settings',
 ];
 if (!in_array($page, $allowedPages)) $page = 'dashboard';
 
@@ -23,6 +24,7 @@ $pageLabels = [
   'report-flood'   => 'Flood Reports',
   'safety-centers' => 'Safety Centers',
   'hotlines'       => 'Emergency Hotlines',
+  'account-settings' => 'Account Settings',
 ];
 
 $pageIcons = [
@@ -31,6 +33,7 @@ $pageIcons = [
   'report-flood'   => 'flood',
   'safety-centers' => 'home_work',
   'hotlines'       => 'support_agent',
+  'account-settings' => 'manage_accounts',
 ];
 
 $residentName = trim((string) ($_SESSION['full_name'] ?? 'Resident User'));
@@ -65,6 +68,7 @@ $currentPageTitle = $pageLabels[$page] ?? 'Dashboard';
 
     <nav class="sidebar-nav">
       <?php foreach ($pageLabels as $key => $label): ?>
+      <?php if ($key === 'account-settings') continue; ?>
       <a class="nav-link<?= $page === $key ? ' active' : '' ?>"
          href="main.php?page=<?= $key ?>">
         <span class="material-symbols-outlined"><?= $pageIcons[$key] ?></span>
@@ -88,20 +92,37 @@ $currentPageTitle = $pageLabels[$page] ?? 'Dashboard';
     <div class="topbar" role="banner">
       <h2 class="system-name">Bocaue Flood Information System</h2>
 
-      <div class="notification-wrapper" id="notification-wrapper">
-        <button class="notification-btn" id="notification-btn" aria-label="Notifications">
-          <span class="material-symbols-outlined">notifications</span>
-          <span class="notification-badge" id="notification-badge" style="display:none;">0</span>
-        </button>
-        <div class="notification-dropdown" id="notification-dropdown">
-          <div class="notification-header">
-            <h4>Notifications</h4>
-            <button type="button" class="mark-read-btn" id="mark-read-btn">Mark all as read</button>
-          </div>
-          <div class="notification-list" id="notification-list">
-            <div class="notification-empty">No notifications yet.</div>
+      <div class="topbar-actions">
+        <div class="notification-wrapper" id="notification-wrapper">
+          <button
+            type="button"
+            class="topbar-action-btn notification-btn"
+            id="notification-btn"
+            aria-label="Notifications"
+            title="Notifications"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
+            <span class="notification-badge" id="notification-badge" style="display:none;">0</span>
+          </button>
+          <div class="notification-dropdown" id="notification-dropdown">
+            <div class="notification-header">
+              <h4>Notifications</h4>
+              <button type="button" class="mark-read-btn" id="mark-read-btn">Mark all as read</button>
+            </div>
+            <div class="notification-list" id="notification-list">
+              <div class="notification-empty">No notifications yet.</div>
+            </div>
           </div>
         </div>
+
+        <a
+          href="main.php?page=account-settings"
+          class="topbar-action-btn<?= $page === 'account-settings' ? ' is-active' : '' ?>"
+          aria-label="Account Settings"
+          title="Account Settings"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span>
+        </a>
       </div>
     </div>
 
@@ -120,5 +141,6 @@ $currentPageTitle = $pageLabels[$page] ?? 'Dashboard';
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="assets/js/resident.js?v=<?= (int) @filemtime(__DIR__ . '/assets/js/resident.js') ?>"></script>
+<script src="../assets/js/account-settings.js?v=<?= (int) @filemtime(__DIR__ . '/../assets/js/account-settings.js') ?>"></script>
 </body>
 </html>

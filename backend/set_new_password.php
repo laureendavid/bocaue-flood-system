@@ -54,7 +54,12 @@ session_regenerate_id(true);
 $_SESSION['user_id'] = $userId;
 $_SESSION['role'] = $role;
 $_SESSION['last_activity'] = time();
-unset($_SESSION['pending_password_user_id'], $_SESSION['pending_password_email'], $_SESSION['pending_password_role']);
+unset(
+    $_SESSION['pending_password_user_id'],
+    $_SESSION['pending_password_email'],
+    $_SESSION['pending_password_role'],
+    $_SESSION['password_reset_from_forgot']
+);
 
 switch ($role) {
     case 'LGU':

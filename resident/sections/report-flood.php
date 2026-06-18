@@ -6,10 +6,8 @@
              assets/css/report-flood.css
              assets/js/report-flood.js
    ============================================================= */
-require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../../config/cloudinary.php';
-
-use Cloudinary\Api\Upload\UploadApi;
+require_once __DIR__ . '/../../includes/cloudinary_upload.php';
 
 $userBarangay = 'Bocaue, Bulacan';
 $userBarangayName = 'Bocaue';
@@ -213,36 +211,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
       $locationId = $conn->insert_id;
       $locStmt->close();
 
-      // 2. Optional photo upload
+      // 2. Optional photo upload (Cloudinary)
       $reportImage = null;
 
       if (!empty($_FILES['report_photo']['tmp_name'])) {
-
-        // size limit (3MB)
-        if ($_FILES['report_photo']['size'] > 3 * 1024 * 1024) {
-          throw new Exception('Image must be 3MB or smaller.');
-        }
-
-        // real mime check
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = finfo_file($finfo, $_FILES['report_photo']['tmp_name']);
-        finfo_close($finfo);
-
-        $allowed = ['image/jpeg', 'image/png'];
-
-        if (!in_array($mime, $allowed)) {
-          throw new Exception('Only JPG and PNG images are allowed.');
-        }
-
-        // upload to Cloudinary
-        $result = (new UploadApi())->upload(
-          $_FILES['report_photo']['tmp_name'],
-          [
-            "folder" => "bocaue_flood_reports"
-          ]
+        $uploadResult = bfis_cloudinary_upload_request(
+          'report_photo',
+          BFIS_CLOUDINARY_FOLDER_REPORTS,
+          ['image/jpeg', 'image/png'],
+          3 * 1024 * 1024
         );
 
-        $reportImage = $result['secure_url'];
+        if (isset($uploadResult['error'])) {
+          throw new Exception($uploadResult['error']);
+        }
+
+        if (!empty($uploadResult['url'])) {
+          $reportImage = $uploadResult['url'];
+        }
       }
 
       // 3. Insert report
