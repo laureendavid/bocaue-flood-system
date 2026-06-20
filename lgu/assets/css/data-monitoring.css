@@ -28,6 +28,7 @@
   grid-template-columns: 1fr 280px;
   gap: 20px;
   margin-bottom: 24px;
+  align-items: start; /* hotlines card doesn't stretch to match map height */
 }
 
 /* =============================================
@@ -92,8 +93,9 @@
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-  overflow-y: auto;
-  max-height: 420px;
+  height: fit-content;
+  display: flex;
+  flex-direction: column;
 }
 
 .hotlines-card h3 {
@@ -103,8 +105,16 @@
   margin: 0 0 16px 0;
 }
 
+/* key fix — limit hotlines height to roughly match the map's height,
+   with its own scroll so long lists don't push the card taller than
+   the map next to it */
+#hotlines-list {
+  overflow-y: auto;
+  max-height: 390px;
+}
+
 /* Hotline Groups (per barangay) */
-.hotline-group {
+#page-data-monitoring .hotline-group {
   background: #f8f9fb;
   border-radius: 8px;
   padding: 12px 14px;
@@ -112,33 +122,43 @@
   border: 1px solid #e8ecf0;
 }
 
-.hotline-group:last-child {
+#page-data-monitoring .hotline-group:last-child {
   margin-bottom: 0;
 }
 
-.hotline-district {
+/* Scoped to #page-data-monitoring because .hotline-district is reused
+   on other pages for a different element (a wrapper div there, a text
+   label here) — without the scope, whichever stylesheet loads last
+   silently overwrites this one. */
+#page-data-monitoring .hotline-district {
   font-size: 0.88rem;
   font-weight: 600;
   color: #1a1a2e;
   margin: 0 0 8px 0;
 }
 
-.hotline-row {
-  display: flex;
-  justify-content: space-between;
+/* Grid instead of flex + space-between: this keeps every phone number
+   in the exact same column position regardless of how long the label
+   text next to it is, so the whole list reads as one clean column. */
+#page-data-monitoring .hotline-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
+  gap: 12px;
   padding: 4px 0;
 }
 
-.hotline-type {
+#page-data-monitoring .hotline-type {
   font-size: 0.8rem;
   color: #6b7280;
 }
 
-.hotline-number {
+#page-data-monitoring .hotline-number {
   font-size: 0.8rem;
   font-weight: 500;
   color: #1a1a2e;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 /* =============================================
@@ -167,13 +187,21 @@
   margin-top: 4px;
 }
 
-.evac-section table {
+/* table-layout: fixed is the actual fix for the misaligned Status
+   column — it forces the header cell and every body cell in that
+   column to share the exact same width, instead of the browser
+   guessing column widths per row. min-width: unset removes the floor
+   that was forcing a horizontal scroll (and cutting off the Status
+   column) on phones. */
+#page-data-monitoring .evac-section table {
   width: 100%;
+  table-layout: fixed;
+  min-width: unset;
   border-collapse: collapse;
   font-size: 0.875rem;
 }
 
-.evac-section thead th {
+#page-data-monitoring .evac-section thead th {
   text-align: left;
   padding: 10px 14px;
   color: #6b7280;
@@ -182,7 +210,7 @@
   border-bottom: 1px solid #e8ecf0;
 }
 
-.evac-section tbody td {
+#page-data-monitoring .evac-section tbody td {
   padding: 12px 14px;
   color: #1a1a2e;
   border-bottom: 1px solid #f0f2f5;
@@ -193,13 +221,37 @@
   border-bottom: none;
 }
 
-.col-center {
-  width: 160px;
+/* These three add up to 100% on purpose, and are scoped + !important
+   on col-status because another stylesheet defines a conflicting
+   .col-status (25% width, 40px right padding, !important) for a
+   different table elsewhere in the app — that's what was actually
+   pushing the badge off to the right, away from the "Status" header. */
+#page-data-monitoring .col-center {
+  width: 50%;
 }
 
-.col-status {
-  width: 120px;
+#page-data-monitoring .col-capacity {
+  width: 28%;
+}
+
+#page-data-monitoring .col-status {
+  width: 22% !important;
+  text-align: right !important;
+  padding-right: 14px !important;
+}
+
+/* Right-align the status cell itself (not just the header) so the
+   badge sits directly under the "Status" label every time. */
+#page-data-monitoring .evac-section tbody td:last-child {
   text-align: right;
+}
+
+/* The badge no longer floats — float was letting it drift outside its
+   column's actual rendered width depending on row content. Plain
+   inline-block + the td's text-align does the same job reliably. */
+#page-data-monitoring .evac-section .badge {
+  float: none;
+  display: inline-block;
 }
 
 /* Capacity bar (progress-style) */
@@ -226,7 +278,6 @@
   font-size: 0.75rem;
   font-weight: 600;
   text-align: center;
-  float: right;
 }
 
 .badge--near-full {
@@ -267,37 +318,45 @@
    ============================================= */
 
 @media (max-width: 768px) {
+  #page-data-monitoring {
+    padding: 16px;
+  }
+
+  /* Map, hotlines, and evac all sit in the same #page-data-monitoring
+     padding, so once this collapses to one column they line up with
+     each other automatically — the table no longer fights that by
+     forcing its own min-width (fixed above). */
   .monitoring-grid {
     grid-template-columns: 1fr;
   }
 
-  .hotlines-card {
+  #hotlines-list {
     max-height: 320px;
   }
+}
 
-  #page-data-monitoring {
-    padding: 16px;
+@media (max-width: 480px) {
+  #page-data-monitoring .col-center {
+    width: 46%;
   }
-}
-.monitoring-grid {
-  display: grid;
-  grid-template-columns: 1fr 280px;
-  gap: 20px;
-  margin-bottom: 24px;
-  align-items: start; /* hotlines card hindi mag-eextend */
-}
 
-.hotlines-card {
-  max-height: none;
-  /* gawin same height ng flood-map */
-  height: fit-content;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
+  #page-data-monitoring .col-capacity {
+    width: 28%;
+  }
 
-/* key fix — limit hotlines height to match the map height */
-#hotlines-list {
-  overflow-y: auto;
-  max-height: 390px; /* approximately same as flood-map height */
+  #page-data-monitoring .col-status {
+    width: 26% !important;
+    padding-right: 10px !important;
+  }
+
+  #page-data-monitoring .evac-section thead th,
+  #page-data-monitoring .evac-section tbody td {
+    padding: 8px 10px;
+    font-size: 0.78rem;
+  }
+
+  #page-data-monitoring .evac-section .badge {
+    padding: 2px 8px;
+    font-size: 0.68rem;
+  }
 }
