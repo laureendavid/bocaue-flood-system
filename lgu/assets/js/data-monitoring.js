@@ -11,12 +11,12 @@ function loadHotlines() {
 
       let html = "";
       for (const [barangay, entries] of Object.entries(json.data)) {
-        html += `<div class="hotline-group">
-          <h4 class="hotline-district">${barangay}</h4>`;
+        html += `<div class="hotline-district">
+          <h4>${barangay}</h4>`;
         entries.forEach((e) => {
           html += `<div class="hotline-row">
-            <span class="hotline-type">${e.hotline_name}</span>
-            <span class="hotline-number">${e.contact_number}</span>
+            <span>${e.hotline_name}</span>
+            <span>${e.contact_number}</span>
           </div>`;
         });
         html += `</div>`;

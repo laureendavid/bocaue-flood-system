@@ -1227,10 +1227,79 @@
       ).observe(loadingEl);
 
       /* ═══════════════════════════════════════════════
-         MAP
-      ═══════════════════════════════════════════════ */
+          MAP
+       ═══════════════════════════════════════════════ */
       var mapInstance = null, fullMapInstance = null;
-      var lastLat, lastLng, lastName;
+      var lastLat, lastLng, lastName, lastReportData = null;
+
+      function rpmEscHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      var rpmSeverityColors = {
+        'Passable': { bg: '#22c55e', border: '#16a34a' },
+        'Limited Access': { bg: '#eab308', border: '#ca8a04' },
+        'Impassable': { bg: '#ef4444', border: '#dc2626' },
+      };
+
+      var rpmRescueBadgeColors = {
+        'Rescue Needed': { bg: '#fee2e2', text: '#991b1b' },
+        'Being Rescued': { bg: '#fef3c7', text: '#92400e' },
+        'Rescued': { bg: '#dcfce7', text: '#166534' },
+        'Not Required': { bg: '#f1f5f9', text: '#475569' },
+      };
+
+      function buildReportPopup(d) {
+        var sev = rpmSeverityColors[d.severity] || { bg: '#3b82f6', border: '#2563eb' };
+        var rb = rpmRescueBadgeColors[d.rescueStatus] || rpmRescueBadgeColors['Not Required'];
+        var gmapsUrl = 'https://www.google.com/maps?q=' + d.lat + ',' + d.lng;
+
+        var html = '<div class="rpm-popup">';
+
+        html += '<div class="rpm-popup__header" style="background:' + sev.bg + ';">';
+        html += '<div class="rpm-popup__eyebrow">Flood Report</div>';
+        html += '<div class="rpm-popup__title">' + rpmEscHtml(d.name) + '</div>';
+        html += '</div>';
+
+        if (d.image) {
+          html += '<div class="rpm-popup__image"><img src="' + rpmEscHtml(d.image) + '" alt="Report photo"></div>';
+        }
+
+        html += '<div class="rpm-popup__body">';
+
+        html += '<div class="rpm-popup__row">📍 ' + rpmEscHtml(d.address) + '</div>';
+        html += '<div class="rpm-popup__row rpm-popup__row--muted">🕒 ' + rpmEscHtml(d.date) + '</div>';
+
+        if (d.description) {
+          html += '<p class="rpm-popup__desc">' + rpmEscHtml(d.description) + '</p>';
+        }
+
+        if (d.people > 0) {
+          html += '<div class="rpm-popup__alert">👥 ' + d.people + ' person(s) need rescue</div>';
+        }
+
+        html += '<div class="rpm-popup__tags">';
+        if (d.water) {
+          html += '<span class="rpm-popup__tag rpm-popup__tag--water">💧 ' + rpmEscHtml(d.water) + '</span>';
+        }
+        if (d.severity) {
+          html += '<span class="rpm-popup__tag" style="background:' + sev.bg + '22;color:' + sev.border + ';border-color:' + sev.bg + '55;">⚠️ ' + rpmEscHtml(d.severity) + '</span>';
+        }
+        html += '</div>';
+
+        html += '<span class="rpm-popup__badge" style="background:' + rb.bg + ';color:' + rb.text + ';">' + rpmEscHtml(d.rescueStatus) + '</span>';
+
+        html += '<a class="rpm-popup__gmaps" href="' + gmapsUrl + '" target="_blank" rel="noopener noreferrer">Open in Google Maps</a>';
+
+        html += '</div></div>';
+
+        return html;
+      }
 
       document.addEventListener('click', function (e) {
         var btn = e.target.closest('.btn-map');
@@ -1238,13 +1307,28 @@
         lastLat = parseFloat(btn.dataset.lat);
         lastLng = parseFloat(btn.dataset.lng);
         lastName = btn.dataset.name;
+        lastReportData = {
+          lat: lastLat,
+          lng: lastLng,
+          name: btn.dataset.name,
+          address: btn.dataset.address,
+          date: btn.dataset.date,
+          description: btn.dataset.description,
+          image: btn.dataset.image,
+          water: btn.dataset.water,
+          severity: btn.dataset.severity,
+          rescueStatus: btn.dataset.rescueStatus,
+          people: parseInt(btn.dataset.people, 10) || 0,
+        };
         document.getElementById('map-modal').style.display = 'flex';
         setTimeout(function () {
           if (mapInstance) mapInstance.remove();
           mapInstance = L.map('map').setView([lastLat, lastLng], 15);
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             { attribution: '&copy; OpenStreetMap' }).addTo(mapInstance);
-          L.marker([lastLat, lastLng]).addTo(mapInstance).bindPopup(lastName).openPopup();
+          L.marker([lastLat, lastLng]).addTo(mapInstance)
+            .bindPopup(buildReportPopup(lastReportData), { maxWidth: 280, minWidth: 240, className: 'rpm-popup-wrap' })
+            .openPopup();
         }, 150);
       });
 
@@ -1256,7 +1340,9 @@
           fullMapInstance = L.map('full-map').setView([lastLat, lastLng], 15);
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             { attribution: '&copy; OpenStreetMap' }).addTo(fullMapInstance);
-          L.marker([lastLat, lastLng]).addTo(fullMapInstance).bindPopup(lastName).openPopup();
+          L.marker([lastLat, lastLng]).addTo(fullMapInstance)
+            .bindPopup(buildReportPopup(lastReportData), { maxWidth: 280, minWidth: 240, className: 'rpm-popup-wrap' })
+            .openPopup();
         }, 150);
       };
 
@@ -1266,17 +1352,6 @@
       document.getElementById('close-full-map').onclick = function () {
         document.getElementById('full-map-modal').style.display = 'none';
       };
-
-      var dateToggleBtn = document.getElementById('comm-date-toggle-btn');
-      var dateWrapEl = document.getElementById('comm-date-wrap-el');
-      if (dateToggleBtn) {
-        dateToggleBtn.addEventListener('click', function () {
-          dateWrapEl.classList.toggle('open');
-          dateToggleBtn.textContent = dateWrapEl.classList.contains('open')
-            ? '✕ Close'
-            : '📅 Custom range';
-        });
-      }
       /* ═══════════════════════════════════════════════
          INITIAL UI STATE
       ═══════════════════════════════════════════════ */

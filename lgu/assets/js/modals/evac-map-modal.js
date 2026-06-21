@@ -1,9 +1,11 @@
 (function () {
   "use strict";
 
-  var evacMap = null;
-  var evacMarker = null;
+  var pageMap = null;
+  var pageMarkers = {};
   var allCenters = [];
+
+  var BOCAUE_CENTER = [14.7982, 120.926];
   var BOCAUE_BOUNDS = L.latLngBounds([14.747, 120.865], [14.845, 120.99]);
   var BOCAUE_POLYGON = [
     [14.844, 120.888],
@@ -64,7 +66,7 @@
   }
 
   function addCurrentLocationControl(map) {
-    var userLocationMarker = null;
+    var locationMarker = null;
     var control = L.control({ position: "topright" });
     control.onAdd = function () {
       var button = L.DomUtil.create("button", "leaflet-bar");
@@ -90,9 +92,9 @@
               alert("You are outside Bocaue, Bulacan coverage area.");
               return;
             }
-            if (userLocationMarker) userLocationMarker.setLatLng([lat, lng]);
-            else userLocationMarker = L.marker([lat, lng]).addTo(map);
-            userLocationMarker.bindPopup("Your current location").openPopup();
+            if (locationMarker) locationMarker.setLatLng([lat, lng]);
+            else locationMarker = L.marker([lat, lng]).addTo(map);
+            locationMarker.bindPopup("Your current location").openPopup();
             map.flyTo([lat, lng], 16, { duration: 0.7 });
           },
           function () {
@@ -107,150 +109,204 @@
   }
 
   /* ----------------------------------------------------------
-     Init modal map
+     Status helpers
   ---------------------------------------------------------- */
-  function initModalMap(lat, lng, name, address) {
-    var mapEl = document.getElementById("evac-modal-map");
-    if (!mapEl || typeof L === "undefined") return;
-
-    if (evacMap) {
-      evacMap.remove();
-      evacMap = null;
-      evacMarker = null;
+  function getStatus(occ, cap) {
+    if (occ >= cap) {
+      return { label: "Full", color: "#ef4444", border: "#dc2626" };
     }
-
-    evacMap = L.map("evac-modal-map", {
-      zoomControl: true,
-      minZoom: 13,
-      maxZoom: 19,
-      maxBounds: BOCAUE_BOUNDS,
-      maxBoundsViscosity: 1.0,
-    }).setView([lat, lng], 16);
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap contributors",
-      maxZoom: 19,
-    }).addTo(evacMap);
-
-    applyBoundaryLayer(evacMap);
-    addCurrentLocationControl(evacMap);
-
-    evacMarker = L.marker([lat, lng])
-      .addTo(evacMap)
-      .bindPopup(
-        "<strong>" +
-          name +
-          "</strong><br>" +
-          "<span style='font-size:0.75rem;color:#64748b;'>" +
-          address +
-          "</span>",
-      )
-      .openPopup();
-
-    setTimeout(function () {
-      evacMap.invalidateSize();
-    }, 150);
+    if (occ >= cap * 0.8) {
+      return { label: "Near Full", color: "#eab308", border: "#ca8a04" };
+    }
+    return { label: "Available", color: "#22c55e", border: "#16a34a" };
   }
 
-  /* ----------------------------------------------------------
-     Open modal
-  ---------------------------------------------------------- */
-  function openModal(center) {
-    var modal = document.getElementById("evac-map-modal");
-    if (!modal) return;
+  function makeCenterIcon(statusColor, statusBorder) {
+    var svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="30" height="40" viewBox="0 0 32 42">' +
+      '<defs><filter id="ecm-ds" x="-40%" y="-20%" width="180%" height="170%">' +
+      '<feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="rgba(0,0,0,0.4)"/>' +
+      "</filter></defs>" +
+      '<path filter="url(#ecm-ds)" fill="' +
+      statusColor +
+      '" stroke="' +
+      statusBorder +
+      '" stroke-width="1.5" ' +
+      'd="M16 2C9.373 2 4 7.373 4 14c0 9.5 12 26 12 26S28 23.5 28 14C28 7.373 22.627 2 16 2z"/>' +
+      '<circle cx="16" cy="14" r="6" fill="rgba(255,255,255,0.95)"/>' +
+      '<svg x="8" y="6" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="' +
+      statusColor +
+      '" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>' +
+      "</svg>" +
+      "</svg>";
+    return L.divIcon({
+      html: svg,
+      className: "",
+      iconSize: [30, 40],
+      iconAnchor: [15, 40],
+      popupAnchor: [0, -42],
+    });
+  }
 
-    var occ = parseInt(center.occupancy) || 0;
-    var cap = parseInt(center.capacity) || 0;
-    var pct = cap > 0 ? Math.round((occ / cap) * 100) : 0;
-
-    /* status */
-    var statusText, statusColor, statusBg;
-    if (occ >= cap) {
-      statusText = "Full";
-      statusColor = "#dc2626";
-      statusBg = "#fef2f2";
-    } else if (occ >= cap * 0.8) {
-      statusText = "Near Full";
-      statusColor = "#d97706";
-      statusBg = "#fffbeb";
-    } else {
-      statusText = "Available";
-      statusColor = "#16a34a";
-      statusBg = "#f0fdf4";
-    }
-
-    /* bar color */
-    var barColor =
-      occ >= cap ? "#ef4444" : occ >= cap * 0.8 ? "#eab308" : "#22c55e";
-
-    /* Google Maps link */
-    var lat = parseFloat(center.lat);
-    var lng = parseFloat(center.lng);
+  function buildMarkerPopup(center, occ, cap, pct, status) {
+    var lat = parseFloat(center.latitude);
+    var lng = parseFloat(center.longitude);
     var gmapsUrl =
       !isNaN(lat) && !isNaN(lng)
         ? "https://www.google.com/maps?q=" + lat + "," + lng
         : null;
 
-    /* populate header */
-    document.getElementById("evac-modal-name").textContent = center.name;
-    document.getElementById("evac-modal-location").textContent = center.address;
-
-    /* capacity bar */
-    var barEl = document.getElementById("evac-modal-bar-fill");
-    if (barEl) {
-      barEl.style.width = pct + "%";
-      barEl.style.background = barColor;
-    }
-
-    /* capacity text */
-    var occEl = document.getElementById("evac-modal-occ");
-    if (occEl) occEl.textContent = occ + " / " + cap + " (" + pct + "%)";
-
-    /* status badge */
-    var badgeEl = document.getElementById("evac-modal-status");
-    if (badgeEl) {
-      badgeEl.textContent = statusText;
-      badgeEl.style.color = statusColor;
-      badgeEl.style.background = statusBg;
-      badgeEl.style.borderColor = statusColor + "33";
-    }
-
-    /* Google Maps button */
-    var gmBtn = document.getElementById("evac-modal-gmaps");
-    if (gmBtn) {
-      if (gmapsUrl) {
-        gmBtn.href = gmapsUrl;
-        gmBtn.style.display = "flex";
-      } else {
-        gmBtn.style.display = "none";
-      }
-    }
-
-    modal.style.display = "flex";
-
-    if (!isNaN(lat) && !isNaN(lng)) {
-      initModalMap(lat, lng, center.name, center.address);
-    } else {
-      document.getElementById("evac-modal-map").innerHTML =
-        "<p style='padding:24px;color:#64748b;text-align:center;'>No location data available.</p>";
-    }
+    return (
+      '<div class="ecm-popup">' +
+      '<div class="ecm-popup__header" style="background:' +
+      status.color +
+      ';">' +
+      '<div class="ecm-popup__eyebrow">Evacuation Center</div>' +
+      '<div class="ecm-popup__title">' +
+      escHtml(center.center_name) +
+      "</div>" +
+      "</div>" +
+      '<div class="ecm-popup__body">' +
+      '<div class="ecm-popup__address">' +
+      escHtml(center.location || "—") +
+      "</div>" +
+      '<div class="ecm-popup__occ-row">' +
+      '<span class="ecm-popup__occ-label">Occupancy</span>' +
+      '<span class="ecm-popup__occ-value">' +
+      occ +
+      " / " +
+      cap +
+      "</span>" +
+      "</div>" +
+      '<div class="ecm-popup__bar-wrap">' +
+      '<div class="ecm-popup__bar-fill" style="width:' +
+      Math.min(pct, 100) +
+      "%;background:" +
+      status.color +
+      ';"></div>' +
+      "</div>" +
+      '<span class="ecm-popup__badge" style="background:' +
+      status.color +
+      "22;color:" +
+      status.border +
+      ';">' +
+      status.label +
+      "</span>" +
+      (gmapsUrl
+        ? '<a class="ecm-popup__gmaps" href="' +
+          gmapsUrl +
+          '" target="_blank" rel="noopener noreferrer">Open in Google Maps</a>'
+        : "") +
+      "</div>" +
+      "</div>"
+    );
   }
 
   /* ----------------------------------------------------------
-     Close modal
+     Init map (#evac-centers-map)
   ---------------------------------------------------------- */
-  function closeModal() {
-    var modal = document.getElementById("evac-map-modal");
-    if (modal) modal.style.display = "none";
-    if (evacMap) {
-      evacMap.remove();
-      evacMap = null;
-      evacMarker = null;
+  function initPageMap() {
+    var mapDiv = document.getElementById("evac-centers-map");
+    if (!mapDiv || typeof L === "undefined") return;
+
+    if (pageMap) {
+      pageMap.invalidateSize();
+      return;
+    }
+
+    pageMap = L.map("evac-centers-map", {
+      center: BOCAUE_CENTER,
+      zoom: 14,
+      minZoom: 13,
+      maxZoom: 19,
+      maxBounds: BOCAUE_BOUNDS,
+      maxBoundsViscosity: 1.0,
+    });
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 19,
+    }).addTo(pageMap);
+
+    applyBoundaryLayer(pageMap);
+    addCurrentLocationControl(pageMap);
+
+    setTimeout(function () {
+      pageMap.invalidateSize();
+    }, 150);
+  }
+
+  function renderPageMarkers(centers) {
+    if (!pageMap) return;
+
+    Object.keys(pageMarkers).forEach(function (key) {
+      pageMap.removeLayer(pageMarkers[key]);
+    });
+    pageMarkers = {};
+
+    var bounds = [];
+
+    centers.forEach(function (center) {
+      var lat = parseFloat(center.latitude);
+      var lng = parseFloat(center.longitude);
+      if (isNaN(lat) || isNaN(lng)) return;
+
+      var occ = parseInt(center.occupancy) || 0;
+      var cap = parseInt(center.capacity) || 0;
+      var pct = cap > 0 ? Math.round((occ / cap) * 100) : 0;
+      var status = getStatus(occ, cap);
+
+      var marker = L.marker([lat, lng], {
+        icon: makeCenterIcon(status.color, status.border),
+      })
+        .addTo(pageMap)
+        .bindPopup(buildMarkerPopup(center, occ, cap, pct, status), {
+          maxWidth: 280,
+          minWidth: 240,
+          className: "ecm-popup-wrap",
+        });
+
+      var key = String(center.center_id || center.center_name);
+      pageMarkers[key] = marker;
+      bounds.push([lat, lng]);
+    });
+
+    if (bounds.length > 1) {
+      pageMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 16 });
+    } else if (bounds.length === 1) {
+      pageMap.setView(bounds[0], 15);
+    }
+  }
+
+  /* Pan/fly to a center's marker and open its popup — used when a
+     table row is clicked. */
+  function focusCenterOnMap(center) {
+    if (!pageMap) return;
+    var lat = parseFloat(center.latitude);
+    var lng = parseFloat(center.longitude);
+    if (isNaN(lat) || isNaN(lng)) return;
+
+    var key = String(center.center_id || center.center_name);
+    var marker = pageMarkers[key];
+
+    pageMap.flyTo([lat, lng], 17, { duration: 0.7 });
+
+    if (marker) {
+      setTimeout(function () {
+        marker.openPopup();
+      }, 700);
+    }
+
+    var mapCard = document.querySelector(".evac-map-card");
+    if (mapCard && window.innerWidth <= 1100) {
+      mapCard.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }
 
   /* ----------------------------------------------------------
-     Render evac table
+     Render evac table — clicking a row flies to the marker
   ---------------------------------------------------------- */
   function renderTable(data) {
     var tbody = document.getElementById("evac-monitor-tbody");
@@ -308,14 +364,7 @@
 
       (function (c) {
         tr.addEventListener("click", function () {
-          openModal({
-            name: c.center_name,
-            address: c.location || "—",
-            lat: c.latitude,
-            lng: c.longitude,
-            occupancy: c.occupancy,
-            capacity: c.capacity,
-          });
+          focusCenterOnMap(c);
         });
       })(center);
 
@@ -344,88 +393,17 @@
         if (!json.success || !json.data || json.data.length === 0) {
           tbody.innerHTML =
             "<tr class='empty-row'><td colspan='3'>No evacuation centers to display.</td></tr>";
+          renderPageMarkers([]);
           return;
         }
         allCenters = json.data;
         renderTable(allCenters);
+        renderPageMarkers(allCenters);
       })
       .catch(function (err) {
         console.error("Evac monitor error:", err);
         tbody.innerHTML =
           "<tr class='empty-row'><td colspan='3'>Failed to load.</td></tr>";
-      });
-  }
-
-  /* ----------------------------------------------------------
-     Inject modal HTML
-  ---------------------------------------------------------- */
-  function injectModal() {
-    if (document.getElementById("evac-map-modal")) return;
-
-    var div = document.createElement("div");
-    div.innerHTML =
-      '<div id="evac-map-modal" style="display:none;position:fixed;inset:0;z-index:9999;' +
-      'background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">' +
-      '<div style="background:#fff;border-radius:16px;width:90%;max-width:580px;' +
-      "overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.22);font-family:'Segoe UI',system-ui,sans-serif;\">" +
-      /* ── Header ── */
-      '<div style="padding:16px 20px;border-bottom:1px solid #f1f5f9;">' +
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">' +
-      '<div style="flex:1;min-width:0;">' +
-      '<div id="evac-modal-name" style="font-weight:700;font-size:1rem;color:#0f172a;"></div>' +
-      '<div id="evac-modal-location" style="font-size:0.78rem;color:#64748b;margin-top:2px;"></div>' +
-      "</div>" +
-      '<button id="evac-modal-close" style="background:none;border:none;cursor:pointer;' +
-      'padding:4px;color:#94a3b8;display:flex;align-items:center;flex-shrink:0;">' +
-      '<span class="material-symbols-outlined">close</span>' +
-      "</button>" +
-      "</div>" +
-      /* capacity + status row */
-      '<div style="display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap;">' +
-      '<div style="flex:1;min-width:140px;">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
-      '<span style="font-size:0.7rem;font-weight:600;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;">Occupancy</span>' +
-      '<span id="evac-modal-occ" style="font-size:0.75rem;font-weight:700;color:#334155;"></span>' +
-      "</div>" +
-      '<div style="height:7px;border-radius:99px;background:#f1f5f9;overflow:hidden;">' +
-      '<div id="evac-modal-bar-fill" style="height:100%;border-radius:99px;transition:width 0.4s ease;width:0%;"></div>' +
-      "</div>" +
-      "</div>" +
-      '<span id="evac-modal-status" style="font-size:0.72rem;font-weight:700;' +
-      'padding:4px 10px;border-radius:99px;border:1.5px solid;white-space:nowrap;"></span>' +
-      "</div>" +
-      "</div>" +
-      /* ── Map ── */
-      '<div id="evac-modal-map" style="height:300px;width:100%;"></div>' +
-      /* ── Footer: Google Maps button ── */
-      '<div style="padding:12px 16px;border-top:1px solid #f1f5f9;">' +
-      '<a id="evac-modal-gmaps" href="#" target="_blank" rel="noopener noreferrer" ' +
-      'style="display:flex;align-items:center;justify-content:center;gap:7px;' +
-      "padding:9px 14px;border-radius:9px;background:#f8fafc;border:1.5px solid #e2e8f0;" +
-      "text-decoration:none;color:#1e40af;font-size:0.78rem;font-weight:600;" +
-      'transition:background 0.15s;cursor:pointer;">' +
-      '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" ' +
-      'stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
-      '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>' +
-      "</svg>" +
-      "Open in Google Maps" +
-      "</a>" +
-      "</div>" +
-      "</div>" +
-      "</div>";
-
-    document.body.appendChild(div.firstChild);
-
-    document
-      .getElementById("evac-modal-close")
-      .addEventListener("click", function (e) {
-        e.stopPropagation();
-        closeModal();
-      });
-    document
-      .getElementById("evac-map-modal")
-      .addEventListener("click", function (e) {
-        if (e.target === this) closeModal();
       });
   }
 
@@ -446,8 +424,19 @@
   ---------------------------------------------------------- */
   function init() {
     if (!document.getElementById("evac-monitor-tbody")) return;
-    injectModal();
+    setTimeout(initPageMap, 150);
     loadEvacMonitor();
+
+    document.querySelectorAll(".nav-link").forEach(function (link) {
+      link.addEventListener("click", function () {
+        setTimeout(function () {
+          if (document.getElementById("evac-centers-map")) {
+            initPageMap();
+            if (allCenters.length) renderPageMarkers(allCenters);
+          }
+        }, 200);
+      });
+    });
   }
 
   if (document.readyState === "loading") {

@@ -196,7 +196,14 @@ if ($result && $result->num_rows > 0):
                 <div class="post-card__map-btns">
                     <?php if (!empty($report['latitude']) && !empty($report['longitude'])): ?>
                         <button type="button" class="btn-map" data-lat="<?= $report['latitude'] ?>"
-                            data-lng="<?= $report['longitude'] ?>" data-name="<?= htmlspecialchars($report['full_name']) ?>">
+                            data-lng="<?= $report['longitude'] ?>" data-name="<?= htmlspecialchars($report['full_name']) ?>"
+                            data-address="<?= $address ?>" data-date="<?= htmlspecialchars($date) ?>"
+                            data-description="<?= htmlspecialchars($report['description']) ?>"
+                            data-image="<?= htmlspecialchars($imageSrc) ?>"
+                            data-water="<?= htmlspecialchars($report['water_level'] ?? '') ?>"
+                            data-severity="<?= htmlspecialchars($report['severity'] ?? '') ?>"
+                            data-rescue-status="<?= htmlspecialchars($rescueStatus) ?>"
+                            data-people="<?= (int) ($report['rescue_people_count'] ?? 0) ?>">
                             View on Map 📍
                         </button>
                         <a class="btn-gmaps"

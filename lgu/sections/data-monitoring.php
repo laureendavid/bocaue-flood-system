@@ -7,7 +7,6 @@
     <div class="map-card">
       <h3>Flood Monitoring Map</h3>
 
-      <!-- ✅ IDAGDAG: Date + Severity filter bars -->
       <div class="map-filter-stack">
         <div id="flood-date-filter-bar"></div>
         <div id="flood-date-active-info" class="date-active-info"></div>
@@ -31,26 +30,36 @@
     </aside>
   </div>
 
+  <!-- Evacuation Centers: map (left) + table (right) -->
   <section class="evac-section" aria-labelledby="evac-monitor-heading">
     <div class="dashboard-section-head">
       <h3 id="evac-monitor-heading">Evacuation Centers</h3>
       <p class="section-note">Click a center to view its location on the map.</p>
     </div>
-    <div class="evac-table-wrap evac-table-wrap--mt evac-table-scroll">
-      <table aria-label="Evacuation center status">
-        <thead>
-          <tr>
-            <th class="col-center">Center</th>
-            <th class="col-capacity">Capacity</th>
-            <th class="col-status">Status</th>
-          </tr>
-        </thead>
-        <tbody id="evac-monitor-tbody">
-          <tr class="empty-row">
-            <td colspan="3">Loading...</td>
-          </tr>
-        </tbody>
-      </table>
+
+    <div class="evac-split-row">
+      <div class="evac-map-card">
+        <div id="evac-centers-map" class="evac-centers-map"></div>
+      </div>
+
+      <div class="evac-table-col">
+        <div class="evac-table-wrap evac-table-scroll-col">
+          <table aria-label="Evacuation center status">
+            <thead>
+              <tr>
+                <th class="col-center">Center</th>
+                <th class="col-capacity">Capacity</th>
+                <th class="col-status">Status</th>
+              </tr>
+            </thead>
+            <tbody id="evac-monitor-tbody">
+              <tr class="empty-row">
+                <td colspan="3">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </section>
 </section>

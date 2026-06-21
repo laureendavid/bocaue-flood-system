@@ -2638,3 +2638,352 @@ html.dark .announce-card {
     display: none;
   }
 }
+/* Hotlines panel — match LGU style: bigger barangay name, no blue on number */
+.rdb-hotline-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.rdb-hotline-row span:last-child {
+  font-weight: 600;
+  font-family: monospace;
+  color: #334155;
+}
+/* ===== EVACUATION CENTERS — table (left) + map (right), stretch to bottom ===== */
+.evac-split-row {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr; /* table kaliwa, map kanan, mas malapad */
+  gap: 20px;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+}
+
+.evac-map-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--lgu-card, #fff);
+  border: 1px solid var(--lgu-border, #dbe7ff);
+  border-radius: var(--lgu-radius, 16px);
+  box-shadow: var(--lgu-shadow, 0 12px 30px rgba(15, 23, 42, 0.1));
+  padding: 12px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.evac-centers-map {
+  width: 100%;
+  flex: 1;
+  min-height: 400px;
+  border-radius: 12px;
+  border: 1px solid var(--lgu-border, #dbe7ff);
+}
+
+.evac-table-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.evac-table-scroll-col {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.evac-table-scroll-col::-webkit-scrollbar {
+  width: 4px;
+}
+.evac-table-scroll-col::-webkit-scrollbar-thumb {
+  background: var(--lgu-border, #dbe7ff);
+  border-radius: 999px;
+}
+
+/* Page needs to be a flex column with room to stretch */
+#page-evacuation-center.active {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 1100px) {
+  .evac-split-row {
+    grid-template-columns: 1fr;
+    flex: none;
+  }
+  .evac-centers-map {
+    min-height: 360px;
+    flex: none;
+  }
+  .evac-table-scroll-col {
+    max-height: 420px;
+    flex: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .evac-centers-map {
+    min-height: 280px;
+  }
+  .evac-table-scroll-col {
+    max-height: 360px;
+  }
+}
+
+/* ===== Filter dropdown — fix z-index so it's not covered by the map ===== */
+.filter-wrapper {
+  position: relative;
+  z-index: 200;
+}
+
+#evac-filter-dropdown {
+  z-index: 500 !important;
+}
+
+.evac-map-card,
+.evac-centers-map {
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== Marker popup styling (used by evac-monitor.js page map) ===== */
+.ecm-popup-wrap .leaflet-popup-content-wrapper {
+  padding: 0 !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.22);
+}
+.ecm-popup-wrap .leaflet-popup-content {
+  margin: 0 !important;
+  width: 260px !important;
+}
+.ecm-popup-wrap .leaflet-popup-tip {
+  background: #fff;
+}
+.ecm-popup {
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  width: 100%;
+}
+.ecm-popup__header {
+  padding: 10px 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.ecm-popup__eyebrow {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.ecm-popup__title {
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: 2px;
+}
+.ecm-popup__body {
+  padding: 12px 14px 14px;
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
+}
+.ecm-popup__address {
+  font-size: 0.78rem;
+  color: #475569;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+.ecm-popup__occ-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+  width: 100%;
+}
+.ecm-popup__occ-label {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ecm-popup__occ-value {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+.ecm-popup__bar-wrap {
+  height: 7px;
+  border-radius: 99px;
+  background: #f1f5f9;
+  overflow: hidden;
+  margin-bottom: 10px;
+  width: 100%;
+}
+.ecm-popup__bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.3s ease;
+}
+.ecm-popup__badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 99px;
+}
+.ecm-popup__gmaps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  text-decoration: none;
+  color: #1e40af;
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ecm-popup__gmaps:hover {
+  background: #eff6ff;
+}
+/* ===== Report Marker Popup (used by community feed "View on Map") ===== */
+.rpm-popup-wrap .leaflet-popup-content-wrapper {
+  padding: 0 !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.22);
+}
+.rpm-popup-wrap .leaflet-popup-content {
+  margin: 0 !important;
+  width: 270px !important;
+}
+.rpm-popup-wrap .leaflet-popup-tip {
+  background: #fff;
+}
+.rpm-popup {
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  width: 100%;
+}
+.rpm-popup__header {
+  padding: 10px 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.rpm-popup__eyebrow {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.rpm-popup__title {
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: 2px;
+}
+.rpm-popup__image {
+  width: 100%;
+  height: 130px;
+  overflow: hidden;
+  background: #f1f5f9;
+}
+.rpm-popup__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.rpm-popup__body {
+  padding: 12px 14px 14px;
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
+}
+.rpm-popup__row {
+  font-size: 0.76rem;
+  color: #475569;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+.rpm-popup__row--muted {
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+.rpm-popup__desc {
+  font-size: 0.78rem;
+  color: #334155;
+  line-height: 1.5;
+  margin: 6px 0 10px;
+  white-space: pre-line;
+  max-height: 90px;
+  overflow-y: auto;
+}
+.rpm-popup__alert {
+  background: #fff8f0;
+  border-left: 3px solid #f59e0b;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #92400e;
+  margin-bottom: 10px;
+}
+.rpm-popup__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.rpm-popup__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+}
+.rpm-popup__tag--water {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+.rpm-popup__badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 99px;
+  margin-bottom: 4px;
+}
+.rpm-popup__gmaps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  text-decoration: none;
+  color: #1e40af;
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.rpm-popup__gmaps:hover {
+  background: #eff6ff;
+}
