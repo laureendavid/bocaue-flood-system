@@ -86,14 +86,8 @@
           </div>
           <div class="au-form-group au-form-group--sm">
             <label class="au-label" for="au_suffix">Suffix</label>
-            <select id="au_suffix" name="suffix" class="au-input">
-              <option value="">—</option>
-              <option value="JR">JR</option>
-              <option value="SR">SR</option>
-              <option value="II">II</option>
-              <option value="III">III</option>
-              <option value="IV">IV</option>
-            </select>
+            <input type="text" id="au_suffix" name="suffix" class="au-input" placeholder="Jr, Sr, III…" maxlength="10"
+              autocomplete="off" />
           </div>
         </div>
 
@@ -107,29 +101,12 @@
         <!-- Barangay + Role -->
         <div class="au-field-row">
           <div class="au-form-group">
-            <label class="au-label" for="au_barangay">Barangay <span class="au-required">*</span></label>
-            <select id="au_barangay" name="barangay_id" class="au-input" required>
-              <option value="" disabled selected>Select barangay</option>
-              <option value="1" data-name="Antipona">Antipona</option>
-              <option value="2" data-name="Bagumbayan">Bagumbayan</option>
-              <option value="3" data-name="Bambang">Bambang</option>
-              <option value="4" data-name="Batia">Batia</option>
-              <option value="5" data-name="Biñang 1st">Biñang 1st</option>
-              <option value="6" data-name="Biñang 2nd">Biñang 2nd</option>
-              <option value="7" data-name="Bolacan">Bolacan</option>
-              <option value="8" data-name="Bundukan">Bundukan</option>
-              <option value="9" data-name="Bunlo">Bunlo</option>
-              <option value="10" data-name="Caingin">Caingin</option>
-              <option value="11" data-name="Duhat">Duhat</option>
-              <option value="12" data-name="Igulot">Igulot</option>
-              <option value="13" data-name="Lolomboy">Lolomboy</option>
-              <option value="14" data-name="Poblacion">Poblacion</option>
-              <option value="15" data-name="Sulucan">Sulucan</option>
-              <option value="16" data-name="Taal">Taal</option>
-              <option value="17" data-name="Tambobong">Tambobong</option>
-              <option value="18" data-name="Turo">Turo</option>
-              <option value="19" data-name="Wakas">Wakas</option>
-            </select>
+            <label class="au-label">Barangay <span class="au-required">*</span></label>
+            <div id="au_barangay_display"
+              style="padding:10px 12px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;color:#475569;font-size:0.92rem;min-height:42px;">
+              Pin the map to detect barangay
+            </div>
+            <input type="hidden" id="au_barangay" name="barangay_id" />
           </div>
           <div class="au-form-group">
             <label class="au-label" for="au_role">Role <span class="au-required">*</span></label>

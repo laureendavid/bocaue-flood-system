@@ -90,7 +90,8 @@
             </div>
             <div class="form-group">
                 <label for="edit-center-address">Address</label>
-                <input type="text" id="edit-center-address" class="form-input" />
+                <input type="text" id="edit-center-address" class="form-input" readonly
+                    style="background:#f1f5f9; color:#64748b; cursor:not-allowed;" />
             </div>
             <div class="form-group">
                 <label for="edit-center-capacity">Capacity</label>

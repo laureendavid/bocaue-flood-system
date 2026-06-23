@@ -206,7 +206,7 @@ document.querySelectorAll('input[name="um-role"]').forEach((radio) => {
     matchText.textContent = "";
     latEl.value = "";
     lngEl.value = "";
-    setMapStatus("Select a barangay or drag the pin.");
+    setMapStatus("Click the map or use GPS to detect barangay.");
   }
 
   if (openBtn) openBtn.addEventListener("click", openModal);
@@ -241,62 +241,129 @@ document.querySelectorAll('input[name="um-role"]').forEach((radio) => {
 
   /* Reverse geocode → fill address field (same logic as registration) */
   function reverseGeocode(latlng, updateField) {
-    setMapStatus("Resolving address…");
+    setMapStatus("Detecting location…");
+
+    var bocaueBrgy = [
+      { id: 1, name: "Antipona" },
+      { id: 2, name: "Bagumbayan" },
+      { id: 3, name: "Bambang" },
+      { id: 4, name: "Batia" },
+      { id: 5, name: "Biñang 1st" },
+      { id: 6, name: "Biñang 2nd" },
+      { id: 7, name: "Bolacan" },
+      { id: 8, name: "Bundukan" },
+      { id: 9, name: "Bunlo" },
+      { id: 10, name: "Caingin" },
+      { id: 11, name: "Duhat" },
+      { id: 12, name: "Igulot" },
+      { id: 13, name: "Lolomboy" },
+      { id: 14, name: "Poblacion" },
+      { id: 15, name: "Sulucan" },
+      { id: 16, name: "Taal" },
+      { id: 17, name: "Tambobong" },
+      { id: 18, name: "Turo" },
+      { id: 19, name: "Wakas" },
+    ];
+
     fetch(
-      "https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&lat=" +
-        encodeURIComponent(latlng.lat) +
+      "https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&namedetails=1&zoom=18&lat=" +
+        latlng.lat.toFixed(7) +
         "&lon=" +
-        encodeURIComponent(latlng.lng),
-      { headers: { Accept: "application/json" } },
+        latlng.lng.toFixed(7),
+      {
+        headers: { Accept: "application/json", "Accept-Language": "en" },
+        cache: "no-store",
+      },
     )
       .then(function (r) {
         return r.json();
       })
       .then(function (d) {
-        var addr = d && d.display_name ? d.display_name : "";
-        if (updateField && addr) {
-          addressEl.value = addr;
-        }
-        setMapStatus(
-          addr
-            ? "Address updated from map pin."
-            : "Location updated. Enter address manually.",
-        );
-      })
-      .catch(function () {
-        setMapStatus("Could not fetch address. Enter manually.");
-      });
-  }
-
-  /* Forward geocode → move pin (triggered when address field loses focus) */
-  function forwardGeocode(query) {
-    setMapStatus("Matching typed address to map…");
-    fetch(
-      "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=" +
-        encodeURIComponent(query + ", Bocaue, Bulacan, Philippines"),
-      { headers: { Accept: "application/json" } },
-    )
-      .then(function (r) {
-        return r.json();
-      })
-      .then(function (data) {
-        if (!data || !data.length) {
-          setMapStatus("Address kept as manual entry.");
+        if (!d) {
+          setMapStatus("Could not detect location. Try again.");
           return;
         }
-        var latlng = keepInsideBounds(
-          L.latLng(parseFloat(data[0].lat), parseFloat(data[0].lon)),
-          auMap.options._strictBounds,
-        );
-        suppressMarkerMove = true;
-        auMarker.setLatLng(latlng);
-        updateLatLng(latlng);
-        auMap.panTo(latlng);
-        suppressMarkerMove = false;
-        setMapStatus("Marker updated from typed address.");
+
+        // Build address same as resident.js formatReverseAddress()
+        var addr = d.address || {};
+        var primary =
+          addr.amenity ||
+          addr.tourism ||
+          addr.building ||
+          addr.shop ||
+          addr.leisure ||
+          addr.attraction ||
+          addr.hotel ||
+          addr.resort ||
+          d.name ||
+          "";
+        var road =
+          addr.road || addr.pedestrian || addr.footway || addr.path || "";
+        var locality =
+          addr.suburb ||
+          addr.neighbourhood ||
+          addr.quarter ||
+          addr.hamlet ||
+          addr.village ||
+          "";
+        var city = addr.city || addr.town || addr.municipality || "Bocaue";
+        var province = addr.province || addr.state || "Bulacan";
+
+        var parts = [primary, road, locality, city, province]
+          .map(function (p) {
+            return String(p || "").trim();
+          })
+          .filter(Boolean);
+
+        var formatted =
+          parts.length > 0
+            ? parts
+                .filter(function (v, i, a) {
+                  return a.indexOf(v) === i;
+                })
+                .join(", ")
+            : (d.display_name || "").split(",").slice(0, 5).join(",").trim();
+
+        if (updateField) {
+          addressEl.value = formatted;
+        }
+
+        // Search full address string for any of the 19 barangay names
+        var fullText = (d.display_name || "").toLowerCase();
+        var matched = null;
+
+        for (var i = 0; i < bocaueBrgy.length; i++) {
+          var brgy = bocaueBrgy[i];
+          // Normalize: remove accents, lowercase
+          var brgyName = brgy.name
+            .toLowerCase()
+            .replace(/ñ/g, "n")
+            .replace(/[^a-z0-9\s]/g, "");
+          var searchText = fullText
+            .replace(/ñ/g, "n")
+            .replace(/[^a-z0-9\s]/g, "");
+
+          if (searchText.includes(brgyName)) {
+            matched = brgy;
+            break;
+          }
+        }
+
+        var display = document.getElementById("au_barangay_display");
+        var hiddenInput = document.getElementById("au_barangay");
+
+        if (matched) {
+          if (display) display.textContent = matched.name;
+          if (hiddenInput) hiddenInput.value = matched.id;
+          setMapStatus("Barangay: " + matched.name + ". Drag pin to adjust.");
+        } else {
+          if (display) display.textContent = "Not detected — try dragging pin";
+          if (hiddenInput) hiddenInput.value = "";
+          setMapStatus("Barangay not found. Try dragging pin.");
+        }
       })
       .catch(function () {
-        setMapStatus("Address updated manually.");
+        setMapStatus("Could not fetch address. Try again.");
       });
   }
 
@@ -364,60 +431,6 @@ document.querySelectorAll('input[name="um-role"]').forEach((radio) => {
     });
   }
 
-  /* ── Barangay → pre-fill address AND pan map ── */
-  var barangayCoords = {
-    1: [14.8083, 120.906], // Antipona
-    2: [14.7958, 120.9158], // Bagumbayan
-    3: [14.8003, 120.9283], // Bambang
-    4: [14.79, 120.905], // Batia
-    5: [14.7836, 120.9497], // Biñang 1st
-    6: [14.78, 120.955], // Biñang 2nd
-    7: [14.82, 120.94], // Bolacan
-    8: [14.81, 120.95], // Bundukan
-    9: [14.795, 120.935], // Bunlo
-    10: [14.785, 120.915], // Caingin
-    11: [14.77, 120.925], // Duhat
-    12: [14.805, 120.92], // Igulot
-    13: [14.76, 120.945], // Lolomboy
-    14: [14.7962, 120.926], // Poblacion
-    15: [14.815, 120.91], // Sulucan
-    16: [14.805, 120.935], // Taal
-    17: [14.825, 120.925], // Tambobong
-    18: [14.775, 120.935], // Turo
-    19: [14.765, 120.915], // Wakas
-  };
-
-  barangayEl.addEventListener("change", function () {
-    var selected = this.options[this.selectedIndex];
-    var brgName = selected
-      ? selected.getAttribute("data-name") || selected.text
-      : "";
-    var val = this.value;
-
-    /* 1. Pre-fill address field */
-    if (brgName) {
-      addressEl.value = "Barangay " + brgName + ", Bocaue, Bulacan";
-    }
-
-    /* 2. Pan map to barangay center if map is ready */
-    if (auMap && auMarker && barangayCoords[val]) {
-      var latlng = L.latLng(barangayCoords[val][0], barangayCoords[val][1]);
-      suppressMarkerMove = true;
-      auMarker.setLatLng(latlng);
-      updateLatLng(latlng);
-      auMap.panTo(latlng);
-      suppressMarkerMove = false;
-      setMapStatus("Showing " + brgName + ". Drag pin for exact location.");
-    }
-  });
-
-  /* ── Address blur → move pin (same as registration page) ── */
-  addressEl.addEventListener("blur", function () {
-    var val = this.value.trim();
-    if (!val || suppressMarkerMove || !auMap) return;
-    forwardGeocode(val);
-  });
-
   /* ── GPS button ── */
   gpsBtn.addEventListener("click", function () {
     if (!navigator.geolocation) {
@@ -440,20 +453,6 @@ document.querySelectorAll('input[name="um-role"]').forEach((radio) => {
       },
       { enableHighAccuracy: true, timeout: 10000 },
     );
-  });
-
-  /* ── Uppercase (typing, paste, autofill) ── */
-  ["au_first_name", "au_last_name"].forEach(function (id) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    function forceUpper() {
-      el.value = el.value.toUpperCase();
-    }
-    el.addEventListener("input", forceUpper);
-    el.addEventListener("change", forceUpper);
-    el.addEventListener("paste", function () {
-      setTimeout(forceUpper, 0);
-    });
   });
 
   /* ── Password toggle ── */

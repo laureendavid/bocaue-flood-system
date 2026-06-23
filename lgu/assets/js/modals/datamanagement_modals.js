@@ -167,26 +167,53 @@ function updateDisplay(lat, lng) {
   document.getElementById("center-address").value =
     `${lat.toFixed(7)}, ${lng.toFixed(7)}`;
 
-  // 4. Reverse geocode with Nominatim (clean address format)
+  // 4. Reverse geocode with Nominatim (same logic as usermanagement.js)
   fetch(
-    `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
+    `https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&namedetails=1&zoom=18&lat=${lat.toFixed(7)}&lon=${lng.toFixed(7)}`,
+    {
+      headers: { Accept: "application/json", "Accept-Language": "en" },
+      cache: "no-store",
+    },
   )
     .then((res) => res.json())
     .then((data) => {
+      if (!data) {
+        if (nameInput) {
+          nameInput.value = "";
+          nameInput.style.color = "#1e293b";
+        }
+        return;
+      }
+
       const a = data.address || {};
 
-      // Build a clean readable address from the parts we care about
-      const parts = [
-        a.house_number && a.road ? `${a.house_number} ${a.road}` : a.road,
-        a.suburb || a.village || a.neighbourhood || a.hamlet,
-        a.town || a.city || a.municipality,
-        a.province || a.state,
-      ].filter(Boolean); // remove undefined/null/empty parts
+      const primary =
+        a.amenity ||
+        a.tourism ||
+        a.building ||
+        a.shop ||
+        a.leisure ||
+        a.attraction ||
+        a.hotel ||
+        a.resort ||
+        data.name ||
+        "";
+      const road = a.road || a.pedestrian || a.footway || a.path || "";
+      const locality =
+        a.suburb || a.neighbourhood || a.quarter || a.hamlet || a.village || "";
+      const city = a.city || a.town || a.municipality || "Bocaue";
+      const province = a.province || a.state || "Bulacan";
+
+      const parts = [primary, road, locality, city, province]
+        .map((p) => String(p || "").trim())
+        .filter(Boolean)
+        .filter((v, i, arr) => arr.indexOf(v) === i); // deduplicate
 
       const locationName =
         parts.length > 0
           ? parts.join(", ")
-          : `${lat.toFixed(7)}, ${lng.toFixed(7)}`;
+          : (data.display_name || "").split(",").slice(0, 5).join(",").trim() ||
+            `${lat.toFixed(7)}, ${lng.toFixed(7)}`;
 
       if (nameInput) {
         nameInput.value = locationName;

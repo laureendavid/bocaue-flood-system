@@ -19,9 +19,9 @@ if (($_POST['action'] ?? '') !== 'add_user_lgu') {
 }
 
 /* ---- Collect & sanitize ---- */
-$firstName = strtoupper(trim($_POST['first_name'] ?? ''));
-$lastName = strtoupper(trim($_POST['last_name'] ?? ''));
-$suffix = strtoupper(trim($_POST['suffix'] ?? ''));
+$firstName = trim($_POST['first_name'] ?? '');
+$lastName = trim($_POST['last_name'] ?? '');
+$suffix = trim($_POST['suffix'] ?? '');
 $email = trim($_POST['email'] ?? '');
 $barangayId = (int) ($_POST['barangay_id'] ?? 0);
 $roleId = (int) ($_POST['role_id'] ?? 0);
