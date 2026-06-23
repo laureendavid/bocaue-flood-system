@@ -198,7 +198,8 @@ if ($action === 'password') {
         redirectWithFlash($redirectBase, 'error', 'Please fill in all password fields.');
     }
 
-    if (strlen($newPassword) < 12
+    if (
+        strlen($newPassword) < 12
         || !preg_match('/[A-Za-z]/', $newPassword)
         || !preg_match('/[0-9]/', $newPassword)
     ) {

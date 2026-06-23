@@ -1,10 +1,7 @@
 <?php
-/* ================================================================
-   main.php — Rescuer Dashboard
-   Place this file in: C:\xampp\htdocs\soe\rescuer\main.php
-   ================================================================ */
 $requiredRole = 'Rescuer';
 include('../config/auth.php');
+require_once '../config/db.php';
 
 $page = $_GET['page'] ?? 'dashboard';
 $allowedPages = [
@@ -34,6 +31,29 @@ $pageIcons = [
 ];
 
 $currentPageTitle = $pageLabels[$page] ?? 'Dashboard';
+
+// ── Fetch profile picture directly from DB ──
+$navName = $_SESSION['full_name'] ?? 'User';
+$navParts = explode(' ', trim($navName));
+$navInitials = strtoupper(substr($navParts[0], 0, 1) . (isset($navParts[1]) ? substr($navParts[1], 0, 1) : ''));
+$navColors = ['#1d4ed8', '#1e5bb8', '#0b1f47', '#2563eb', '#1e40af', '#1d4ed8'];
+$navBg = $navColors[abs(crc32($navName)) % count($navColors)];
+
+$navPic = '';
+if (!empty($_SESSION['user_id'])) {
+  $picRow = mysqli_fetch_assoc(mysqli_query(
+    $conn,
+    "SELECT profile_picture FROM users WHERE user_id = " . (int) $_SESSION['user_id'] . " LIMIT 1"
+  ));
+  $raw = $picRow['profile_picture'] ?? '';
+  if (!empty($raw)) {
+    if (str_starts_with($raw, 'http://') || str_starts_with($raw, 'https://')) {
+      $navPic = $raw; // Cloudinary
+    } else {
+      $navPic = '../' . ltrim($raw, '/'); // local /uploads/...
+    }
+  }
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -53,16 +73,13 @@ $currentPageTitle = $pageLabels[$page] ?? 'Dashboard';
 <body>
   <div class="app-shell">
 
-    <!-- ===== SIDEBAR OVERLAY (mobile/tablet) ===== -->
     <div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
 
-    <!-- ===== SIDEBAR ===== -->
     <aside id="sidebar" class="sidebar" aria-label="Main navigation">
       <button id="sidebar-close-btn" class="sidebar-close-btn" aria-label="Close navigation">
         <span class="material-symbols-outlined">close</span>
       </button>
 
-      <!-- Brand — same structure as LGU -->
       <div class="sidebar-brand">
         <div class="brand-icon">
           <span class="material-symbols-outlined">person</span>
@@ -91,39 +108,36 @@ $currentPageTitle = $pageLabels[$page] ?? 'Dashboard';
       </div>
     </aside>
 
-    <!-- ===== MAIN CONTENT ===== -->
     <main class="main-content">
 
-      <!-- Top Bar -->
       <div class="topbar" role="banner">
         <button id="hamburger-btn" class="hamburger-btn" aria-label="Open navigation" aria-controls="sidebar">
           <span class="material-symbols-outlined">menu</span>
         </button>
 
-        <!-- Page title + subtitle — same as LGU -->
         <div class="topbar-heading">
           <h1><?= htmlspecialchars($currentPageTitle) ?></h1>
           <p>Rescuer Operations</p>
         </div>
 
-        <!-- Toast notifications -->
         <div id="toast-container"></div>
 
-        <!-- Profile Avatar + Dropdown -->
         <div class="profile-wrapper" id="profile-wrapper">
           <button class="profile-avatar" id="profile-btn" aria-label="Profile menu">
-                    <?php
-                    $navName = $_SESSION['full_name'] ?? 'User';
-                    $navParts = explode(' ', trim($navName));
-                    $navInitials = strtoupper(substr($navParts[0], 0, 1) . (isset($navParts[1]) ? substr($navParts[1], 0, 1) : ''));
-                    $navColors = ['#1d4ed8', '#1e5bb8', '#0b1f47', '#2563eb', '#1e40af', '#1d4ed8'];
-                    $navColorIndex = abs(crc32($navName)) % count($navColors);
-                    $navBg = $navColors[$navColorIndex];
-                    ?>
-            <span
-              style="background:<?= $navBg ?>; width:100%; height:100%; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:700; color:#fff;">
-              <?= htmlspecialchars($navInitials) ?>
-            </span>
+            <?php if (!empty($navPic)): ?>
+              <img src="<?= htmlspecialchars($navPic) ?>" alt="Profile"
+                style="width:100%; height:100%; border-radius:50%; object-fit:cover; display:block;"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+              <span
+                style="display:none; background:<?= $navBg ?>; width:100%; height:100%; border-radius:50%; align-items:center; justify-content:center; font-size:0.85rem; font-weight:700; color:#fff;">
+                <?= htmlspecialchars($navInitials) ?>
+              </span>
+            <?php else: ?>
+              <span
+                style="background:<?= $navBg ?>; width:100%; height:100%; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:700; color:#fff;">
+                <?= htmlspecialchars($navInitials) ?>
+              </span>
+            <?php endif; ?>
           </button>
           <div class="profile-dropdown" id="profile-dropdown">
             <a href="account-settings.php" class="dropdown-item">
@@ -138,7 +152,6 @@ $currentPageTitle = $pageLabels[$page] ?? 'Dashboard';
         </div>
       </div>
 
-      <!-- ===== PAGE SECTION ===== -->
       <?php
       $sectionFile = "sections/{$page}.php";
       if (file_exists($sectionFile)) {
