@@ -867,6 +867,37 @@
       <!-- ── FILTER STACK ── -->
       <div class="community-filter-stack">
 
+        <!-- Search bar -->
+        <div class="comm-filter-bar" id="comm-search-bar">
+          <span class="comm-filter-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            Search
+          </span>
+          <div style="display:flex; align-items:center; gap:6px; flex:1; min-width:0;">
+            <input type="text" id="comm-search-input" placeholder="Search by resident name…" style="
+                flex:1; min-width:0; padding:4px 10px;
+                border-radius:6px; border:1px solid #e2e8f0;
+                background:#fff; color:#1e293b;
+                font-size:0.76rem; font-family:inherit;
+                outline:none; transition:border-color 0.15s;
+            " />
+            <button id="comm-search-clear" style="
+                display:none; padding:3px 8px;
+                border-radius:6px; font-size:0.72rem; font-weight:600;
+                border:1px solid #e2e8f0; background:transparent;
+                color:#64748b; cursor:pointer;
+            ">✕ Clear</button>
+          </div>
+          <span id="comm-search-active-pill" style="
+        display:none; font-size:0.7rem; color:#1e40af;
+        background:#eff6ff; border:0.5px solid #bfdbfe;
+        border-radius:6px; padding:3px 9px; white-space:nowrap;
+    "></span>
+        </div>
         <!-- Date filter bar -->
         <div class="comm-filter-bar" id="comm-date-bar">
           <span class="comm-filter-label">
@@ -1170,6 +1201,7 @@
 
       /* ═══ BARANGAY FILTER STATE ═══ */
       var activeBarangayId = '';
+      var activeSearch = '';
       var barangaySelect = document.getElementById('comm-barangay-select');
 
       fetch('../includes/fetch_barangays.php')
@@ -1193,6 +1225,66 @@
         loadFeed();
       });
 
+      /* ═══════════════════════════════════════════════
+   SEARCH FILTER
+═══════════════════════════════════════════════ */
+      var searchInput = document.getElementById('comm-search-input');
+      var searchClearBtn = document.getElementById('comm-search-clear');
+      var searchPill = document.getElementById('comm-search-active-pill');
+      var searchDebounce = null;
+
+      function setSearchUI(val) {
+        searchClearBtn.style.display = val ? '' : 'none';
+        if (val) {
+          searchPill.style.display = '';
+          searchPill.textContent = '🔍 "' + val + '"';
+        } else {
+          searchPill.style.display = 'none';
+        }
+        searchInput.style.borderColor = val ? '#3b82f6' : '#e2e8f0';
+      }
+
+      function triggerSearch(val) {
+        activeSearch = val.trim();
+        setSearchUI(activeSearch);
+        feedPage = 1; hasMore = true; loading = false;
+        feed.innerHTML = '';
+        loadingEl.style.display = 'block';
+        endEl.style.display = 'none';
+        loadFeed();
+      }
+
+      searchInput.addEventListener('input', function () {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(function () {
+          triggerSearch(searchInput.value);
+        }, 400);
+      });
+
+      searchInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          clearTimeout(searchDebounce);
+          triggerSearch(searchInput.value);
+        }
+      });
+
+      searchClearBtn.addEventListener('click', function () {
+        searchInput.value = '';
+        triggerSearch('');
+        searchInput.focus();
+      });
+
+      /* Clickable profile trigger */
+      document.addEventListener('click', function (e) {
+        var trigger = e.target.closest('.profile-trigger');
+        if (!trigger) return;
+        var name = trigger.dataset.reporterName;
+        if (!name) return;
+        searchInput.value = name;
+        triggerSearch(name);
+        feed.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+
       /* ═══ UPDATED loadFeed() — replaces the original ═══ */
       function loadFeed() {
         if (loading || !hasMore) return;
@@ -1201,6 +1293,7 @@
         var url = '../includes/fetch_communityReports.php?page=' + feedPage;
         if (activeStatus !== 'all') url += '&status=' + encodeURIComponent(activeStatus);
         if (activeBarangayId) url += '&barangay_id=' + encodeURIComponent(activeBarangayId);
+        if (activeSearch) url += '&search=' + encodeURIComponent(activeSearch);
 
         fetch(url)
           .then(function (r) { return r.text(); })

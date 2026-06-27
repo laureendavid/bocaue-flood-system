@@ -34,6 +34,11 @@ if (!empty($_GET['barangay_id'])) {
         $barangayFilter = "AND l.full_address LIKE '%$safeName%'";
     }
 }
+$searchFilter = '';
+if (!empty($_GET['search'])) {
+    $safeSearch = $conn->real_escape_string($_GET['search']);
+    $searchFilter = "AND u.full_name LIKE '%$safeSearch%'";
+}
 
 $sql = "
     SELECT
@@ -69,6 +74,7 @@ $sql = "
     WHERE r.status_id = 2
     $statusFilter
     $barangayFilter
+    $searchFilter
     ORDER BY r.created_at DESC
     LIMIT $limit OFFSET $offset
 ";
@@ -158,11 +164,19 @@ if ($result && $result->num_rows > 0):
                     $colorIndex = abs(crc32($report['full_name'])) % count($avatarColors);
                     $avatarBg = $avatarColors[$colorIndex];
                     ?>
-                    <div class="post-card__avatar post-card__avatar--initials" style="background:<?= $avatarBg ?>;">
+                    <div class="post-card__avatar post-card__avatar--initials profile-trigger"
+                        style="background:<?= $avatarBg ?>; cursor:pointer;"
+                        data-reporter-name="<?= htmlspecialchars($report['full_name']) ?>"
+                        title="View posts by <?= htmlspecialchars($report['full_name']) ?>">
                         <?= $initials ?>
                     </div>
                     <div class="post-card__user-info">
-                        <span class="post-card__name"><?= htmlspecialchars($report['full_name']) ?></span>
+                        <span class="post-card__name profile-trigger"
+                            style="cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px;"
+                            data-reporter-name="<?= htmlspecialchars($report['full_name']) ?>"
+                            title="View posts by <?= htmlspecialchars($report['full_name']) ?>">
+                            <?= htmlspecialchars($report['full_name']) ?>
+                        </span>
                         <span class="post-card__meta"><?= $date ?> &bull; <?= $address ?></span>
                     </div>
                 </div>
