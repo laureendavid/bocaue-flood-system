@@ -680,7 +680,32 @@ document.addEventListener("DOMContentLoaded", () => {
   let notificationOffset = 0;
   let notificationsHasMore = true;
   let notificationsLoading = false;
+  let currentUnreadCount = 0;
   const notificationPageSize = 20;
+  const seenNotificationIds = new Set();
+
+  function dedupeNotificationsById(items) {
+    if (!Array.isArray(items)) return [];
+
+    const unique = [];
+    items.forEach((item) => {
+      const id = String(item?.id ?? "");
+      if (!id || seenNotificationIds.has(id)) {
+        return;
+      }
+      seenNotificationIds.add(id);
+      unique.push(item);
+    });
+
+    return unique;
+  }
+
+  function resetNotificationState() {
+    notificationOffset = 0;
+    notificationsHasMore = true;
+    notificationsCache = [];
+    seenNotificationIds.clear();
+  }
 
   function formatNotificationTime(dateStr) {
     if (!dateStr) return "";
@@ -795,9 +820,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (notificationsLoading) return;
 
     if (reset) {
-      notificationOffset = 0;
-      notificationsHasMore = true;
-      notificationsCache = [];
+      resetNotificationState();
       notificationList.innerHTML =
         '<div class="notification-loading">Loading notifications...</div>';
     } else if (!notificationsHasMore) {
@@ -822,18 +845,21 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!response.ok || !data.success) {
         throw new Error(data.message || "Unable to load notifications.");
       }
-      const incoming = Array.isArray(data.notifications)
-        ? data.notifications
-        : [];
+      const incoming = dedupeNotificationsById(
+        Array.isArray(data.notifications) ? data.notifications : [],
+      );
       notificationsHasMore = Boolean(data.has_more);
-      notificationOffset += incoming.length;
+      notificationOffset += Array.isArray(data.notifications)
+        ? data.notifications.length
+        : 0;
       notificationsCache = reset
         ? incoming
         : notificationsCache.concat(incoming);
       clearNotificationLoadingState();
       renderNotifications(incoming, !reset);
       renderNotificationEndState();
-      updateNotificationBadge(data.unread_count || 0);
+      currentUnreadCount = Number(data.unread_count || 0);
+      updateNotificationBadge(currentUnreadCount);
     } catch (error) {
       if (reset) {
         notificationList.innerHTML = `<div class="notification-empty">${escapeHtml(error.message || "Unable to load notifications.")}</div>`;
@@ -860,6 +886,8 @@ document.addEventListener("DOMContentLoaded", () => {
           data.message || "Unable to mark notifications as read.",
         );
       }
+      currentUnreadCount = Number(data.unread_count || 0);
+      updateNotificationBadge(currentUnreadCount);
       loadNotifications(true);
     } catch (error) {
       alert(error.message || "Unable to mark notifications as read.");
@@ -867,7 +895,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function markSingleAsRead(notificationId) {
-    if (!notificationId) return;
+    if (!notificationId) return null;
     const body = new URLSearchParams();
     body.set("notification_id", String(notificationId));
 
@@ -883,6 +911,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!response.ok || !data.success) {
       throw new Error(data.message || "Unable to update notification.");
     }
+
+    return data;
   }
 
   if (notificationBtn && notificationDropdown) {
@@ -919,16 +949,15 @@ document.addEventListener("DOMContentLoaded", () => {
       if (notificationId <= 0 || isRead) return;
 
       try {
-        await markSingleAsRead(notificationId);
+        const result = await markSingleAsRead(notificationId);
         item.dataset.notificationRead = "1";
         item.classList.remove("unread");
-        const currentBadge = Number(notificationBadge?.textContent || 0);
-        if (
-          notificationBadge &&
-          Number.isFinite(currentBadge) &&
-          currentBadge > 0
-        ) {
-          updateNotificationBadge(Math.max(currentBadge - 1, 0));
+        if (result && result.unread_count !== undefined) {
+          currentUnreadCount = Number(result.unread_count || 0);
+          updateNotificationBadge(currentUnreadCount);
+        } else if (currentUnreadCount > 0) {
+          currentUnreadCount = Math.max(currentUnreadCount - 1, 0);
+          updateNotificationBadge(currentUnreadCount);
         } else {
           loadNotifications(true);
         }
@@ -1588,6 +1617,8 @@ function initDashboardFloodMap() {
 
     if (!radios.length || !waterSel) return;
 
+    var previousSeverity = null;
+
     var severityWaterMap = {
       high: ["above", "chest"],
       moderate: ["waist", "knee"],
@@ -1616,6 +1647,30 @@ function initDashboardFloodMap() {
       }
     }
 
+    function syncRescueDetailsUI(rescueValue) {
+      if (rescueValue === "Rescue Needed") {
+        if (rescueDetails) rescueDetails.classList.add("visible");
+        if (rescuePeopleInput) {
+          rescuePeopleInput.disabled = false;
+          rescuePeopleInput.required = true;
+        }
+        if (rescueDescriptionInput) {
+          rescueDescriptionInput.disabled = false;
+        }
+      } else {
+        if (rescueDetails) rescueDetails.classList.remove("visible");
+        if (rescuePeopleInput) {
+          rescuePeopleInput.value = "";
+          rescuePeopleInput.disabled = true;
+          rescuePeopleInput.required = false;
+        }
+        if (rescueDescriptionInput) {
+          rescueDescriptionInput.value = "";
+          rescueDescriptionInput.disabled = true;
+        }
+      }
+    }
+
     function applyRules(value) {
       var allowedLevels = severityWaterMap[value] || [];
       applyWaterLevelConstraints(allowedLevels);
@@ -1631,39 +1686,37 @@ function initDashboardFloodMap() {
       if (value === "passable") {
         if (rescueNotRequired) rescueNotRequired.checked = true;
         if (rescueSection) rescueSection.classList.add("hidden");
-        if (rescueDetails) rescueDetails.classList.remove("visible");
-        if (rescuePeopleInput) {
-          rescuePeopleInput.value = "";
-          rescuePeopleInput.disabled = true;
-          rescuePeopleInput.required = false;
-        }
-        if (rescueDescriptionInput) {
-          rescueDescriptionInput.value = "";
-          rescueDescriptionInput.disabled = true;
-        }
-      } else {
-        if (rescueNeeded) rescueNeeded.checked = true;
-        if (rescueSection) rescueSection.classList.remove("hidden");
-        if (rescueDetails) rescueDetails.classList.add("visible");
-        if (rescuePeopleInput) {
-          rescuePeopleInput.disabled = false;
-          rescuePeopleInput.required = true;
-        }
-        if (rescueDescriptionInput) {
-          rescueDescriptionInput.disabled = false;
-        }
-      }
+        rescueOptions.forEach(function (radio) {
+          radio.disabled = true;
+        });
+        syncRescueDetailsUI("Not Required");
 
-      rescueOptions.forEach(function (radio) {
-        radio.disabled = true;
-      });
-
-      if (value === "passable") {
         var numPeoplePassable = document.getElementById("rescue-people");
         var rescueNotePassable = document.getElementById("rescue-note");
         if (numPeoplePassable) numPeoplePassable.value = "";
         if (rescueNotePassable) rescueNotePassable.value = "";
+      } else {
+        if (rescueSection) rescueSection.classList.remove("hidden");
+        rescueOptions.forEach(function (radio) {
+          radio.disabled = false;
+        });
+
+        var checkedRescue = document.querySelector(
+          'input[name="rescue_status"]:checked',
+        );
+        if (previousSeverity === "passable" || !checkedRescue) {
+          if (rescueNeeded) rescueNeeded.checked = true;
+        }
+
+        checkedRescue = document.querySelector(
+          'input[name="rescue_status"]:checked',
+        );
+        syncRescueDetailsUI(
+          checkedRescue ? checkedRescue.value : "Rescue Needed",
+        );
       }
+
+      previousSeverity = value;
     }
 
     radios.forEach(function (radio) {
@@ -1825,7 +1878,7 @@ function initDashboardFloodMap() {
 
 /* =============================================================
    hotlines.js — Hotlines page logic
-   Data from sections/hotlines.php (#hl-db-json) — flood_information DB
+   Data from ../api/fetch_hotlines.php (shared with LGU / Rescuer)
    ============================================================= */
 
 (function () {
@@ -1889,36 +1942,11 @@ function initDashboardFloodMap() {
     };
   }
 
-  function readHotlinesFromPage() {
-    var el = document.getElementById("hl-db-json");
-    if (!el || !el.textContent) return null;
-    try {
-      return JSON.parse(el.textContent);
-    } catch (e) {
-      return null;
-    }
-  }
-
   function loadHotlines() {
     showLoading(true);
     hideError();
 
-    var payload = readHotlinesFromPage();
-    if (payload) {
-      showLoading(false);
-      if (payload.error) {
-        showError(payload.error);
-      }
-      allHotlines = (payload.items || []).map(applyDisplayMeta);
-      if (!allHotlines.length && !payload.error) {
-        showError("No hotlines found in the database. Add hotlines from the LGU portal.");
-      }
-      renderCards(getFiltered());
-      return;
-    }
-
-    var apiUrl = "api/fetch-hotlines.php";
-    fetch(apiUrl)
+    fetch("../api/fetch_hotlines.php")
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();

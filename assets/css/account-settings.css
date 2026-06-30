@@ -70,6 +70,13 @@
   border-left-color: #dc2626;
 }
 
+.as-alert--info {
+  background: #eff6ff;
+  color: #1e40af;
+  border-color: #3b82f6;
+  border-left-color: #3b82f6;
+}
+
 .as-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -643,6 +650,11 @@ html.dark .as-alert--success {
 html.dark .as-alert--error {
   background: rgba(127, 29, 29, 0.25);
   color: #fca5a5;
+}
+
+html.dark .as-alert--info {
+  background: rgba(30, 64, 175, 0.25);
+  color: #93c5fd;
 }
 
 .account-settings-body {

@@ -96,10 +96,16 @@ function bfis_load_account_settings_profile(mysqli $conn, int $userId): ?array
  */
 function bfis_account_settings_redirect_url(): string
 {
-    return match ($_SESSION['role'] ?? '') {
-        'LGU' => '../lgu/account-settings.php',
-        'Rescuer' => '../rescuer/account-settings.php',
-        'Resident' => '../resident/main.php?page=account-settings',
-        default => '../main/login.php',
-    };
+    $role = $_SESSION['role'] ?? '';
+
+    switch ($role) {
+        case 'LGU':
+            return '../lgu/account-settings.php';
+        case 'Rescuer':
+            return '../rescuer/account-settings.php';
+        case 'Resident':
+            return '../resident/main.php?page=account-settings';
+        default:
+            return '../main/login.php';
+    }
 }

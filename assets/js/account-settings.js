@@ -63,6 +63,29 @@
     });
   });
 
+  function fieldValue(id) {
+    return document.getElementById(id)?.value.trim() || "";
+  }
+
+  function fieldOriginal(id) {
+    const input = document.getElementById(id);
+    if (!input) return "";
+    return (input.dataset.originalValue || "").trim();
+  }
+
+  function fieldChanged(id) {
+    return fieldValue(id) !== fieldOriginal(id);
+  }
+
+  function resolveProfileValue(id) {
+    const current = fieldValue(id);
+    const original = fieldOriginal(id);
+    if (current === "" && original !== "" && id !== "suffix") {
+      return original;
+    }
+    return current;
+  }
+
   function validatePhone(phone) {
     return /^09\d{9}$/.test(phone);
   }
@@ -75,33 +98,80 @@
     );
   }
 
+  function profileFieldHasChanges() {
+    return (
+      ["first_name", "last_name", "suffix", "email", "phone", "date_of_birth"].some(fieldChanged)
+      || Boolean(profileInput && profileInput.files && profileInput.files.length)
+    );
+  }
+
   if (profileForm) {
     profileForm.addEventListener("submit", function (event) {
-      const firstName = document.getElementById("first_name")?.value.trim() || "";
-      const lastName = document.getElementById("last_name")?.value.trim() || "";
-      const email = document.getElementById("email")?.value.trim() || "";
-      const phone = document.getElementById("phone")?.value.trim() || "";
-      const dob = document.getElementById("date_of_birth")?.value.trim() || "";
-
-      if (!firstName || !lastName) {
-        event.preventDefault();
-        alert("First name and last name are required.");
+      if (!profileFieldHasChanges()) {
         return;
       }
 
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      const firstName = resolveProfileValue("first_name");
+      const lastName = resolveProfileValue("last_name");
+      const email = resolveProfileValue("email");
+      const phone = resolveProfileValue("phone");
+      const dob = resolveProfileValue("date_of_birth");
+
+      if (fieldChanged("first_name") && firstName === "") {
+        event.preventDefault();
+        alert("First name cannot be empty.");
+        return;
+      }
+
+      if (fieldChanged("last_name") && lastName === "") {
+        event.preventDefault();
+        alert("Last name cannot be empty.");
+        return;
+      }
+
+      if (firstName === "" || lastName === "") {
+        event.preventDefault();
+        alert("First name and last name are required on your account.");
+        return;
+      }
+
+      if (fieldChanged("email")) {
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          event.preventDefault();
+          alert("Please enter a valid email address.");
+          return;
+        }
+      }
+
+      if (email === "" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         event.preventDefault();
         alert("Please enter a valid email address.");
         return;
       }
 
-      if (!validatePhone(phone)) {
+      if (fieldChanged("phone")) {
+        if (!validatePhone(phone)) {
+          event.preventDefault();
+          alert("Please enter a valid PH phone number (e.g. 09XXXXXXXXX).");
+          return;
+        }
+      }
+
+      if (phone === "" || !validatePhone(phone)) {
         event.preventDefault();
         alert("Please enter a valid PH phone number (e.g. 09XXXXXXXXX).");
         return;
       }
 
-      if (!dob) {
+      if (fieldChanged("date_of_birth")) {
+        if (!dob) {
+          event.preventDefault();
+          alert("Date of birth is required.");
+          return;
+        }
+      }
+
+      if (dob === "") {
         event.preventDefault();
         alert("Date of birth is required.");
       }

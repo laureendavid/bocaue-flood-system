@@ -22,16 +22,24 @@ $roleLabel = htmlspecialchars($profile['full_name'] ?? 'user');
       <p class="as-egov-eyebrow"><?= htmlspecialchars($portalEyebrow ?? 'My Account') ?></p>
       <h1 class="as-egov-title">Account Settings</h1>
       <p class="as-egov-lead">
-        Review and update your registered profile information. Fields marked with
-        <abbr title="Required">*</abbr> are required. Verified location data from registration cannot be modified.
+        Review and update your registered profile information. You may change only the fields you need;
+        unchanged fields keep their current values. Verified location data from registration cannot be modified.
       </p>
     </header>
 
     <?php if (is_array($flash) && !empty($flash['message'])): ?>
-      <div class="as-alert as-alert--<?= htmlspecialchars($flash['type'] ?? 'info') ?>" role="alert">
-        <span class="material-symbols-outlined" aria-hidden="true">
-          <?= ($flash['type'] ?? '') === 'success' ? 'check_circle' : 'error' ?>
-        </span>
+      <?php
+        $flashType = $flash['type'] ?? 'info';
+        if ($flashType === 'success') {
+            $flashIcon = 'check_circle';
+        } elseif ($flashType === 'error') {
+            $flashIcon = 'error';
+        } else {
+            $flashIcon = 'info';
+        }
+      ?>
+      <div class="as-alert as-alert--<?= htmlspecialchars($flashType) ?>" role="alert">
+        <span class="material-symbols-outlined" aria-hidden="true"><?= $flashIcon ?></span>
         <span><?= htmlspecialchars($flash['message']) ?></span>
       </div>
     <?php endif; ?>
@@ -108,19 +116,26 @@ $roleLabel = htmlspecialchars($profile['full_name'] ?? 'user');
 
           <fieldset class="as-egov-section">
             <legend class="as-section-label">Personal Details</legend>
-            <p class="as-required-note">All fields marked with <abbr title="Required">*</abbr> are required.</p>
+            <p class="as-required-note">
+              Fields marked with <abbr title="Required">*</abbr> must remain valid on your account.
+              Leave a field as shown to keep its current value.
+            </p>
 
             <div class="as-form-fields">
               <div class="as-form-row as-form-row--2">
                 <div class="as-form-group">
                   <label class="as-form-label" for="first_name">First Name <abbr title="Required">*</abbr></label>
                   <input type="text" id="first_name" name="first_name" class="as-form-input"
-                    value="<?= htmlspecialchars($profile['first_name'] ?? '') ?>" required maxlength="80" autocomplete="given-name">
+                    value="<?= htmlspecialchars($profile['first_name'] ?? '') ?>"
+                    data-original-value="<?= htmlspecialchars($profile['first_name'] ?? '') ?>"
+                    maxlength="80" autocomplete="given-name">
                 </div>
                 <div class="as-form-group">
                   <label class="as-form-label" for="last_name">Last Name <abbr title="Required">*</abbr></label>
                   <input type="text" id="last_name" name="last_name" class="as-form-input"
-                    value="<?= htmlspecialchars($profile['last_name'] ?? '') ?>" required maxlength="80" autocomplete="family-name">
+                    value="<?= htmlspecialchars($profile['last_name'] ?? '') ?>"
+                    data-original-value="<?= htmlspecialchars($profile['last_name'] ?? '') ?>"
+                    maxlength="80" autocomplete="family-name">
                 </div>
               </div>
 
@@ -128,12 +143,15 @@ $roleLabel = htmlspecialchars($profile['full_name'] ?? 'user');
                 <div class="as-form-group">
                   <label class="as-form-label" for="suffix">Suffix <span class="as-optional">(Optional)</span></label>
                   <input type="text" id="suffix" name="suffix" class="as-form-input"
-                    value="<?= htmlspecialchars($profile['suffix'] ?? '') ?>" maxlength="20" placeholder="e.g. JR., SR., III">
+                    value="<?= htmlspecialchars($profile['suffix'] ?? '') ?>"
+                    data-original-value="<?= htmlspecialchars($profile['suffix'] ?? '') ?>"
+                    maxlength="20" placeholder="e.g. JR., SR., III">
                 </div>
                 <div class="as-form-group">
                   <label class="as-form-label" for="date_of_birth">Date of Birth <abbr title="Required">*</abbr></label>
                   <input type="date" id="date_of_birth" name="date_of_birth" class="as-form-input"
-                    value="<?= htmlspecialchars($dobValue) ?>" required>
+                    value="<?= htmlspecialchars($dobValue) ?>"
+                    data-original-value="<?= htmlspecialchars($dobValue) ?>">
                 </div>
               </div>
             </div>
@@ -147,12 +165,16 @@ $roleLabel = htmlspecialchars($profile['full_name'] ?? 'user');
                 <div class="as-form-group">
                   <label class="as-form-label" for="email">Email Address <abbr title="Required">*</abbr></label>
                   <input type="email" id="email" name="email" class="as-form-input"
-                    value="<?= htmlspecialchars($profile['email'] ?? '') ?>" required autocomplete="email">
+                    value="<?= htmlspecialchars($profile['email'] ?? '') ?>"
+                    data-original-value="<?= htmlspecialchars($profile['email'] ?? '') ?>"
+                    autocomplete="email">
                 </div>
                 <div class="as-form-group">
                   <label class="as-form-label" for="phone">Mobile Number <abbr title="Required">*</abbr></label>
                   <input type="tel" id="phone" name="phone" class="as-form-input"
-                    value="<?= htmlspecialchars($profile['phone'] ?? '') ?>" required pattern="09[0-9]{9}"
+                    value="<?= htmlspecialchars($profile['phone'] ?? '') ?>"
+                    data-original-value="<?= htmlspecialchars($profile['phone'] ?? '') ?>"
+                    pattern="09[0-9]{9}"
                     maxlength="11" placeholder="09XXXXXXXXX" autocomplete="tel" inputmode="numeric">
                   <p class="as-form-hint">Philippine mobile format: 09XXXXXXXXX</p>
                 </div>

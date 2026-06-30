@@ -7,77 +7,10 @@ if (empty($_SESSION['reg_step1_ok'])) {
 }
 
 require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../phpmailer/src/Exception.php';
-require_once __DIR__ . '/../phpmailer/src/PHPMailer.php';
-require_once __DIR__ . '/../phpmailer/src/SMTP.php';
-
-use PHPMailer\PHPMailer\Exception;
-use PHPMailer\PHPMailer\PHPMailer;
+require_once __DIR__ . '/../config/uploads.php';
 
 $error = '';
 $debugDetail = '';
-
-function ensureEmailVerificationTable(PDO $pdo): void
-{
-  $pdo->exec(
-    'CREATE TABLE IF NOT EXISTS email_verifications (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT NOT NULL,
-            email VARCHAR(255) NOT NULL,
-            token VARCHAR(128) NOT NULL UNIQUE,
-            expires_at DATETIME NOT NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            INDEX idx_email (email),
-            INDEX idx_expires_at (expires_at)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
-  );
-}
-
-function getEmailVerificationColumns(PDO $pdo): array
-{
-  $stmt = $pdo->query('SHOW COLUMNS FROM email_verifications');
-  $columns = [];
-  foreach ($stmt as $row) {
-    $columns[] = $row['Field'];
-  }
-  return $columns;
-}
-
-function sendVerificationEmail(string $toEmail, string $token): void
-{
-  $verifyUrl = sprintf(
-    '%s://%s/bocaue-flood-system/main/verify-email.php?token=%s',
-    (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http',
-    $_SERVER['HTTP_HOST'] ?? 'localhost',
-    urlencode($token)
-  );
-
-  $mail = new PHPMailer(true);
-  $mail->isSMTP();
-  $mail->Host = 'smtp.gmail.com';
-  $mail->SMTPAuth = true;
-  $mail->Username = 'bocauefloodinformation@gmail.com';
-  $mail->Password = 'lgcwknbelezciovh';
-  $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-  $mail->Port = 587;
-  $mail->Timeout = 20;
-  $mail->SMTPOptions = [
-    'ssl' => [
-      'verify_peer' => false,
-      'verify_peer_name' => false,
-      'allow_self_signed' => true,
-    ],
-  ];
-
-  $mail->setFrom('bocauefloodinformation@gmail.com', 'Bocaue Flood Information System');
-  $mail->addAddress($toEmail);
-  $mail->isHTML(true);
-  $mail->Subject = 'Verify your BFIS account';
-  $mail->Body = 'Your account has been created.<br><br>Please verify your email by clicking this link:<br><a href="' .
-    htmlspecialchars($verifyUrl, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($verifyUrl, ENT_QUOTES, 'UTF-8') . '</a>';
-  $mail->AltBody = 'Verify your account by opening this link: ' . $verifyUrl;
-  $mail->send();
-}
 
 function isWeakPassword(string $password): bool
 {
@@ -177,11 +110,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($checkStmt->fetch()) {
           $error = 'Email is already registered. Please log in or use another email.';
         } else {
-          ensureEmailVerificationTable($pdo);
-          $pdo->beginTransaction();
+          $uploadResult = bfis_reg_finalize_local_uploads($profilePicture, $validIdImage);
+          if (isset($uploadResult['error'])) {
+            $error = $uploadResult['error'];
+          } else {
+            $profilePicture = $uploadResult['profile_picture'] ?? $profilePicture;
+            $validIdImage = $uploadResult['valid_id_image'] ?? $validIdImage;
 
-          $insertStmt = $pdo->prepare(
-            'INSERT INTO users (
+            $pdo->beginTransaction();
+
+            $insertStmt = $pdo->prepare(
+              'INSERT INTO users (
                             first_name,
                             last_name,
                             suffix,
@@ -199,95 +138,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             password,
                             is_verified,
                             first_login
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 3, ?, 0, 1)'
-          );
-
-          $insertStmt->execute([
-            $firstName,
-            $lastName,
-            $suffix === '' ? null : $suffix,
-            $fullName,
-            $email,
-            $dateOfBirth,
-            $phone,
-            $validIdImage,
-            $profilePicture,
-            $barangayId,
-            $address,
-            $latitude,
-            $longitude,
-            $passwordHash,
-          ]);
-
-          $userId = (int) $pdo->lastInsertId();
-          $token = bin2hex(random_bytes(32));
-          $verificationColumns = getEmailVerificationColumns($pdo);
-          $hasEmailColumn = in_array('email', $verificationColumns, true);
-          $hasUserIdColumn = in_array('user_id', $verificationColumns, true);
-
-          if ($hasEmailColumn) {
-            $cleanupTokenStmt = $pdo->prepare('DELETE FROM email_verifications WHERE email = ?');
-            $cleanupTokenStmt->execute([$email]);
-          } elseif ($hasUserIdColumn) {
-            $cleanupTokenStmt = $pdo->prepare('DELETE FROM email_verifications WHERE user_id = ?');
-            $cleanupTokenStmt->execute([$userId]);
-          }
-
-          if ($hasEmailColumn && $hasUserIdColumn) {
-            $tokenStmt = $pdo->prepare(
-              'INSERT INTO email_verifications (user_id, email, token, expires_at)
-                             VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR))'
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 3, ?, 1, 1)'
             );
-            $tokenStmt->execute([$userId, $email, $token]);
-          } elseif ($hasUserIdColumn) {
-            $tokenStmt = $pdo->prepare(
-              'INSERT INTO email_verifications (user_id, token, expires_at)
-                             VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR))'
-            );
-            $tokenStmt->execute([$userId, $token]);
-          } else {
-            throw new RuntimeException('email_verifications table missing required user_id/email columns.');
+
+            $insertStmt->execute([
+              $firstName,
+              $lastName,
+              $suffix === '' ? null : $suffix,
+              $fullName,
+              $email,
+              $dateOfBirth,
+              $phone,
+              $validIdImage,
+              $profilePicture,
+              $barangayId,
+              $address,
+              $latitude,
+              $longitude,
+              $passwordHash,
+            ]);
+
+            $pdo->commit();
+
+            if (!empty($uploadResult['temp_paths'])) {
+              bfis_reg_delete_temp_paths($uploadResult['temp_paths']);
+            }
+
+            $_SESSION['reg_completion_email'] = $email;
+            $_SESSION['reg_step3_ok'] = true;
+
+            $keys = [
+              'reg_first_name',
+              'reg_last_name',
+              'reg_suffix',
+              'reg_full_name',
+              'reg_email',
+              'reg_dob',
+              'reg_phone',
+              'reg_barangay_slug',
+              'reg_barangay_id',
+              'reg_address',
+              'reg_lat',
+              'reg_lng',
+              'reg_profile_picture',
+              'reg_valid_id_image',
+              'reg_step1_ok',
+            ];
+            foreach ($keys as $key) {
+              unset($_SESSION[$key]);
+            }
+
+            session_write_close();
+            header('Location: register_step3.php');
+            exit;
           }
-
-          $pdo->commit();
-
-          try {
-            sendVerificationEmail($email, $token);
-            $_SESSION['reg_mail_status'] = 'sent';
-            $_SESSION['reg_mail_error'] = '';
-          } catch (Exception $mailException) {
-            error_log('Registration verification email failed: ' . $mailException->getMessage());
-            $_SESSION['reg_mail_status'] = 'failed';
-            $_SESSION['reg_mail_error'] = $mailException->getMessage();
-          }
-
-          $_SESSION['reg_completion_email'] = $email;
-          $_SESSION['reg_completion_user_id'] = $userId;
-          $_SESSION['reg_step3_ok'] = true;
-
-          $keys = [
-            'reg_first_name',
-            'reg_last_name',
-            'reg_suffix',
-            'reg_full_name',
-            'reg_email',
-            'reg_dob',
-            'reg_phone',
-            'reg_barangay_slug',
-            'reg_barangay_id',
-            'reg_address',
-            'reg_lat',
-            'reg_lng',
-            'reg_profile_picture',
-            'reg_valid_id_image',
-            'reg_step1_ok'
-          ];
-          foreach ($keys as $key) {
-            unset($_SESSION[$key]);
-          }
-
-          header('Location: register_step3.php');
-          exit;
         }
       } catch (Throwable $throwable) {
         if ($pdo->inTransaction()) {

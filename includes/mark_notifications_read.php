@@ -42,7 +42,21 @@ $stmt->execute();
 $affected = $stmt->affected_rows;
 $stmt->close();
 
+$unreadCount = 0;
+$countSql = $hasIsRead
+    ? 'SELECT COUNT(*) AS unread_count FROM notifications WHERE user_id = ? AND is_read = 0'
+    : 'SELECT COUNT(*) AS unread_count FROM notifications WHERE user_id = ? AND LOWER(COALESCE(status, "unread")) = "unread"';
+$countStmt = $conn->prepare($countSql);
+if ($countStmt) {
+    $countStmt->bind_param('i', $userId);
+    $countStmt->execute();
+    $countRow = $countStmt->get_result()->fetch_assoc();
+    $countStmt->close();
+    $unreadCount = (int) ($countRow['unread_count'] ?? 0);
+}
+
 echo json_encode([
     'success' => true,
     'updated' => (int) $affected,
+    'unread_count' => $unreadCount,
 ]);

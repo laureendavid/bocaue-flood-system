@@ -2,7 +2,6 @@
 session_start();
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../config/uploads.php';
-require_once __DIR__ . '/../includes/cloudinary_upload.php';
 
 $error = '';
 
@@ -64,30 +63,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $profilePicturePath = $_SESSION['reg_profile_picture'] ?? null;
     $validIdPath = $_SESSION['reg_valid_id_image'] ?? null;
 
-    $photoResult = bfis_cloudinary_upload_request(
+    $photoResult = bfis_reg_store_upload_request(
       'photo_upload',
-      BFIS_CLOUDINARY_FOLDER_PROFILES,
+      'reg_profile',
       ['image/jpeg', 'image/png'],
       5 * 1024 * 1024
     );
     if (isset($photoResult['error'])) {
       $error = $photoResult['error'];
-    } elseif (!empty($photoResult['url'])) {
-      $profilePicturePath = $photoResult['url'];
+    } elseif (!empty($photoResult['path'])) {
+      $profilePicturePath = $photoResult['path'];
     }
 
     if ($error === '') {
-      $idResult = bfis_cloudinary_upload_request(
+      $idResult = bfis_reg_store_upload_request(
         'valid_id_image',
-        BFIS_CLOUDINARY_FOLDER_VALID_IDS,
+        'reg_valid_id',
         ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
-        10 * 1024 * 1024,
-        'raw'
+        10 * 1024 * 1024
       );
       if (isset($idResult['error'])) {
         $error = $idResult['error'];
-      } elseif (!empty($idResult['url'])) {
-        $validIdPath = $idResult['url'];
+      } elseif (!empty($idResult['path'])) {
+        $validIdPath = $idResult['path'];
       }
     }
 
@@ -110,6 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $_SESSION['reg_valid_id_image'] = $validIdPath;
       $_SESSION['reg_step1_ok'] = true;
 
+      session_write_close();
       header('Location: register_step2.php');
       exit;
     }
@@ -142,7 +141,7 @@ $sticky = [
   'lng' => htmlspecialchars($_POST['lng'] ?? ($_SESSION['reg_lng'] ?? '')),
   'profile_picture' => $_SESSION['reg_profile_picture'] ?? $existingProfilePicture,
 ];
-$stickyProfilePhotoUrl = bfis_resolve_media_url($sticky['profile_picture'] ?? '', '');
+$stickyProfilePhotoUrl = bfis_reg_preview_url($sticky['profile_picture'] ?? '', '');
 ?>
 <!DOCTYPE html>
 <html lang="en">

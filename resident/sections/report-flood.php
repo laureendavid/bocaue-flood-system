@@ -8,6 +8,7 @@
    ============================================================= */
 require_once __DIR__ . '/../../config/cloudinary.php';
 require_once __DIR__ . '/../../includes/cloudinary_upload.php';
+require_once __DIR__ . '/../../includes/notifications_service.php';
 
 $userBarangay = 'Bocaue, Bulacan';
 $userBarangayName = 'Bocaue';
@@ -42,6 +43,107 @@ function isWithinBocaueCoverage(float $latitude, float $longitude): bool
     && $latitude <= 14.845
     && $longitude >= 120.865
     && $longitude <= 120.990;
+}
+
+/**
+ * Save a staged flood report image locally when Cloudinary is unavailable.
+ */
+function saveFloodReportPhotoLocal(string $stagedPath, int $userId): ?string
+{
+  if (!is_readable($stagedPath)) {
+    return null;
+  }
+
+  $uploadsDir = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'reports';
+
+  if (!is_dir($uploadsDir) && !@mkdir($uploadsDir, 0755, true) && !is_dir($uploadsDir)) {
+    return null;
+  }
+
+  $extension = strtolower(pathinfo($stagedPath, PATHINFO_EXTENSION));
+
+  if ($extension === '') {
+    $extension = 'jpg';
+  }
+
+  $filename = 'report_' . $userId . '_' . bfis_random_hex(8) . '.' . $extension;
+  $destination = $uploadsDir . DIRECTORY_SEPARATOR . $filename;
+
+  if (!@copy($stagedPath, $destination)) {
+    return null;
+  }
+
+  return 'uploads/reports/' . $filename;
+}
+
+/**
+ * Upload flood report photo using the same Cloudinary workflow as account profile photos.
+ *
+ * @return array{url?: string, public_id?: string|null, error?: string}
+ */
+function uploadFloodReportPhoto(int $userId): array
+{
+  $fieldName = 'report_photo';
+  $maxBytes = 3 * 1024 * 1024;
+  $allowedMime = ['image/jpeg', 'image/png'];
+
+  if (empty($_FILES[$fieldName]['name'])) {
+    return [];
+  }
+
+  $file = $_FILES[$fieldName];
+
+  if ($file['error'] === UPLOAD_ERR_NO_FILE) {
+    return [];
+  }
+
+  $staged = bfis_stage_profile_upload($file, $userId, $allowedMime, $maxBytes);
+
+  if (isset($staged['error'])) {
+    $message = (string) $staged['error'];
+
+    return [
+      'error' => str_ireplace('profile photo', 'report photo', $message),
+    ];
+  }
+
+  if (empty($staged['path'])) {
+    return ['error' => 'Unable to save uploaded file. Please try again.'];
+  }
+
+  $stagedPath = $staged['path'];
+
+  $cloudResult = bfis_cloudinary_upload_http(
+    $stagedPath,
+    BFIS_CLOUDINARY_FOLDER_REPORTS,
+    $allowedMime,
+    $maxBytes
+  );
+
+  if (!isset($cloudResult['error']) && !empty($cloudResult['url'])) {
+    bfis_delete_staged_profile_upload($stagedPath);
+
+    return [
+      'url' => $cloudResult['url'],
+      'public_id' => $cloudResult['public_id'] ?? null,
+    ];
+  }
+
+  error_log(
+    'Flood report Cloudinary upload failed, using local fallback: '
+    . ($cloudResult['error'] ?? 'unknown error')
+  );
+
+  $localPath = saveFloodReportPhotoLocal($stagedPath, $userId);
+  bfis_delete_staged_profile_upload($stagedPath);
+
+  if ($localPath === null) {
+    return [
+      'error' => $cloudResult['error'] ?? 'Unable to save report photo on the server.',
+    ];
+  }
+
+  return ['url' => $localPath];
 }
 
 function fetchIdByCandidates(mysqli $conn, string $table, string $idColumn, string $nameColumn, array $candidates): ?int
@@ -102,13 +204,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
     'moderate' => ['waist', 'knee'],
     'passable' => ['ankle', 'none'],
   ];
-  $autoRescueBySeverity = [
-    'high' => 'Rescue Needed',
-    'moderate' => 'Rescue Needed',
-    'passable' => 'Not Required',
-  ];
   $allowedWaterLevels = $allowedWaterLevelsBySeverity[$severityRaw] ?? [];
-  $rescueStatus = $autoRescueBySeverity[$severityRaw] ?? 'Not Required';
+  $allowedRescueStatuses = ['Rescue Needed', 'Not Required'];
+
+  if ($severityRaw === 'passable') {
+    $rescueStatus = 'Not Required';
+  } elseif (!in_array($rescueStatus, $allowedRescueStatuses, true)) {
+    $rescueStatus = in_array($severityRaw, ['high', 'moderate'], true)
+      ? 'Rescue Needed'
+      : 'Not Required';
+  }
+
   $rescuePeopleCount = null;
 
   $fullAddress = $pinnedAddress ?: $userBarangay;
@@ -192,9 +298,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
       goto render_form;
     }
 
+    $reportImage = null;
+    $photoUpload = uploadFloodReportPhoto($userId);
+
+    if (isset($photoUpload['error'])) {
+      $submitError = $photoUpload['error'];
+      goto render_form;
+    }
+
+    if (!empty($photoUpload['url'])) {
+      $reportImage = $photoUpload['url'];
+    }
+
+    $reportedAt = ($floodDate && $floodTime)
+      ? $floodDate . ' ' . $floodTime . ':00'
+      : $manilaNow->format('Y-m-d H:i:s');
+
     $conn->begin_transaction();
     try {
-      // 1. Insert location
       $locStmt = $conn->prepare("
                 INSERT INTO locations
                     (barangay_id, latitude, longitude, full_address)
@@ -210,31 +331,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
       $locStmt->execute();
       $locationId = $conn->insert_id;
       $locStmt->close();
-
-      // 2. Optional photo upload (Cloudinary)
-      $reportImage = null;
-
-      if (!empty($_FILES['report_photo']['tmp_name'])) {
-        $uploadResult = bfis_cloudinary_upload_request(
-          'report_photo',
-          BFIS_CLOUDINARY_FOLDER_REPORTS,
-          ['image/jpeg', 'image/png'],
-          3 * 1024 * 1024
-        );
-
-        if (isset($uploadResult['error'])) {
-          throw new Exception($uploadResult['error']);
-        }
-
-        if (!empty($uploadResult['url'])) {
-          $reportImage = $uploadResult['url'];
-        }
-      }
-
-      // 3. Insert report
-      $reportedAt = ($floodDate && $floodTime)
-        ? $floodDate . ' ' . $floodTime . ':00'
-        : $manilaNow->format('Y-m-d H:i:s');
 
       $repStmt = $conn->prepare("
                 INSERT INTO reports
@@ -258,9 +354,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
         $reportedAt
       );
       $repStmt->execute();
+      $newReportId = (int) $conn->insert_id;
       $repStmt->close();
 
       $conn->commit();
+
+      try {
+        bfis_ensure_notifications_table($conn);
+        bfis_notify_residents_of_flood_report(
+          $conn,
+          $newReportId,
+          (int) ($userBarangayId ?? 0),
+          $userId,
+          $reportedAt
+        );
+      } catch (Throwable $notificationError) {
+        error_log('Flood report alert notification failed: ' . $notificationError->getMessage());
+      }
+
       $submitSuccess = true;
 
     } catch (Exception $e) {
@@ -276,6 +387,14 @@ $postSeverity = $_POST['severity'] ?? '';
 $postRescue = $_POST['rescue_status'] ?? '';
 $postRescuePeopleCount = $_POST['rescue_people_count'] ?? ($_POST['rescue_people'] ?? '');
 $postRescueDescription = $_POST['rescue_description'] ?? ($_POST['rescue_note'] ?? '');
+$rescueDefaultBySeverity = [
+  'high' => 'Rescue Needed',
+  'moderate' => 'Rescue Needed',
+  'passable' => 'Not Required',
+];
+$displayRescue = $postRescue !== ''
+  ? $postRescue
+  : ($rescueDefaultBySeverity[$postSeverity] ?? '');
 $severityHintMap = [
   'high' => 'Allowed for High: Above head, Chest-deep.',
   'moderate' => 'Allowed for Moderate: Waist-deep, Knee-deep.',
@@ -408,7 +527,7 @@ $initialWaterHint = $severityHintMap[$postSeverity] ?? 'Select flood severity fi
 
             <!-- No rescue -->
             <label class="rescue-option">
-              <input type="radio" name="rescue_status" value="Not Required" <?= ($postRescue === '' || $postRescue === 'Not Required') ? 'checked' : '' ?>>
+              <input type="radio" name="rescue_status" value="Not Required" <?= $displayRescue === 'Not Required' ? 'checked' : '' ?>>
               <div class="rescue-card">
                 <span class="rescue-icon material-symbols-outlined">check_circle</span>
                 <span class="rescue-label">No Rescue Needed</span>
@@ -418,7 +537,7 @@ $initialWaterHint = $severityHintMap[$postSeverity] ?? 'Select flood severity fi
 
             <!-- Rescue needed -->
             <label class="rescue-option">
-              <input type="radio" name="rescue_status" value="Rescue Needed" <?= $postRescue === 'Rescue Needed' ? 'checked' : '' ?>>
+              <input type="radio" name="rescue_status" value="Rescue Needed" <?= $displayRescue === 'Rescue Needed' ? 'checked' : '' ?>>
               <div class="rescue-card">
                 <span class="rescue-icon material-symbols-outlined">sos</span>
                 <span class="rescue-label">Rescue Needed</span>
@@ -429,7 +548,7 @@ $initialWaterHint = $severityHintMap[$postSeverity] ?? 'Select flood severity fi
           </div>
 
           <!-- Extra rescue details — shown only when Rescue Needed is picked -->
-          <div class="rescue-details <?= $postRescue === 'Rescue Needed' ? 'visible' : '' ?>" id="rescue-details">
+          <div class="rescue-details <?= $displayRescue === 'Rescue Needed' ? 'visible' : '' ?>" id="rescue-details">
             <div class="form-group">
               <label class="form-label" for="rescue-people">Number of people needing rescue</label>
               <input type="number" class="form-input" id="rescue-people" name="rescue_people_count" placeholder="e.g. 4"

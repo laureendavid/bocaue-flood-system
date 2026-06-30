@@ -1,10 +1,10 @@
 <?php
 // config/db.php
 
-$host = "localhost";
-$user = "root";
-$pass = ""; // default XAMPP password
-$db = "flood_information";
+$host = "sql300.infinityfree.com";
+$user = "if0_41283224";
+$pass = "8EFGD1TLQzEmrjb"; 
+$db = "if0_41283224_flood_information";
 
 // ── mysqli connection (used by backend/login.php) ──────────────────────────
 $conn = new mysqli($host, $user, $pass, $db);
@@ -28,4 +28,3 @@ try {
 } catch (PDOException $e) {
     die("PDO connection failed: " . $e->getMessage());
 }
-?>
