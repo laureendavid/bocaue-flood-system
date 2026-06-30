@@ -86,7 +86,7 @@ if ($result && $result->num_rows > 0):
 
         $hasImage = !empty($report['report_image']);
 
-        $profilePic = bfis_resolve_media_url($report['profile_picture'] ?? '', '/assets/img/default-avatar.png');
+        $profilePic = bfis_resolve_media_url($report['profile_picture'] ?? '', '');
 
         $reportImage = trim($report['report_image'] ?? '');
         $imageSrc = bfis_resolve_media_url($reportImage, '');
@@ -164,11 +164,24 @@ if ($result && $result->num_rows > 0):
                     $colorIndex = abs(crc32($report['full_name'])) % count($avatarColors);
                     $avatarBg = $avatarColors[$colorIndex];
                     ?>
-                    <div class="post-card__avatar post-card__avatar--initials profile-trigger"
-                        style="background:<?= $avatarBg ?>; cursor:pointer;"
+                    <div class="post-card__avatar profile-trigger"
+                        style="cursor:pointer; position:relative; overflow:hidden; padding:0;"
                         data-reporter-name="<?= htmlspecialchars($report['full_name']) ?>"
                         title="View posts by <?= htmlspecialchars($report['full_name']) ?>">
-                        <?= $initials ?>
+                        <?php if (!empty($profilePic)): ?>
+                            <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile"
+                                style="width:100%; height:100%; border-radius:50%; object-fit:cover; display:block;"
+                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <span class="post-card__avatar--initials"
+                                style="display:none; background:<?= $avatarBg ?>; width:100%; height:100%; border-radius:50%;">
+                                <?= $initials ?>
+                            </span>
+                        <?php else: ?>
+                            <span class="post-card__avatar--initials"
+                                style="background:<?= $avatarBg ?>; width:100%; height:100%; border-radius:50%; display:flex;">
+                                <?= $initials ?>
+                            </span>
+                        <?php endif; ?>
                     </div>
                     <div class="post-card__user-info">
                         <span class="post-card__name profile-trigger"
