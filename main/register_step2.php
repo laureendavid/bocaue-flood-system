@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../includes/session_bootstrap.php';
 
 if (empty($_SESSION['reg_step1_ok'])) {
   header('Location: register_step1.php');
@@ -7,7 +7,7 @@ if (empty($_SESSION['reg_step1_ok'])) {
 }
 
 require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../config/uploads.php';
+require_once __DIR__ . '/../includes/registration_service.php';
 
 $error = '';
 $debugDetail = '';
@@ -69,14 +69,9 @@ function validatePassword(string $password, string $confirmPassword): string
   return '';
 }
 
-function normalizeCoordinate(?string $value): ?string
-{
-  $value = trim((string) $value);
-  if ($value === '' || !is_numeric($value)) {
-    return null;
-  }
-
-  return number_format((float) $value, 8, '.', '');
+if (!empty($_SESSION['reg_step2_ok']) && empty($_POST['password'])) {
+  header('Location: register_step3.php');
+  exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -86,20 +81,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $error = validatePassword($password, $confirmPassword);
 
   if ($error === '') {
-    $email = $_SESSION['reg_email'] ?? '';
+    $email = trim($_SESSION['reg_email'] ?? '');
     $fullName = trim($_SESSION['reg_full_name'] ?? '');
-    $firstName = trim($_SESSION['reg_first_name'] ?? '');
-    $lastName = trim($_SESSION['reg_last_name'] ?? '');
-    $suffix = trim($_SESSION['reg_suffix'] ?? '');
-    $dateOfBirth = $_SESSION['reg_dob'] ?? null;
-    $phone = $_SESSION['reg_phone'] ?? null;
-    $barangayId = $_SESSION['reg_barangay_id'] ?? null;
-    $address = $_SESSION['reg_address'] ?? null;
-    $latitude = normalizeCoordinate($_SESSION['reg_lat'] ?? null);
-    $longitude = normalizeCoordinate($_SESSION['reg_lng'] ?? null);
-    $validIdImage = $_SESSION['reg_valid_id_image'] ?? null;
-    $profilePicture = $_SESSION['reg_profile_picture'] ?? null;
-    $passwordHash = password_hash($password, PASSWORD_BCRYPT);
 
     if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
       $error = 'Invalid registration session. Please restart registration.';
@@ -110,83 +93,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($checkStmt->fetch()) {
           $error = 'Email is already registered. Please log in or use another email.';
         } else {
-          $uploadResult = bfis_reg_finalize_local_uploads($profilePicture, $validIdImage);
-          if (isset($uploadResult['error'])) {
-            $error = $uploadResult['error'];
+          $verificationResult = bfis_registration_issue_verification($pdo, $email, $fullName);
+
+          if (isset($verificationResult['error'])) {
+            $error = $verificationResult['error'];
           } else {
-            $profilePicture = $uploadResult['profile_picture'] ?? $profilePicture;
-            $validIdImage = $uploadResult['valid_id_image'] ?? $validIdImage;
-
-            $pdo->beginTransaction();
-
-            $insertStmt = $pdo->prepare(
-              'INSERT INTO users (
-                            first_name,
-                            last_name,
-                            suffix,
-                            full_name,
-                            email,
-                            date_of_birth,
-                            phone,
-                            valid_id_image,
-                            profile_picture,
-                            barangay_id,
-                            current_address,
-                            latitude,
-                            longitude,
-                            role_id,
-                            password,
-                            is_verified,
-                            first_login
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 3, ?, 1, 1)'
-            );
-
-            $insertStmt->execute([
-              $firstName,
-              $lastName,
-              $suffix === '' ? null : $suffix,
-              $fullName,
-              $email,
-              $dateOfBirth,
-              $phone,
-              $validIdImage,
-              $profilePicture,
-              $barangayId,
-              $address,
-              $latitude,
-              $longitude,
-              $passwordHash,
-            ]);
-
-            $pdo->commit();
-
-            if (!empty($uploadResult['temp_paths'])) {
-              bfis_reg_delete_temp_paths($uploadResult['temp_paths']);
-            }
-
-            $_SESSION['reg_completion_email'] = $email;
-            $_SESSION['reg_step3_ok'] = true;
-
-            $keys = [
-              'reg_first_name',
-              'reg_last_name',
-              'reg_suffix',
-              'reg_full_name',
-              'reg_email',
-              'reg_dob',
-              'reg_phone',
-              'reg_barangay_slug',
-              'reg_barangay_id',
-              'reg_address',
-              'reg_lat',
-              'reg_lng',
-              'reg_profile_picture',
-              'reg_valid_id_image',
-              'reg_step1_ok',
-            ];
-            foreach ($keys as $key) {
-              unset($_SESSION[$key]);
-            }
+            $_SESSION['reg_password_hash'] = password_hash($password, PASSWORD_BCRYPT);
+            unset($_SESSION['reg_email_verified']);
+            $_SESSION['reg_step2_ok'] = true;
 
             session_write_close();
             header('Location: register_step3.php');
@@ -194,12 +108,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           }
         }
       } catch (Throwable $throwable) {
-        if ($pdo->inTransaction()) {
-          $pdo->rollBack();
-        }
-        error_log('Registration save failed: ' . $throwable->getMessage());
+        error_log('Registration step 2 failed: ' . $throwable->getMessage());
         $debugDetail = $throwable->getMessage();
-        $error = 'Unable to complete registration right now. Please try again.';
+        $error = 'Unable to continue registration right now. Please try again.';
       }
     }
   }

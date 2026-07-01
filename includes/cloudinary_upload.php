@@ -474,7 +474,7 @@ function bfis_reg_finalize_single_media(
     }
 
     if (bfis_cloudinary_is_available()) {
-        $upload = bfis_cloudinary_upload_path(
+        $upload = bfis_cloudinary_upload_http(
             $diskPath,
             $cloudFolder,
             $allowedMime,
@@ -545,9 +545,8 @@ function bfis_reg_finalize_cloudinary_uploads(?string $profileStoredPath, ?strin
         $validIdStoredPath,
         BFIS_CLOUDINARY_FOLDER_VALID_IDS,
         'reg_valid_id',
-        ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
-        10 * 1024 * 1024,
-        'raw'
+        ['image/jpeg', 'image/png', 'image/webp'],
+        10 * 1024 * 1024
     );
 
     if (isset($validIdResult['error'])) {

@@ -1,0 +1,10 @@
+<?php
+
+/**
+ * Copy this file to db.local.php and set your database credentials.
+ * db.local.php is gitignored and must exist on each server (local XAMPP + InfinityFree).
+ */
+$host = 'localhost';
+$user = 'root';
+$pass = '';
+$db = 'flood_information';

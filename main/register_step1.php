@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../includes/session_bootstrap.php';
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../config/uploads.php';
 
@@ -28,6 +28,8 @@ $barangays = [
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  require_once __DIR__ . '/../includes/registration_service.php';
+
   $firstName = strtoupper(trim($_POST['first_name'] ?? ''));
   $lastName = strtoupper(trim($_POST['last_name'] ?? ''));
   $suffix = strtoupper(trim($_POST['suffix'] ?? ''));
@@ -56,6 +58,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $emailCheckStmt->execute([$email]);
     if ($emailCheckStmt->fetch()) {
       $error = 'Email is already registered. Please use a different email or log in.';
+    } else {
+      $phoneCheckStmt = $pdo->prepare('SELECT user_id FROM users WHERE phone = ? LIMIT 1');
+      $phoneCheckStmt->execute([$phone]);
+      if ($phoneCheckStmt->fetch()) {
+        $error = 'Phone number is already registered. Please use a different number or log in.';
+      }
     }
   }
 
@@ -63,29 +71,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $profilePicturePath = $_SESSION['reg_profile_picture'] ?? null;
     $validIdPath = $_SESSION['reg_valid_id_image'] ?? null;
 
-    $photoResult = bfis_reg_store_upload_request(
+    $photoResult = bfis_reg_image_upload_request(
       'photo_upload',
-      'reg_profile',
+      BFIS_CLOUDINARY_FOLDER_PROFILES,
       ['image/jpeg', 'image/png'],
-      5 * 1024 * 1024
+      5 * 1024 * 1024,
+      'profile photo'
     );
     if (isset($photoResult['error'])) {
       $error = $photoResult['error'];
-    } elseif (!empty($photoResult['path'])) {
-      $profilePicturePath = $photoResult['path'];
+    } elseif (!empty($photoResult['url'])) {
+      if ($profilePicturePath !== null && !bfis_is_cloudinary_media_url($profilePicturePath)) {
+        bfis_reg_delete_temp_path($profilePicturePath);
+      }
+      $profilePicturePath = $photoResult['url'];
     }
 
     if ($error === '') {
-      $idResult = bfis_reg_store_upload_request(
+      $idResult = bfis_reg_image_upload_request(
         'valid_id_image',
-        'reg_valid_id',
-        ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
-        10 * 1024 * 1024
+        BFIS_CLOUDINARY_FOLDER_VALID_IDS,
+        ['image/jpeg', 'image/png', 'image/webp'],
+        10 * 1024 * 1024,
+        'valid ID'
       );
       if (isset($idResult['error'])) {
         $error = $idResult['error'];
-      } elseif (!empty($idResult['path'])) {
-        $validIdPath = $idResult['path'];
+      } elseif (!empty($idResult['url'])) {
+        if ($validIdPath !== null && !bfis_is_cloudinary_media_url($validIdPath)) {
+          bfis_reg_delete_temp_path($validIdPath);
+        }
+        $validIdPath = $idResult['url'];
       }
     }
 
@@ -107,6 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $_SESSION['reg_profile_picture'] = $profilePicturePath;
       $_SESSION['reg_valid_id_image'] = $validIdPath;
       $_SESSION['reg_step1_ok'] = true;
+      unset($_SESSION['reg_step2_ok'], $_SESSION['reg_password_hash'], $_SESSION['reg_email_verified'], $_SESSION['reg_verification_email'], $_SESSION['reg_verification_id'], $_SESSION['reg_verified_token_hash']);
 
       session_write_close();
       header('Location: register_step2.php');

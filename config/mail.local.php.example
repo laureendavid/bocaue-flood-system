@@ -1,0 +1,15 @@
+<?php
+
+/**
+ * Copy this file to mail.local.php and fill in your Brevo SMTP credentials.
+ * mail.local.php is gitignored and must exist on each server (local + InfinityFree).
+ */
+return [
+    'host' => 'smtp-relay.brevo.com',
+    'port' => 587,
+    'encryption' => 'tls',
+    'username' => 'your-brevo-smtp-login@smtp-brevo.com',
+    'password' => 'your-brevo-smtp-key',
+    'from_email' => 'your-sender@example.com',
+    'from_name' => 'Bocaue Flood Info System',
+];
